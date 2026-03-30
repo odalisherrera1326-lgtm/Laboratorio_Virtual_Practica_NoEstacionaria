@@ -255,7 +255,10 @@ else:
     status_placeholder = st.empty()
     dt = 1.0 
     vector_t = np.arange(0, tiempo_ensayo, dt)
-    h_log, u_log, sp_log = [], [], [] 
+    
+    h_log, u_log = [], [] 
+    sp_log = []   
+    e_log = []  
     h_corrida = h_total if op_tipo == "Vaciado" else 0.05
     err_int, err_pasado = 0, 0
     barra_p = st.progress(0)
@@ -271,9 +274,10 @@ else:
         )
         
        
-        h_log.append(h_corrida)
-        u_log.append(u_inst)
-        sp_log.append(sp_nivel) 
+    h_log.append(h_corrida)
+    u_log.append(u_inst)
+    sp_log.append(sp_nivel) # <--- NUEVO: Guardar SP actual
+    e_log.append(sp_nivel - h_corrida) # <--- NUEVO: Guardar Error actual 
         
         # --- RENDERIZADO DE GRÁFICOS (Matplotlib) ---
         
@@ -315,25 +319,22 @@ else:
         placeholder_tanque.pyplot(fig_t)
         plt.close(fig_t)
 
-        # B. TENDENCIA DE NIVEL 
-        fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-        
-        # Línea azul: Nivel real (PV)
-        ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2.5, label='Nivel PV (Real)')
-        
-        # Línea roja punteada: Setpoint (SP)
-        ax_tr.plot(vector_t[:i+1], sp_log, color='#c0392b', ls='--', lw=2, label='Referencia SP (Target)')
-        
-        ax_tr.set_xlim(0, tiempo_ensayo)
-        ax_tr.set_ylim(0, h_total*1.1)
-        ax_tr.set_xlabel("Tiempo [s]")
-        ax_tr.set_ylabel("Altura [m]")
-        ax_tr.set_title("Respuesta Dinámica: PV vs SP", fontsize=10, fontweight='bold')
-        ax_tr.legend(loc='upper right') # <-- Agregamos la leyenda
-        ax_tr.grid(True, alpha=0.3, linestyle=':')
-        
-        placeholder_grafico.pyplot(fig_tr)
-        plt.close(fig_tr)
+        # --- DENTRO DEL FOR: B. TENDENCIA DE NIVEL  ---
+    fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
+    
+    # Línea Azul: Nivel Real (PV)
+    ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2.5, label='Nivel PV (Real)')
+    
+    # Línea Roja: Setpoint (SP)
+    ax_tr.plot(vector_t[:i+1], sp_log, color='#c0392b', ls='--', lw=2, label='Referencia SP')
+    
+    ax_tr.set_title("Respuesta Dinámica: PV vs SP", fontsize=10, fontweight='bold')
+    ax_tr.set_ylabel("Altura [m]")
+    ax_tr.legend(loc='upper right')
+    ax_tr.grid(True, alpha=0.3)
+    
+    placeholder_grafico.pyplot(fig_tr)
+    plt.close(fig_tr) # CRÍTICO: Para no colapsar la RAM
 
         # C. ACCIÓN DEL CONTROLADOR (u)
         fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
@@ -350,6 +351,22 @@ else:
         
         time.sleep(0.01) 
         barra_p.progress((i+1)/len(vector_t))
+# --- FUERA DEL BUCLE FOR ---
+st.markdown("---")
+st.subheader("📝 Análisis de Desempeño del Controlador")
+
+# Cálculo de integrales de error (IAE e ITAE)
+iae = np.trapz(np.abs(e_log), dx=1.0)
+itae = np.trapz(np.arange(len(e_log)) * np.abs(e_log), dx=1.0)
+
+col_res1, col_res2 = st.columns(2)
+col_res1.metric("IAE (Error Acumulado)", f"{iae:.2f} m·s")
+col_res2.metric("ITAE (Criterio de Estabilidad)", f"{itae:.2f} m·s²")
+
+if itae < 1000:
+    st.success("✅ El sistema muestra una estabilidad robusta.")
+else:
+    st.warning("⚠️ El sistema es lento o presenta oscilaciones persistentes.")
 
     # 4. FINALIZACIÓN Y RESULTADOS
     st.success(f" Simulación del Tanque {geom_tanque} completada.")
