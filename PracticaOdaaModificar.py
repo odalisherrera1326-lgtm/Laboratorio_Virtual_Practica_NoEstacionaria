@@ -244,15 +244,20 @@ else:
         placeholder_u = st.empty()
 
     with col_met:
-        # CONTENEDOR UNIFICADO PARA MÉTRICAS
-        st.subheader("📊 Control de Calidad")
-        # Definición de placeholders para actualización en tiempo real
+      
+        st.subheader("📊 Desempeño PID") 
+        
+        # Estas tarjetas se actualizarán en tiempo real
         placeholder_iae = st.empty()
         placeholder_itae = st.empty()
-        st.divider()
+        
+        st.markdown("---") # Separador visual
+        
+        # Tus métricas actuales de Nivel y Error
         m_h = st.empty()
         m_e = st.empty()
-        st.divider()
+        
+        st.markdown("---")
         area_descarga = st.empty()
 
     # 2. PREPARACIÓN DE LA SIMULACIÓN
@@ -291,11 +296,20 @@ else:
         
         # --- ACTUALIZACIÓN VISUAL (Cada 2 pasos) ---
         if i % 2 == 0:
-            # A. Métricas numéricas (IAE e ITAE ahora sí se verán)
-            placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
-            placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
+            placeholder_iae.metric(
+                label="IAE (Error Acumulado)", 
+                value=f"{iae_acumulado:.2f}",
+                help="Integral del Error Absoluto. Entre menor sea, mejor es la sintonía."
+            )
+            placeholder_itae.metric(
+                label="ITAE (Penalización Temporal)", 
+                value=f"{itae_acumulado:.2f}",
+                help="Integral del Tiempo por el Error Absoluto. Mide qué tan rápido se estabiliza."
+            )
+
             m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
             m_e.metric("Error [m]", f"{e_inst:.4f}")
+          
 
             # B. Tanque Animado
             fig_t, ax_t = plt.subplots(figsize=(5, 4))
