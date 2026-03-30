@@ -263,110 +263,88 @@ else:
     err_int, err_pasado = 0, 0
     barra_p = st.progress(0)
 
-  # 3. BUCLE PRINCIPAL (Cálculo y Renderizado)
+ # 3. BUCLE PRINCIPAL 
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
-        # Lógica de perturbación y resolución
+        # --- CÁLCULOS FÍSICOS ---
         q_p_inst = p_magnitud if (p_activa and t_act >= p_tiempo) else 0.0
+        
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, err_int, err_pasado
         )
         
-       
-    h_log.append(h_corrida)
-    u_log.append(u_inst)
-    sp_log.append(sp_nivel) # <--- NUEVO: Guardar SP actual
-    e_log.append(sp_nivel - h_corrida) # <--- NUEVO: Guardar Error actual 
+        # --- GUARDADO DE DATOS (DENTRO DEL FOR) ---
+        h_log.append(h_corrida)
+        u_log.append(u_inst)
+        sp_log.append(sp_nivel) 
+        e_log.append(sp_nivel - h_corrida)
         
-        # --- RENDERIZADO DE GRÁFICOS (Matplotlib) ---
-        
-        # A. DIBUJO DEL TANQUE ANIMADO
-        fig_t, ax_t = plt.subplots(figsize=(5, 4))
-        ax_t.set_xlim(-r_max*1.2, r_max*1.2)
-        ax_t.set_ylim(-0.1, h_total*1.1)
-        ax_t.set_xticks([]); ax_t.set_ylabel("Nivel [m]")
-        
-        # Simulación de oleaje visual si hay flujo de entrada
-        h_vis = h_corrida + (0.02 * np.sin(t_act * 4) if u_inst > 0.05 else 0)
-        
-        if geom_tanque == "Cilíndrico":
-            # Dibujamos el agua (rectángulo azul)
-            ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_vis, color='#3498db', alpha=0.6))
-            # Dibujamos las paredes del tanque
-            ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=3)
+        # --- RENDERIZADO VISUAL (DENTRO DEL FOR) ---
+        # Solo dibujamos cada 2 iteraciones para que la web fluya rápido
+        if i % 2 == 0:
+            # 1. Tanque Animado
+            fig_t, ax_t = plt.subplots(figsize=(5, 4))
+            ax_t.set_xlim(-r_max*1.2, r_max*1.2)
+            ax_t.set_ylim(-0.1, h_total*1.1)
+            ax_t.set_xticks([]); ax_t.set_ylabel("Nivel [m]")
             
-        elif geom_tanque == "Cónico":
-            # Calculamos el radio en la superficie actual
-            r_h = (r_max / h_total) * h_vis
-            # Dibujamos el agua (triángulo/trapecio azul)
-            ax_t.add_patch(plt.Polygon([[-r_h, h_vis], [r_h, h_vis], [0, 0]], color='#3498db', alpha=0.6))
-            # Dibujamos las paredes
-            ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=3)
+            h_vis = h_corrida + (0.02 * np.sin(t_act * 4) if u_inst > 0.05 else 0)
             
-        elif geom_tanque == "Esférico":
-            # Dibujamos el contorno de la esfera
-            ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=3))
-            if h_vis > 0:
-                # Calculamos el ángulo para rellenar según el nivel (Wedge)
-                ang_w = np.degrees(np.arccos(np.clip(1 - (h_vis/r_max), -1, 1)))
-                ax_t.add_patch(plt.matplotlib.patches.Wedge((0, r_max), r_max, 270-ang_w, 270+ang_w, color='#3498db', alpha=0.6))
+            if geom_tanque == "Cilíndrico":
+                ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_vis, color='#3498db', alpha=0.6))
+                ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=3)
+            elif geom_tanque == "Cónico":
+                r_h = (r_max / h_total) * h_vis
+                ax_t.add_patch(plt.Polygon([[-r_h, h_vis], [r_h, h_vis], [0, 0]], color='#3498db', alpha=0.6))
+                ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=3)
+            elif geom_tanque == "Esférico":
+                ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=3))
+                if h_vis > 0:
+                    ang_w = np.degrees(np.arccos(np.clip(1 - (h_vis/r_max), -1, 1)))
+                    ax_t.add_patch(plt.matplotlib.patches.Wedge((0, r_max), r_max, 270-ang_w, 270+ang_w, color='#3498db', alpha=0.6))
 
-        # Línea de referencia del Setpoint
-        ax_t.axhline(y=sp_nivel, color='red', ls='--', label=f"SP: {sp_nivel}m")
-        
-        # Mostramos en el placeholder y cerramos para liberar memoria
-        placeholder_tanque.pyplot(fig_t)
-        plt.close(fig_t)
+            ax_t.axhline(y=sp_nivel, color='red', ls='--', label=f"SP: {sp_nivel}m")
+            placeholder_tanque.pyplot(fig_t)
+            plt.close(fig_t)
 
-        # --- DENTRO DEL FOR: B. TENDENCIA DE NIVEL  ---
-    fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-    
-    # Línea Azul: Nivel Real (PV)
-    ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2.5, label='Nivel PV (Real)')
-    
-    # Línea Roja: Setpoint (SP)
-    ax_tr.plot(vector_t[:i+1], sp_log, color='#c0392b', ls='--', lw=2, label='Referencia SP')
-    
-    ax_tr.set_title("Respuesta Dinámica: PV vs SP", fontsize=10, fontweight='bold')
-    ax_tr.set_ylabel("Altura [m]")
-    ax_tr.legend(loc='upper right')
-    ax_tr.grid(True, alpha=0.3)
-    
-    placeholder_grafico.pyplot(fig_tr)
-    plt.close(fig_tr) # CRÍTICO: Para no colapsar la RAM
+            # 2. Gráfica PV vs SP (La mejora de tesis)
+            fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
+            ax_tr.plot(vector_t[:len(h_log)], h_log, color='#2980b9', lw=2.5, label='Nivel PV (Real)')
+            ax_tr.plot(vector_t[:len(sp_log)], sp_log, color='#c0392b', ls='--', lw=2, label='Referencia SP')
+            ax_tr.set_title("Respuesta Dinámica: PV vs SP", fontsize=10, fontweight='bold')
+            ax_tr.grid(True, alpha=0.3)
+            ax_tr.legend(loc='upper right')
+            placeholder_grafico.pyplot(fig_tr)
+            plt.close(fig_tr)
 
-        # C. ACCIÓN DEL CONTROLADOR (u)
-        fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
-        ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
-        ax_u.set_xlim(0, tiempo_ensayo)
-        ax_u.set_ylim(0, 0.7)
-        ax_u.set_ylabel("u [m³/s]")
-        placeholder_u.pyplot(fig_u)
-        plt.close(fig_u)
+            # 3. Acción de Válvula
+            fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
+            ax_u.step(vector_t[:len(u_log)], u_log, color='#e67e22', where='post')
+            ax_u.set_xlim(0, tiempo_ensayo)
+            ax_u.set_ylim(0, 0.7)
+            ax_u.set_ylabel("u [m³/s]")
+            placeholder_u.pyplot(fig_u)
+            plt.close(fig_u)
 
-        # ACTUALIZACIÓN DE MÉTRICAS
-        m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
-        m_e.metric("Error [m]", f"{e_inst:.4f}")
+            # 4. Métricas numéricas
+            m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
+            m_e.metric("Error [m]", f"{e_inst:.4f}")
         
         time.sleep(0.01) 
         barra_p.progress((i+1)/len(vector_t))
-# --- FUERA DEL BUCLE FOR ---
-st.markdown("---")
-st.subheader("📝 Análisis de Desempeño del Controlador")
 
-# Cálculo de integrales de error (IAE e ITAE)
-iae = np.trapz(np.abs(e_log), dx=1.0)
-itae = np.trapz(np.arange(len(e_log)) * np.abs(e_log), dx=1.0)
+    # --- ANÁLISIS FINAL (FUERA DEL FOR) ---
+    st.markdown("---")
+    st.subheader("📝 Análisis de Desempeño del Controlador")
+    iae = np.trapz(np.abs(e_log), dx=1.0)
+    itae = np.trapz(np.arange(len(e_log)) * np.abs(e_log), dx=1.0)
 
-col_res1, col_res2 = st.columns(2)
-col_res1.metric("IAE (Error Acumulado)", f"{iae:.2f} m·s")
-col_res2.metric("ITAE (Criterio de Estabilidad)", f"{itae:.2f} m·s²")
-
-if itae < 1000:
-    st.success("✅ El sistema muestra una estabilidad robusta.")
-else:
-    st.warning("⚠️ El sistema es lento o presenta oscilaciones persistentes.")
+    c1, c2 = st.columns(2)
+    c1.metric("IAE (Error Acumulado)", f"{iae:.2f} m·s")
+    c2.metric("ITAE (Criterio de Estabilidad)", f"{itae:.2f} m·s²")
+    
+    st.success("Simulación completada. Puede descargar los datos o ajustar parámetros.")
 
     # 4. FINALIZACIÓN Y RESULTADOS
     st.success(f" Simulación del Tanque {geom_tanque} completada.")
