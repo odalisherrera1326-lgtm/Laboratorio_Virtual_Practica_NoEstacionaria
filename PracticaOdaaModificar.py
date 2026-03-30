@@ -245,7 +245,10 @@ else:
 
     with col_met:
         st.markdown("<div class='metric-panel'>", unsafe_allow_html=True)
-        st.subheader("📊 Métricas")
+        st.subheader("📊 Métricas") 
+        placeholder_iae = st.empty()
+        placeholder_itae = st.empty()
+        st.markdown("---") 
         m_h = st.empty()
         m_e = st.empty()
         st.markdown("</div>", unsafe_allow_html=True)
@@ -264,6 +267,8 @@ else:
     barra_p = st.progress(0)
 
  # 3. BUCLE PRINCIPAL 
+    iae_acumulado = 0
+    itae_acumulado = 0
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
@@ -273,6 +278,8 @@ else:
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, err_int, err_pasado
         )
+        iae_acumulado += abs(e_inst) * dt
+        itae_acumulado += (t_act * abs(e_inst)) * dt
         
         # --- GUARDADO DE DATOS (DENTRO DEL FOR) ---
         h_log.append(h_corrida)
@@ -280,8 +287,8 @@ else:
         sp_log.append(sp_nivel) 
         e_log.append(sp_nivel - h_corrida)
         
-        # --- RENDERIZADO VISUAL (DENTRO DEL FOR) ---
-        # Solo dibujamos cada 2 iteraciones para que la web fluya rápido
+        # --- RENDERIZADO VISUAL  ---
+        
         if i % 2 == 0:
             # 1. Tanque Animado
             fig_t, ax_t = plt.subplots(figsize=(5, 4))
@@ -328,6 +335,12 @@ else:
             plt.close(fig_u)
 
             # 4. Métricas numéricas
+            # --- ACTUALIZAR IAE E ITAE EN PANTALLA ---
+            placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
+            placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
+
+      
+           
             m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
             m_e.metric("Error [m]", f"{e_inst:.4f}")
         
