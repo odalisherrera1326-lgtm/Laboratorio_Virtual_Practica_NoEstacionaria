@@ -209,73 +209,79 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev):
     
     return h_next, q_entrada, err, e_sum, err
 # =============================================================================
-# 5. ESTRUCTURA DE INTERFAZ PERSISTENTE (FUERA DE LOS IF)
+# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA (CORREGIDA)
 # =============================================================================
 
-# Definimos las columnas principales de la aplicación
-col_graf, col_met = st.columns([2, 1])
-
-with col_graf:
-    st.subheader("🖥️ Monitor del Proceso")
-    placeholder_tanque = st.empty()
-    st.subheader("📊 Tendencia Temporal")
-    placeholder_grafico = st.empty()
-    st.subheader("⚙️ Acción del Controlador")
-    placeholder_u = st.empty()
-
-with col_met:
-    st.subheader("📊 Métricas de Control")
-    # Estos placeholders ahora existen SIEMPRE en la página
-    placeholder_iae = st.empty()
-    placeholder_itae = st.empty()
-    
-    # Valores iniciales para que no se vea vacío al cargar
-    placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
-    placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
-    
-    st.markdown("---")
-    m_h = st.empty()
-    m_e = st.empty()
-    m_h.metric("Nivel PV [m]", "0.000")
-    m_e.metric("Error [m]", "0.000")
-    
-    st.markdown("---")
-    area_descarga = st.empty()
-
-# =============================================================================
-# 6. LÓGICA DE SIMULACIÓN
-# =============================================================================
-
-if iniciar_sim or st.session_state.ejecutando:
+if iniciar_sim:
     st.session_state.ejecutando = True
-    
-    # Preparación de datos
+
+# Determinamos si el expander del diagrama debe estar abierto
+estado_expander = not st.session_state.ejecutando
+
+# --- PESTAÑA DEL DIAGRAMA ---
+with st.expander("Diagrama del Proceso", expanded=estado_expander):
+    col_img = st.columns([1, 5, 1])[1]
+    with col_img:
+        if os.path.exists("Captura de pantalla 2026-03-29 163125.png"):
+            st.image("Captura de pantalla 2026-03-29 163125.png", use_container_width=True)
+        else:
+            st.info("📍 El diagrama del sistema se mostrará aquí.")
+
+# --- LÓGICA DE CONTROL DE ESTADOS ---
+if not st.session_state.ejecutando:
+    st.info("💡 Ajuste los parámetros en la barra lateral y presione 'Iniciar' para comenzar.")
+else:
+    # 1. Dashboard de columnas
+    col_graf, col_met = st.columns([2, 1])
+
+    with col_graf:
+        st.subheader("🖥️ Monitor del Proceso")
+        placeholder_tanque = st.empty()
+        st.subheader("📊 Tendencia Temporal")
+        placeholder_grafico = st.empty()
+        st.subheader("⚙️ Acción del Controlador")
+        placeholder_u = st.empty()
+
+    with col_met:
+        st.subheader("📊 Métricas de Control")
+        # Forzamos la aparición de las tarjetas con un valor inicial
+        placeholder_iae = st.empty()
+        placeholder_itae = st.empty()
+        placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
+        placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
+        
+        st.markdown("---")
+        m_h = st.empty()
+        m_e = st.empty()
+        m_h.metric("Nivel PV [m]", "0.000")
+        m_e.metric("Error [m]", "0.000")
+        
+        st.markdown("---")
+        area_descarga = st.empty()
+
+    # 2. Preparación de datos
     status_placeholder = st.empty()
     dt = 1.0 
     vector_t = np.arange(0, tiempo_ensayo, dt)
     h_log, u_log, sp_log, e_log = [], [], [], []
-    
-    # Configuración inicial según tipo de operación
     h_corrida = h_total if op_tipo == "Vaciado" else 0.05
-    err_int, err_pasado = 0.0, 0.0
-    iae_acumulado = 0.0
-    itae_acumulado = 0.0
+    err_int, err_pasado = 0, 0
+    iae_acumulado = 0
+    itae_acumulado = 0
     
     barra_p = st.progress(0)
 
-    # Bucle de Simulación
+    # 3. Bucle de Simulación
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
-        # Lógica de perturbación
         q_p_inst = p_magnitud if (p_activa and t_act >= p_tiempo) else 0.0
         
-        # Llamada a la función de cálculo
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, err_int, err_pasado
         )
         
-        # Cálculo de métricas integrales de control
+        # Cálculo de métricas integrales
         iae_acumulado += abs(e_inst) * dt
         itae_acumulado += (t_act * abs(e_inst)) * dt
         
@@ -284,34 +290,82 @@ if iniciar_sim or st.session_state.ejecutando:
         sp_log.append(sp_nivel) 
         e_log.append(e_inst)
         
-        # Actualización visual cada 2 pasos para suavidad
         if i % 2 == 0:
+            # ACTUALIZACIÓN DE MÉTRICAS (AQUÍ ESTABA EL ERROR)
             placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
             placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
             m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
             m_e.metric("Error [m]", f"{e_inst:.4f}")
 
-            # Renderizado de gráficos (usando tus funciones actuales)
-            # [Aquí va tu código de fig_t, fig_tr, fig_u que ya tienes]
-            # ... (omitido por brevedad, mantén tu lógica de matplotlib)
+            # Gráficos (Tanque)
+            fig_t, ax_t = plt.subplots(figsize=(5, 4))
+            ax_t.set_xlim(-r_max*1.2, r_max*1.2)
+            ax_t.set_ylim(-0.1, h_total*1.1)
+            ax_t.set_xticks([]); ax_t.set_ylabel("Nivel [m]")
+            h_vis = h_corrida + (0.02 * np.sin(t_act * 4) if u_inst > 0.05 else 0)
             
+            if geom_tanque == "Cilíndrico":
+                ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_vis, color='#3498db', alpha=0.6))
+                ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=3)
+            elif geom_tanque == "Cónico":
+                r_h = (r_max / h_total) * h_vis
+                ax_t.add_patch(plt.Polygon([[-r_h, h_vis], [r_h, h_vis], [0, 0]], color='#3498db', alpha=0.6))
+                ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=3)
+            elif geom_tanque == "Esférico":
+                ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=3))
+                if h_vis > 0:
+                    ang_w = np.degrees(np.arccos(np.clip(1 - (h_vis/r_max), -1, 1)))
+                    ax_t.add_patch(plt.matplotlib.patches.Wedge((0, r_max), r_max, 270-ang_w, 270+ang_w, color='#3498db', alpha=0.6))
+
+            ax_t.axhline(y=sp_nivel, color='red', ls='--', label=f"SP: {sp_nivel}m")
+            placeholder_tanque.pyplot(fig_t)
+            plt.close(fig_t)
+
+            # Gráfica PV vs SP
+            fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
+            ax_tr.plot(vector_t[:len(h_log)], h_log, color='#2980b9', lw=2.5, label='Nivel PV')
+            ax_tr.plot(vector_t[:len(sp_log)], sp_log, color='#c0392b', ls='--', lw=2, label='Setpoint SP')
+            ax_tr.grid(True, alpha=0.3)
+            ax_tr.legend(loc='upper right')
+            placeholder_grafico.pyplot(fig_tr)
+            plt.close(fig_tr)
+
+            # Acción u
+            fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
+            ax_u.step(vector_t[:len(u_log)], u_log, color='#e67e22', where='post')
+            ax_u.set_ylim(0, 0.7)
+            placeholder_u.pyplot(fig_u)
+            plt.close(fig_u)
+        
         time.sleep(0.01) 
         barra_p.progress((i+1)/len(vector_t))
 
-    # Al finalizar el bucle
-    st.session_state.ejecutando = False
+    # --- RESULTADOS FINALES ---
     status_placeholder.empty()
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
+    st.balloons()
     
-    # Botón de descarga persistente
     df_final = pd.DataFrame({
-        "Tiempo [s]": vector_t, "Nivel [m]": h_log, "u [m3/s]": u_log, "Error [m]": e_log
+        "Tiempo [s]": vector_t, 
+        "Nivel [m]": h_log, 
+        "u [m3/s]": u_log,
+        "Error [m]": e_log
     })
+    
+    st.subheader("📝 Resumen de Estabilidad")
+    err_f = abs(sp_nivel - h_log[-1])
+    c1, c2, c3 = st.columns(3)
+    c1.metric("IAE Final", f"{iae_acumulado:.2f}")
+    c2.metric("ITAE Final", f"{itae_acumulado:.2f}")
+    c3.metric("Error Residual", f"{err_f:.4f} m")
+
     area_descarga.download_button(
         "📥 Descargar Datos de Tesis (CSV)", 
         df_final.to_csv(index=False), 
-        "resultados_simulacion_ucv.csv"
+        "resultados_simulacion_ucv.csv",
+        use_container_width=True
     )
+
     # Análisis de Estabilidad
     st.markdown("---")
     st.subheader("Análisis de Estabilidad")
