@@ -209,7 +209,7 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev):
     
     return h_next, q_entrada, err, e_sum, err
 # =============================================================================
-# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA
+# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA (CORREGIDA)
 # =============================================================================
 
 if iniciar_sim:
@@ -218,7 +218,7 @@ if iniciar_sim:
 # Determinamos si el expander del diagrama debe estar abierto
 estado_expander = not st.session_state.ejecutando
 
-# --- PESTAÑA DEL DIAGRAMA (Se cierra sola al iniciar) ---
+# --- PESTAÑA DEL DIAGRAMA ---
 with st.expander("Diagrama del Proceso", expanded=estado_expander):
     col_img = st.columns([1, 5, 1])[1]
     with col_img:
@@ -229,42 +229,40 @@ with st.expander("Diagrama del Proceso", expanded=estado_expander):
 
 # --- LÓGICA DE CONTROL DE ESTADOS ---
 if not st.session_state.ejecutando:
-    # Mensaje de espera inicial
     st.info("💡 Ajuste los parámetros en la barra lateral y presione 'Iniciar' para comenzar.")
 else:
-    # 1. CREACIÓN DINÁMICA DE LA INTERFAZ (Dashboard)
+    # 1. Dashboard de columnas
     col_graf, col_met = st.columns([2, 1])
 
     with col_graf:
         st.subheader("🖥️ Monitor del Proceso")
         placeholder_tanque = st.empty()
-        st.subheader("📊 Tendencia Temporal de Nivel")
+        st.subheader("📊 Tendencia Temporal")
         placeholder_grafico = st.empty()
         st.subheader("⚙️ Acción del Controlador")
         placeholder_u = st.empty()
 
     with col_met:
-      
-        st.subheader("📊 Desempeño PID") 
-        
-        # Estas tarjetas se actualizarán en tiempo real
+        st.subheader("📊 Métricas de Control")
+        # Forzamos la aparición de las tarjetas con un valor inicial
         placeholder_iae = st.empty()
         placeholder_itae = st.empty()
+        placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
+        placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
         
-        st.markdown("---") # Separador visual
-        
-        # Tus métricas actuales de Nivel y Error
+        st.markdown("---")
         m_h = st.empty()
         m_e = st.empty()
+        m_h.metric("Nivel PV [m]", "0.000")
+        m_e.metric("Error [m]", "0.000")
         
         st.markdown("---")
         area_descarga = st.empty()
 
-    # 2. PREPARACIÓN DE LA SIMULACIÓN
+    # 2. Preparación de datos
     status_placeholder = st.empty()
     dt = 1.0 
     vector_t = np.arange(0, tiempo_ensayo, dt)
-    
     h_log, u_log, sp_log, e_log = [], [], [], []
     h_corrida = h_total if op_tipo == "Vaciado" else 0.05
     err_int, err_pasado = 0, 0
@@ -273,45 +271,33 @@ else:
     
     barra_p = st.progress(0)
 
-    # 3. BUCLE PRINCIPAL 
+    # 3. Bucle de Simulación
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
-        # --- CÁLCULOS FÍSICOS Y CONTROL ---
         q_p_inst = p_magnitud if (p_activa and t_act >= p_tiempo) else 0.0
         
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, err_int, err_pasado
         )
         
-        # Acumular métricas de error (IAE / ITAE)
+        # Cálculo de métricas integrales
         iae_acumulado += abs(e_inst) * dt
         itae_acumulado += (t_act * abs(e_inst)) * dt
         
-        # Guardar datos
         h_log.append(h_corrida)
         u_log.append(u_inst)
         sp_log.append(sp_nivel) 
         e_log.append(e_inst)
         
-        # --- ACTUALIZACIÓN VISUAL (Cada 2 pasos) ---
         if i % 2 == 0:
-            placeholder_iae.metric(
-                label="IAE (Error Acumulado)", 
-                value=f"{iae_acumulado:.2f}",
-                help="Integral del Error Absoluto. Entre menor sea, mejor es la sintonía."
-            )
-            placeholder_itae.metric(
-                label="ITAE (Penalización Temporal)", 
-                value=f"{itae_acumulado:.2f}",
-                help="Integral del Tiempo por el Error Absoluto. Mide qué tan rápido se estabiliza."
-            )
-
+            # ACTUALIZACIÓN DE MÉTRICAS (AQUÍ ESTABA EL ERROR)
+            placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
+            placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
             m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
             m_e.metric("Error [m]", f"{e_inst:.4f}")
-          
 
-            # B. Tanque Animado
+            # Gráficos (Tanque)
             fig_t, ax_t = plt.subplots(figsize=(5, 4))
             ax_t.set_xlim(-r_max*1.2, r_max*1.2)
             ax_t.set_ylim(-0.1, h_total*1.1)
@@ -335,17 +321,16 @@ else:
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
 
-            # C. Gráfica Tendencia (PV vs SP)
+            # Gráfica PV vs SP
             fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
             ax_tr.plot(vector_t[:len(h_log)], h_log, color='#2980b9', lw=2.5, label='Nivel PV')
             ax_tr.plot(vector_t[:len(sp_log)], sp_log, color='#c0392b', ls='--', lw=2, label='Setpoint SP')
-            ax_tr.set_title("Respuesta Dinámica", fontsize=10, fontweight='bold')
             ax_tr.grid(True, alpha=0.3)
             ax_tr.legend(loc='upper right')
             placeholder_grafico.pyplot(fig_tr)
             plt.close(fig_tr)
 
-            # D. Acción Control (u)
+            # Acción u
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
             ax_u.step(vector_t[:len(u_log)], u_log, color='#e67e22', where='post')
             ax_u.set_ylim(0, 0.7)
@@ -355,27 +340,31 @@ else:
         time.sleep(0.01) 
         barra_p.progress((i+1)/len(vector_t))
 
-    # --- ANÁLISIS FINAL (FUERA DEL FOR) ---
-    st.markdown("---")
-    st.subheader("📝 Análisis de Desempeño del Controlador")
-    iae = np.trapz(np.abs(e_log), dx=1.0)
-    itae = np.trapz(np.arange(len(e_log)) * np.abs(e_log), dx=1.0)
-
-    c1, c2 = st.columns(2)
-    c1.metric("IAE (Error Acumulado)", f"{iae:.2f} m·s")
-    c2.metric("ITAE (Criterio de Estabilidad)", f"{itae:.2f} m·s²")
-    
-    st.success("Simulación completada. Puede descargar los datos o ajustar parámetros.")
-
-    # 4. FINALIZACIÓN Y RESULTADOS
-    st.success(f" Simulación del Tanque {geom_tanque} completada.")
+    # --- RESULTADOS FINALES ---
+    status_placeholder.empty()
+    st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
     st.balloons()
     
-    # Tabla resumen y descarga
-    df_final = pd.DataFrame({"Tiempo [s]": vector_t, "Nivel [m]": h_log, "u [m3/s]": u_log})
-    st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=True)
+    df_final = pd.DataFrame({
+        "Tiempo [s]": vector_t, 
+        "Nivel [m]": h_log, 
+        "u [m3/s]": u_log,
+        "Error [m]": e_log
+    })
     
-    area_descarga.download_button("📥 Descargar CSV", df_final.to_csv(index=False), "resultados_ucv.csv")
+    st.subheader("📝 Resumen de Estabilidad")
+    err_f = abs(sp_nivel - h_log[-1])
+    c1, c2, c3 = st.columns(3)
+    c1.metric("IAE Final", f"{iae_acumulado:.2f}")
+    c2.metric("ITAE Final", f"{itae_acumulado:.2f}")
+    c3.metric("Error Residual", f"{err_f:.4f} m")
+
+    area_descarga.download_button(
+        "📥 Descargar Datos de Tesis (CSV)", 
+        df_final.to_csv(index=False), 
+        "resultados_simulacion_ucv.csv",
+        use_container_width=True
+    )
 
     # Análisis de Estabilidad
     st.markdown("---")
