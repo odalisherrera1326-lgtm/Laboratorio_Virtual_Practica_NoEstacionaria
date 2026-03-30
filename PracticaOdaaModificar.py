@@ -244,14 +244,15 @@ else:
         placeholder_u = st.empty()
 
     with col_met:
-        st.markdown("<div class='metric-panel'>", unsafe_allow_html=True)
-        st.subheader("📊 Métricas") 
+        # CONTENEDOR UNIFICADO PARA MÉTRICAS
+        st.subheader("📊 Control de Calidad")
+        # Definición de placeholders para actualización en tiempo real
         placeholder_iae = st.empty()
         placeholder_itae = st.empty()
-        st.markdown("---") 
+        st.divider()
         m_h = st.empty()
         m_e = st.empty()
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.divider()
         area_descarga = st.empty()
 
     # 2. PREPARACIÓN DE LA SIMULACIÓN
@@ -259,43 +260,48 @@ else:
     dt = 1.0 
     vector_t = np.arange(0, tiempo_ensayo, dt)
     
-    h_log, u_log = [], [] 
-    sp_log = []   
-    e_log = []  
+    h_log, u_log, sp_log, e_log = [], [], [], []
     h_corrida = h_total if op_tipo == "Vaciado" else 0.05
     err_int, err_pasado = 0, 0
-    barra_p = st.progress(0)
-
- # 3. BUCLE PRINCIPAL 
     iae_acumulado = 0
     itae_acumulado = 0
+    
+    barra_p = st.progress(0)
+
+    # 3. BUCLE PRINCIPAL 
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
-        # --- CÁLCULOS FÍSICOS ---
+        # --- CÁLCULOS FÍSICOS Y CONTROL ---
         q_p_inst = p_magnitud if (p_activa and t_act >= p_tiempo) else 0.0
         
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, err_int, err_pasado
         )
+        
+        # Acumular métricas de error (IAE / ITAE)
         iae_acumulado += abs(e_inst) * dt
         itae_acumulado += (t_act * abs(e_inst)) * dt
         
-        # --- GUARDADO DE DATOS (DENTRO DEL FOR) ---
+        # Guardar datos
         h_log.append(h_corrida)
         u_log.append(u_inst)
         sp_log.append(sp_nivel) 
-        e_log.append(sp_nivel - h_corrida)
+        e_log.append(e_inst)
         
-        # --- RENDERIZADO VISUAL  ---
-        
+        # --- ACTUALIZACIÓN VISUAL (Cada 2 pasos) ---
         if i % 2 == 0:
-            # 1. Tanque Animado
+            # A. Métricas numéricas (IAE e ITAE ahora sí se verán)
+            placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
+            placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
+            m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
+            m_e.metric("Error [m]", f"{e_inst:.4f}")
+
+            # B. Tanque Animado
             fig_t, ax_t = plt.subplots(figsize=(5, 4))
             ax_t.set_xlim(-r_max*1.2, r_max*1.2)
             ax_t.set_ylim(-0.1, h_total*1.1)
             ax_t.set_xticks([]); ax_t.set_ylabel("Nivel [m]")
-            
             h_vis = h_corrida + (0.02 * np.sin(t_act * 4) if u_inst > 0.05 else 0)
             
             if geom_tanque == "Cilíndrico":
@@ -315,34 +321,22 @@ else:
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
 
-            # 2. Gráfica PV vs SP (La mejora de tesis)
+            # C. Gráfica Tendencia (PV vs SP)
             fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-            ax_tr.plot(vector_t[:len(h_log)], h_log, color='#2980b9', lw=2.5, label='Nivel PV (Real)')
-            ax_tr.plot(vector_t[:len(sp_log)], sp_log, color='#c0392b', ls='--', lw=2, label='Referencia SP')
-            ax_tr.set_title("Respuesta Dinámica: PV vs SP", fontsize=10, fontweight='bold')
+            ax_tr.plot(vector_t[:len(h_log)], h_log, color='#2980b9', lw=2.5, label='Nivel PV')
+            ax_tr.plot(vector_t[:len(sp_log)], sp_log, color='#c0392b', ls='--', lw=2, label='Setpoint SP')
+            ax_tr.set_title("Respuesta Dinámica", fontsize=10, fontweight='bold')
             ax_tr.grid(True, alpha=0.3)
             ax_tr.legend(loc='upper right')
             placeholder_grafico.pyplot(fig_tr)
             plt.close(fig_tr)
 
-            # 3. Acción de Válvula
+            # D. Acción Control (u)
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
             ax_u.step(vector_t[:len(u_log)], u_log, color='#e67e22', where='post')
-            ax_u.set_xlim(0, tiempo_ensayo)
             ax_u.set_ylim(0, 0.7)
-            ax_u.set_ylabel("u [m³/s]")
             placeholder_u.pyplot(fig_u)
             plt.close(fig_u)
-
-            # 4. Métricas numéricas
-            # --- ACTUALIZAR IAE E ITAE EN PANTALLA ---
-            placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
-            placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
-
-      
-           
-            m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
-            m_e.metric("Error [m]", f"{e_inst:.4f}")
         
         time.sleep(0.01) 
         barra_p.progress((i+1)/len(vector_t))
