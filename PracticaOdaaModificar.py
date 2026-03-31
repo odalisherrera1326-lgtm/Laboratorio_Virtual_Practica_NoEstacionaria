@@ -304,11 +304,10 @@ else:
         e_log.append(e_inst)
         
         if i % 2 == 0:
-            # ACTUALIZACIÓN DE MÉTRICAS (AQUÍ ESTABA EL ERROR)
-            placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
-            placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
             m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
             m_e.metric("Error [m]", f"{e_inst:.4f}")
+            placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
+            placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
 
             # Gráficos (Tanque)
             fig_t, ax_t = plt.subplots(figsize=(5, 4))
@@ -334,27 +333,35 @@ else:
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
 
-            # Gráfica PV vs SP
-            fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-            ax_tr.plot(vector_t[:len(h_log)], h_log, color='#2980b9', lw=2.5, label='Nivel PV')
-            ax_tr.plot(vector_t[:len(sp_log)], sp_log, color='#c0392b', ls='--', lw=2, label='Setpoint SP')
-            ax_tr.grid(True, alpha=0.3)
-            ax_tr.legend(loc='upper right')
-            placeholder_grafico.pyplot(fig_tr)
-            plt.close(fig_tr)
+            # B. TENDENCIA DE NIVEL
+           fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
+           ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2)
+           ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5)
+           ax_tr.set_xlim(0, tiempo_ensayo)
+           ax_tr.set_ylim(0, h_total*1.1)
+           ax_tr.set_xlabel("Tiempo [s]"); ax_tr.set_ylabel("Altura [m]")
+           ax_tr.grid(True, alpha=0.2)
+           placeholder_grafico.pyplot(fig_tr)
+           plt.close(fig_tr)
 
-            # Acción u
-            fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
-            ax_u.step(vector_t[:len(u_log)], u_log, color='#e67e22', where='post')
-            ax_u.set_ylim(0, 0.7)
-            placeholder_u.pyplot(fig_u)
-            plt.close(fig_u)
+           # C. ACCIÓN DEL CONTROLADOR (u)
+           fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
+           ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
+           ax_u.set_xlim(0, tiempo_ensayo)
+           ax_u.set_ylim(0, 0.7)
+           ax_u.set_ylabel("u [m³/s]");ax_u.set_xlabel("Tiempo [s]")
+           placeholder_u.pyplot(fig_u)
+           plt.close(fig_u)
+        
+         # ACTUALIZACIÓN DE MÉTRICAS
+          m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
+          m_e.metric("Error [m]", f"{e_inst:.4f}")
         
         time.sleep(0.01) 
         barra_p.progress((i+1)/len(vector_t))
 
     # --- RESULTADOS FINALES ---
-    # --- BLOQUE FINAL CORREGIDO ---
+    
     status_placeholder.empty()
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
     st.balloons()
