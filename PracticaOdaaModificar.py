@@ -358,6 +358,10 @@ else:
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
     st.balloons()
     
+     # Tabla resumen y descarga
+    df_final = pd.DataFrame({"Tiempo [s]": vector_t, "Nivel [m]": h_log, "u [m3/s]": u_log})
+    st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=
+    
     df_final = pd.DataFrame({
         "Tiempo [s]": vector_t, 
         "Nivel [m]": h_log, 
@@ -373,7 +377,7 @@ else:
     c3.metric("Error Residual", f"{err_f:.4f} m")
 
     area_descarga.download_button(
-        "📥 Descargar Datos de Tesis (CSV)", 
+        "📥 Descargar Datos  (CSV)", 
         df_final.to_csv(index=False), 
         "resultados_simulacion_ucv.csv",
         use_container_width=True
