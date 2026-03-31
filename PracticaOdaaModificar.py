@@ -143,6 +143,19 @@ with col_teoria2:
         
         En este simulador, las ecuaciones se resuelven numéricamente mediante el **Método de Euler** con un paso de tiempo $\Delta t = 1.0$ s.
         """)
+with col_teoria3:
+    with st.expander("📊 Criterios de Desempeño (IAE/ITAE)", expanded=False):
+        st.markdown(r"""
+        Para evaluar la eficiencia del control, se utilizan métricas integrales del error $e(t) = SP - PV$:
+
+        1. **IAE (Integral del Error Absoluto):**
+        $$IAE = \int_{0}^{t} |e(t)| dt$$
+        Mide el rendimiento acumulado. Es ideal para evaluar la respuesta general del sistema.
+
+        2. **ITAE (Integral del Tiempo por el Error Absoluto):**
+        $$ITAE = \int_{0}^{t} t \cdot |e(t)| dt$$
+        **Penaliza errores que duran mucho tiempo.** Es el criterio más estricto en tesis de control porque asegura que el sistema se estabilice rápido.
+        """)
 
 # =============================================================================
 # 3. BARRA LATERAL: PARÁMETROS TÉCNICOS
