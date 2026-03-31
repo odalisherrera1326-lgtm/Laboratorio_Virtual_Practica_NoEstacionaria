@@ -107,7 +107,7 @@ st.markdown(f"""
 # =============================================================================
 # 2. MARCO TEÓRICO INTEGRADO: FÍSICA Y CONTROL
 # =============================================================================
-col_teoria1, col_teoria2 = st.columns(2)
+col_teoria1, col_teoria2,col_teoria3 = st.columns(3)
 
 with col_teoria1:
     with st.expander("Fundamento teórico: Ecuaciones de Conservación y Descarga", expanded=False):
