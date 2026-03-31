@@ -360,7 +360,7 @@ else:
     
      # Tabla resumen y descarga
     df_final = pd.DataFrame({"Tiempo [s]": vector_t, "Nivel [m]": h_log, "u [m3/s]": u_log})
-    st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=
+    st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=)
     
     df_final = pd.DataFrame({
         "Tiempo [s]": vector_t, 
