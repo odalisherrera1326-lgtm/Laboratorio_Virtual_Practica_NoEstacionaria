@@ -354,14 +354,12 @@ else:
         barra_p.progress((i+1)/len(vector_t))
 
     # --- RESULTADOS FINALES ---
+    # --- BLOQUE FINAL CORREGIDO ---
     status_placeholder.empty()
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
     st.balloons()
     
-     # Tabla resumen y descarga
-    df_final = pd.DataFrame({"Tiempo [s]": vector_t, "Nivel [m]": h_log, "u [m3/s]": u_log})
-    st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=)
-    
+    # 1. Crear el DataFrame con todos los datos recolectados
     df_final = pd.DataFrame({
         "Tiempo [s]": vector_t, 
         "Nivel [m]": h_log, 
@@ -369,6 +367,11 @@ else:
         "Error [m]": e_log
     })
     
+    # 2. Mostrar la tabla de resultados 
+    st.subheader("📋 Resumen de Datos Finales")
+    st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=True)
+    
+    # 3. Métricas de estabilidad y botón de descarga
     st.subheader("📝 Resumen de Estabilidad")
     err_f = abs(sp_nivel - h_log[-1])
     c1, c2, c3 = st.columns(3)
@@ -377,9 +380,9 @@ else:
     c3.metric("Error Residual", f"{err_f:.4f} m")
 
     area_descarga.download_button(
-        "📥 Descargar Datos  (CSV)", 
-        df_final.to_csv(index=False), 
-        "resultados_simulacion_ucv.csv",
+        label="📥 Descargar Datos (CSV)", 
+        data=df_final.to_csv(index=False), 
+        file_name="resultados_simulacion_ucv.csv",
         use_container_width=True
     )
 
