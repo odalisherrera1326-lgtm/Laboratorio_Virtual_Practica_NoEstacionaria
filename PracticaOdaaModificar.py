@@ -18,23 +18,31 @@ st.set_page_config(
 if 'ejecutando' not in st.session_state:
     st.session_state.ejecutando = False
 
-# Estilos CSS Unificados: Todo en un solo bloque corregido
+# =============================================================================
+# ESTILOS CSS UNIFICADOS: IDENTIDAD UCV + BIBLIOTECA LATERAL
+# =============================================================================
 st.markdown("""
     <style>
-    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR */
+    /* 1. CONFIGURACIÓN GLOBAL Y FONDO */
     html, body, [data-testid="stAppViewContainer"] {
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto;
     }
-    button, [data-testid="stHeaderActionElements"] { cursor: pointer !important; }
-    .main { background-color: #f4f7f9; }
+    .main { 
+        background-color: #f0f2f6 !important; /* Fondo gris técnico para resaltar gráficos */
+    }
 
-    /* 2. ENCABEZADO DINÁMICO UCV */
+    /* 2. ENCABEZADO DINÁMICO UCV CON DETALLE AMARILLO */
     .header-container {
-        background: linear-gradient(-45deg, #1a5276, #21618c, #154360, #1a5276);
+        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
-        padding: 25px; border-radius: 15px; margin-bottom: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1); color: white; text-align: center;
+        padding: 25px; 
+        border-radius: 15px; 
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+        color: white; 
+        text-align: center;
+        border-bottom: 6px solid #f1c40f; /* Amarillo institucional UCV */
     }
     @keyframes gradient {
         0% { background-position: 0% 50%; }
@@ -44,27 +52,72 @@ st.markdown("""
 
     /* 3. INDICADOR DE FLUJO ACTIVO */
     .flow-indicator {
-        background: #e8f4f8; border-left: 5px solid #3498db;
-        padding: 10px; border-radius: 5px; display: flex;
-        align-items: center; gap: 10px; font-weight: bold;
-        color: #1a5276; animation: pulse 2s infinite;
+        background: #e8f4f8; 
+        border-left: 5px solid #3498db;
+        padding: 12px; 
+        border-radius: 8px; 
+        display: flex;
+        align-items: center; 
+        gap: 10px; 
+        font-weight: bold;
+        color: #1a5276; 
+        animation: pulse 2s infinite;
+        justify-content: center;
     }
     @keyframes pulse {
-        0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; }
+        0% { opacity: 0.7; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.02); }
+        100% { opacity: 0.7; transform: scale(1); }
     }
 
-    /* 4. MÉTRICAS Y BOTONES */
-    [data-testid="stMetricValue"] { font-size: 1.8rem; color: #1a5276; font-weight: bold; }
+    /* 4. MÉTRICAS (TARJETAS BLANCAS) */
+    [data-testid="stMetricValue"] { 
+        font-size: 1.9rem !important; 
+        color: #1a5276 !important; 
+        font-weight: 800 !important; 
+    }
     div.stMetric {
-        background-color: #ffffff; padding: 20px; border-radius: 12px;
-        border-left: 8px solid #1a5276; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        background-color: #ffffff !important; 
+        padding: 20px !important; 
+        border-radius: 12px !important;
+        border-left: 10px solid #1a5276 !important; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
     }
+
+    /* 5. BOTONES Y BARRA LATERAL */
+    section[data-testid="stSidebar"] {
+        background-color: #ffffff !important;
+        border-right: 1px solid #d1d8e0;
+    }
+    
     .stButton>button {
-        background-color: #1a5276; color: white; border-radius: 10px;
-        font-weight: bold; height: 3.5em; width: 100%; transition: 0.3s;
+        background-color: #1a5276 !important; 
+        color: white !important; 
+        border-radius: 12px !important;
+        font-weight: bold !important; 
+        height: 3.5em !important; 
+        width: 100% !important; 
+        transition: all 0.3s ease !important;
+        border: none !important;
     }
+    
+    .stButton>button:hover {
+        background-color: #21618c !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        border: 1px solid #f1c40f !important;
+    }
+
+    /* Botón Secundario (Reset) */
     div.stButton > button:first-child[kind="secondary"] {
-        background-color: #943126; color: white; border: none;
+        background-color: #943126 !important; 
+        color: white !important;
+    }
+
+    /* 6. ESTILO PARA EL CONTENEDOR DE LA BIBLIOTECA (SIDEBAR) */
+    [data-testid="stVerticalBlock"] > div:has(div.stButton) {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
