@@ -86,16 +86,32 @@ st.markdown("""
         50% { opacity: 1; }
         100% { opacity: 0.6; }
     }
-
-   /* Color de la línea del slider (la parte que se arrastra) */
-    .stSlider [data-baseweb="slider"] div div {
-        background-color: #ffa500 !important; 
+/* 1. La línea de progreso del slider (la parte naranja que se arrastra) */
+    [data-baseweb="slider"] > div > div > div {
+        background-color: #ffa500 !important;
     }
-    
-    /* Color del número/valor encima del slider */
-    .stSlider [data-baseweb="typography"] {
+
+    /* 2. El círculo o manejador (el que mueves con el dedo/mouse) */
+    [data-baseweb="slider"] div[role="slider"] {
+        background-color: #ffa500 !important;
+        border: 2px solid #ffffff !important;
+    }
+
+    /* 3. Los números de los extremos (mínimo y máximo) */
+    [data-baseweb="slider"] [data-testid="stTickBar"] div {
         color: #ffa500 !important;
         font-weight: bold !important;
+    }
+
+    /* 4. El valor actual que aparece arriba del slider */
+    div[data-testid="stWidgetLabel"] p {
+        color: #ffa500 !important;
+        font-weight: bold !important;
+    }
+
+    /* 5. Específicamente para la barra lateral (Sidebar) */
+    section[data-testid="stSidebar"] [data-baseweb="slider"] > div > div > div {
+        background-color: #ffa500 !important;
     }
 
     /* 6. INPUTS Y BOTONES */
