@@ -19,7 +19,7 @@ if 'ejecutando' not in st.session_state:
     st.session_state.ejecutando = False
 
 # =============================================================================
-# INTERFAZ FINAL TESIS UCV: TITILADO DINÁMICO + LEGIBILIDAD TOTAL
+# INTERFAZ FINAL TESIS UCV: FULL PERSONALIZACIÓN + MÉTRICAS EN RECUADROS
 # =============================================================================
 st.markdown("""
     <style>
@@ -56,7 +56,6 @@ st.markdown("""
     }
 
     /* 3. LEGIBILIDAD DE INPUTS (PARA QUE NO SE PIERDAN AL CLICKEAR) */
-    /* Fondo blanco y letra azul oscuro al escribir o seleccionar */
     [data-testid="stSidebar"] .stNumberInput input,
     [data-testid="stSidebar"] .stTextInput input {
         background-color: #ffffff !important;
@@ -66,13 +65,31 @@ st.markdown("""
         border-radius: 8px !important;
     }
     
-    /* Efecto cuando el campo está activo (Focus) */
     [data-testid="stSidebar"] .stNumberInput input:focus {
         border: 2px solid #ffffff !important;
         box-shadow: 0 0 10px #f1c40f !important;
     }
 
-    /* 4. BARRA DE PROGRESO "PROCESANDO" (TITILADO AMARILLO) */
+    /* 4. RECUADROS DE MÉTRICAS (IAE / ITAE) */
+    div[data-testid="stMetric"] {
+        background-color: #ffffff !important;
+        border: 2px solid #1a5276 !important;
+        border-radius: 15px !important;
+        padding: 15px !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+        text-align: center !important;
+    }
+    div[data-testid="stMetric"] label {
+        color: #1a5276 !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+    }
+    div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
+        color: #f1c40f !important; /* Dorado UCV para el valor */
+        font-size: 1.8rem !important;
+    }
+
+    /* 5. BARRA DE PROGRESO "PROCESANDO" (TITILADO AMARILLO) */
     .stProgress > div > div > div > div {
         background-color: #f1c40f !important;
         animation: titilado 1.5s ease-in-out infinite;
@@ -85,7 +102,7 @@ st.markdown("""
         100% { opacity: 0.4; transform: scaleX(1); }
     }
 
-    /* 5. SLIDERS MODERNOS Y LEGIBLES */
+    /* 6. SLIDERS MODERNOS Y LEGIBLES */
     .stSlider [data-baseweb="slider"] > div {
         background-color: rgba(255, 255, 255, 0.2) !important;
     }
@@ -97,7 +114,7 @@ st.markdown("""
         font-weight: bold !important;
     }
 
-    /* 6. BOTÓN DE DESCARGA (VERDE ESMERALDA) */
+    /* 7. BOTÓN DE DESCARGA (VERDE ESMERALDA) */
     [data-testid="stSidebar"] .stDownloadButton button {
         background-color: #27ae60 !important;
         color: white !important;
@@ -112,7 +129,7 @@ st.markdown("""
         transform: scale(1.03);
     }
 
-    /* 7. BOTONES DE CONTROL (INICIAR/RESET) CON BRILLO */
+    /* 8. BOTONES DE CONTROL (INICIAR/RESET) CON BRILLO */
     .stButton>button {
         background-color: #1a5276 !important; 
         color: white !important; 
@@ -127,7 +144,6 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* Botón Reset con Brillo Rojo */
     div.stButton > button:first-child[kind="secondary"] {
         background-color: #943126 !important;
     }
@@ -135,7 +151,7 @@ st.markdown("""
         box-shadow: 0 0 25px #cb4335 !important;
     }
 
-    /* 8. BANNER DE ENCABEZADO UCV */
+    /* 9. BANNER DE ENCABEZADO UCV */
     .header-container {
         background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
         background-size: 400% 400%;
