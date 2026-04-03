@@ -23,6 +23,27 @@ if 'ejecutando' not in st.session_state:
 # =============================================================================
 st.markdown("""
     <style>
+    /* 1. CAMBIO DE COLOR DE LOS NÚMEROS EN LAS MÉTRICAS */
+    /* Sustituimos el amarillo por un azul oscuro institucional para mejor contraste */
+    div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
+        color: #154360 !important; 
+        font-size: 2rem !important;
+        font-weight: 800 !important;
+    }
+
+    /* 2. CAMBIO DE COLOR DE LA BARRA DE PROGRESO (PROCESANDO) */
+    /* Usaremos un azul brillante con un toque de resplandor */
+    .stProgress > div > div > div > div {
+        background-color: #2980b9 !important; /* Azul Eléctrico */
+        animation: pulso_azul 2s ease-in-out infinite;
+        box-shadow: 0 0 12px rgba(41, 128, 185, 0.6);
+    }
+    
+    @keyframes pulso_azul {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
     /* 1. CONFIGURACIÓN GLOBAL Y CURSOR DE ENGRANAJE ⚙️ */
     html, body, [data-testid="stAppViewContainer"] {
         background-color: #f4f7f9 !important; 
