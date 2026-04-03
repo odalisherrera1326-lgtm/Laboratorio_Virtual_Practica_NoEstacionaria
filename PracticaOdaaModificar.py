@@ -23,39 +23,17 @@ if 'ejecutando' not in st.session_state:
 # =============================================================================
 st.markdown("""
     <style>
-    /* 1. CAMBIO DE COLOR DE LOS NÚMEROS EN LAS MÉTRICAS */
-    /* Sustituimos el amarillo por un azul oscuro institucional para mejor contraste */
-    div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-        color: #154360 !important; 
-        font-size: 2rem !important;
-        font-weight: 800 !important;
-    }
-
-    /* 2. CAMBIO DE COLOR DE LA BARRA DE PROGRESO (PROCESANDO) */
-    /* Usaremos un azul brillante con un toque de resplandor */
-    .stProgress > div > div > div > div {
-        background-color: #2980b9 !important; /* Azul Eléctrico */
-        animation: pulso_azul 2s ease-in-out infinite;
-        box-shadow: 0 0 12px rgba(41, 128, 185, 0.6);
-    }
-    
-    @keyframes pulso_azul {
-        0% { opacity: 0.6; }
-        50% { opacity: 1; }
-        100% { opacity: 0.6; }
-    }
     /* 1. CONFIGURACIÓN GLOBAL Y CURSOR DE ENGRANAJE ⚙️ */
     html, body, [data-testid="stAppViewContainer"] {
         background-color: #f4f7f9 !important; 
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto !important;
     }
 
-    /* Cursor interactivo con puntero 👆⚙️ */
     button, a, [data-testid="stHeaderActionElements"], .stSlider {
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text><text x='10' y='28' style='font-size: 14px;'>👆</text></svg>") 16 16, pointer !important;
     }
 
-    /* 2. BARRAS DE INTERFAZ (SUPERIOR Y LATERAL) AZUL UCV */
+    /* 2. BARRAS DE INTERFAZ (AZUL UCV) */
     header[data-testid="stHeader"] {
         background-color: #1a5276 !important;
         color: white !important;
@@ -63,10 +41,9 @@ st.markdown("""
 
     [data-testid="stSidebar"] {
         background-color: #1a5276 !important;
-        border-right: 4px solid #f1c40f !important;
+        border-right: 4px solid #154360 !important;
     }
 
-    /* Forzar textos blancos en la barra lateral */
     [data-testid="stSidebar"] .stMarkdown, 
     [data-testid="stSidebar"] label, 
     [data-testid="stSidebar"] p, 
@@ -76,22 +53,7 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* 3. LEGIBILIDAD DE INPUTS (PARA QUE NO SE PIERDAN AL CLICKEAR) */
-    [data-testid="stSidebar"] .stNumberInput input,
-    [data-testid="stSidebar"] .stTextInput input {
-        background-color: #ffffff !important;
-        color: #1a5276 !important;
-        font-weight: bold !important;
-        border: 2px solid #f1c40f !important;
-        border-radius: 8px !important;
-    }
-    
-    [data-testid="stSidebar"] .stNumberInput input:focus {
-        border: 2px solid #ffffff !important;
-        box-shadow: 0 0 10px #f1c40f !important;
-    }
-
-    /* 4. RECUADROS DE MÉTRICAS (IAE / ITAE) */
+    /* 3. RECUADROS Y NÚMEROS DE MÉTRICAS (SIN AMARILLO) */
     div[data-testid="stMetric"] {
         background-color: #ffffff !important;
         border: 2px solid #1a5276 !important;
@@ -105,49 +67,68 @@ st.markdown("""
         font-weight: bold !important;
         text-transform: uppercase !important;
     }
+    /* Color de los números: Azul oscuro para legibilidad */
     div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-        color: #f1c40f !important; /* Dorado UCV para el valor */
-        font-size: 1.8rem !important;
+        color: #154360 !important; 
+        font-size: 2rem !important;
+        font-weight: 800 !important;
     }
 
-    /* 5. BARRA DE PROGRESO "PROCESANDO" (TITILADO AMARILLO) */
+    /* 4. BARRA DE PROGRESO "PROCESANDO" (AHORA AZUL) */
     .stProgress > div > div > div > div {
-        background-color: #f1c40f !important;
-        animation: titilado 1.5s ease-in-out infinite;
-        box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+        background-color: #2980b9 !important;
+        animation: pulso_azul 2s ease-in-out infinite;
+        box-shadow: 0 0 12px rgba(41, 128, 185, 0.6);
     }
     
-    @keyframes titilado {
-        0% { opacity: 0.4; transform: scaleX(1); }
-        50% { opacity: 1; transform: scaleX(1.01); }
-        100% { opacity: 0.4; transform: scaleX(1); }
+    @keyframes pulso_azul {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
     }
 
-    /* 6. SLIDERS MODERNOS Y LEGIBLES */
-    .stSlider [data-baseweb="slider"] > div {
-        background-color: rgba(255, 255, 255, 0.2) !important;
-    }
+    /* 5. SLIDERS (SIN AMARILLO) */
     .stSlider [data-baseweb="slider"] div div {
-        background-color: #f1c40f !important;
+        background-color: #2980b9 !important;
     }
     .stSlider [data-baseweb="typography"] {
-        color: #f1c40f !important;
+        color: #ffffff !important; /* Texto blanco para la barra lateral */
         font-weight: bold !important;
     }
 
-    /* 7. BOTÓN DE DESCARGA (VERDE ESMERALDA) */
+    /* 6. INPUTS Y BOTONES */
+    [data-testid="stSidebar"] .stNumberInput input {
+        background-color: #ffffff !important;
+        color: #1a5276 !important;
+        border: 2px solid #2980b9 !important;
+        border-radius: 8px !important;
+    }
+
     [data-testid="stSidebar"] .stDownloadButton button {
         background-color: #27ae60 !important;
         color: white !important;
-        border: 2px solid #2ecc71 !important;
         border-radius: 12px !important;
-        font-weight: bold !important;
-        transition: all 0.3s ease !important;
     }
-    [data-testid="stSidebar"] .stDownloadButton button:hover {
-        background-color: #2ecc71 !important;
-        box-shadow: 0 0 20px #2ecc71 !important;
-        transform: scale(1.03);
+
+    .stButton>button {
+        background-color: #1a5276 !important; 
+        color: white !important; 
+        border: 2px solid white !important;
+        border-radius: 12px !important;
+    }
+    
+    .stButton>button:hover {
+        border: 2px solid #2980b9 !important;
+        box-shadow: 0 0 20px rgba(41, 128, 185, 0.5) !important;
+    }
+
+    /* 7. BANNER DE ENCABEZADO */
+    .header-container {
+        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
+        padding: 25px; border-radius: 15px; border-bottom: 6px solid #1a5276;
+        color: white; text-align: center;
     }
 
     /* 8. BOTONES DE CONTROL (INICIAR/RESET) CON BRILLO */
