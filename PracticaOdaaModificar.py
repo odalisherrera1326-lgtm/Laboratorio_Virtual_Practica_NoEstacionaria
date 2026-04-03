@@ -19,7 +19,7 @@ if 'ejecutando' not in st.session_state:
     st.session_state.ejecutando = False
 
 # =============================================================================
-# INTERFAZ FINAL TESIS UCV: FULL PERSONALIZACIÓN (BARRAS, CURSOR, BOTONES)
+# INTERFAZ FINAL TESIS UCV: TITILADO DINÁMICO + LEGIBILIDAD TOTAL
 # =============================================================================
 st.markdown("""
     <style>
@@ -34,13 +34,12 @@ st.markdown("""
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text><text x='10' y='28' style='font-size: 14px;'>👆</text></svg>") 16 16, pointer !important;
     }
 
-    /* 2. BARRA SUPERIOR (HEADER) AZUL UCV */
+    /* 2. BARRAS DE INTERFAZ (SUPERIOR Y LATERAL) AZUL UCV */
     header[data-testid="stHeader"] {
         background-color: #1a5276 !important;
         color: white !important;
     }
 
-    /* 3. BARRA LATERAL (SIDEBAR) AZUL UCV Y BORDE AMARILLO */
     [data-testid="stSidebar"] {
         background-color: #1a5276 !important;
         border-right: 4px solid #f1c40f !important;
@@ -56,25 +55,46 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* 4. MEJORA DE SLIDERS (LEGIBILIDAD DE NÚMEROS) */
-    .stSlider [data-baseweb="slider"] > div {
-        background-color: rgba(255, 255, 255, 0.2) !important;
-    }
-    .stSlider [data-baseweb="slider"] div div {
-        background-color: #f1c40f !important; /* Progreso en amarillo */
-    }
-    .stSlider [data-baseweb="typography"] {
-        color: #f1c40f !important; /* Números extremos en amarillo */
-        font-weight: bold !important;
-    }
-
-    /* 5. CAMPOS DE ENTRADA (Ajustes de Parámetros) */
-    [data-testid="stSidebar"] .stNumberInput input {
+    /* 3. LEGIBILIDAD DE INPUTS (PARA QUE NO SE PIERDAN AL CLICKEAR) */
+    /* Fondo blanco y letra azul oscuro al escribir o seleccionar */
+    [data-testid="stSidebar"] .stNumberInput input,
+    [data-testid="stSidebar"] .stTextInput input {
         background-color: #ffffff !important;
         color: #1a5276 !important;
         font-weight: bold !important;
         border: 2px solid #f1c40f !important;
         border-radius: 8px !important;
+    }
+    
+    /* Efecto cuando el campo está activo (Focus) */
+    [data-testid="stSidebar"] .stNumberInput input:focus {
+        border: 2px solid #ffffff !important;
+        box-shadow: 0 0 10px #f1c40f !important;
+    }
+
+    /* 4. BARRA DE PROGRESO "PROCESANDO" (TITILADO AMARILLO) */
+    .stProgress > div > div > div > div {
+        background-color: #f1c40f !important;
+        animation: titilado 1.5s ease-in-out infinite;
+        box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+    }
+    
+    @keyframes titilado {
+        0% { opacity: 0.4; transform: scaleX(1); }
+        50% { opacity: 1; transform: scaleX(1.01); }
+        100% { opacity: 0.4; transform: scaleX(1); }
+    }
+
+    /* 5. SLIDERS MODERNOS Y LEGIBLES */
+    .stSlider [data-baseweb="slider"] > div {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+    }
+    .stSlider [data-baseweb="slider"] div div {
+        background-color: #f1c40f !important;
+    }
+    .stSlider [data-baseweb="typography"] {
+        color: #f1c40f !important;
+        font-weight: bold !important;
     }
 
     /* 6. BOTÓN DE DESCARGA (VERDE ESMERALDA) */
@@ -103,7 +123,7 @@ st.markdown("""
     }
     .stButton>button:hover {
         border: 2px solid #f1c40f !important;
-        box-shadow: 0 0 25px #f1c40f !important; /* Brillo amarillo UCV */
+        box-shadow: 0 0 25px #f1c40f !important;
         transform: translateY(-2px);
     }
 
@@ -115,18 +135,7 @@ st.markdown("""
         box-shadow: 0 0 25px #cb4335 !important;
     }
 
-    /* 8. BARRA DE PROGRESO (TITILADO AMARILLO) */
-    .stProgress > div > div > div > div {
-        background-color: #f1c40f !important;
-        animation: titilado 1.5s ease-in-out infinite;
-    }
-    @keyframes titilado {
-        0% { opacity: 0.5; }
-        50% { opacity: 1; }
-        100% { opacity: 0.5; }
-    }
-
-    /* 9. BANNER DE ENCABEZADO */
+    /* 8. BANNER DE ENCABEZADO UCV */
     .header-container {
         background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
         background-size: 400% 400%;
