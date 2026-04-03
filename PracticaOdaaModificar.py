@@ -23,26 +23,22 @@ if 'ejecutando' not in st.session_state:
 # =============================================================================
 st.markdown("""
     <style>
-    /* 1. CONFIGURACIÓN GLOBAL Y FONDO */
-    html, body, [data-testid="stAppViewContainer"] {
-        cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto;
-    }
+    /* 1. CONFIGURACIÓN GLOBAL */
     .main { 
-        background-color: #f0f2f6 !important; /* Fondo gris técnico para resaltar gráficos */
+        background-color: #f4f7f9 !important; 
     }
 
-    /* 2. ENCABEZADO DINÁMICO UCV CON DETALLE AMARILLO */
+    /* 2. ENCABEZADO UCV (Banner dinámico) */
     .header-container {
         background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
         padding: 25px; 
         border-radius: 15px; 
-        margin-bottom: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+        border-bottom: 6px solid #f1c40f; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         color: white; 
         text-align: center;
-        border-bottom: 6px solid #f1c40f; /* Amarillo institucional UCV */
     }
     @keyframes gradient {
         0% { background-position: 0% 50%; }
@@ -50,74 +46,68 @@ st.markdown("""
         100% { background-position: 0% 50%; }
     }
 
-    /* 3. INDICADOR DE FLUJO ACTIVO */
-    .flow-indicator {
-        background: #e8f4f8; 
-        border-left: 5px solid #3498db;
-        padding: 12px; 
-        border-radius: 8px; 
-        display: flex;
-        align-items: center; 
-        gap: 10px; 
-        font-weight: bold;
-        color: #1a5276; 
-        animation: pulse 2s infinite;
-        justify-content: center;
-    }
-    @keyframes pulse {
-        0% { opacity: 0.7; transform: scale(1); }
-        50% { opacity: 1; transform: scale(1.02); }
-        100% { opacity: 0.7; transform: scale(1); }
-    }
-
-    /* 4. MÉTRICAS (TARJETAS BLANCAS) */
-    [data-testid="stMetricValue"] { 
-        font-size: 1.9rem !important; 
-        color: #1a5276 !important; 
-        font-weight: 800 !important; 
-    }
-    div.stMetric {
-        background-color: #ffffff !important; 
-        padding: 20px !important; 
-        border-radius: 12px !important;
-        border-left: 10px solid #1a5276 !important; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-    }
-
-    /* 5. BOTONES Y BARRA LATERAL */
+    /* 3. BARRA LATERAL (SIDEBAR) CON COLOR TÉCNICO */
     section[data-testid="stSidebar"] {
-        background-color: #ffffff !important;
-        border-right: 1px solid #d1d8e0;
+        background-color: #1a5276 !important; /* Azul oscuro base */
+        color: white !important;
     }
     
-    .stButton>button {
-        background-color: #1a5276 !important; 
-        color: white !important; 
-        border-radius: 12px !important;
-        font-weight: bold !important; 
-        height: 3.5em !important; 
-        width: 100% !important; 
-        transition: all 0.3s ease !important;
-        border: none !important;
-    }
-    
-    .stButton>button:hover {
-        background-color: #21618c !important;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
-        border: 1px solid #f1c40f !important;
-    }
-
-    /* Botón Secundario (Reset) */
-    div.stButton > button:first-child[kind="secondary"] {
-        background-color: #943126 !important; 
+    /* Ajuste de textos dentro de la sidebar para que sean blancos */
+    section[data-testid="stSidebar"] .stMarkdown, 
+    section[data-testid="stSidebar"] label, 
+    section[data-testid="stSidebar"] p {
         color: white !important;
     }
 
-    /* 6. ESTILO PARA EL CONTENEDOR DE LA BIBLIOTECA (SIDEBAR) */
-    [data-testid="stVerticalBlock"] > div:has(div.stButton) {
-        background-color: #f8f9fa;
-        padding: 10px;
-        border-radius: 10px;
+    /* 4. MARCO TEÓRICO (EXPANDERS COLORIZADOS) */
+    .stDetails {
+        border: 2px solid #1a5276 !important;
+        border-radius: 12px !important;
+        background-color: #ffffff !important;
+        overflow: hidden;
+        margin-bottom: 15px !important;
+    }
+    
+    /* Color del título del expander */
+    .stDetails summary {
+        background-color: #1a5276 !important;
+        color: #f1c40f !important; /* Texto amarillo para resaltar */
+        padding: 15px !important;
+        font-weight: bold !important;
+        font-size: 1.1rem !important;
+    }
+    
+    .stDetails summary:hover {
+        background-color: #21618c !important;
+    }
+
+    /* 5. TARJETAS DE MÉTRICAS */
+    div.stMetric {
+        background-color: #ffffff !important; 
+        border-left: 10px solid #1a5276 !important; 
+        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+    }
+
+    /* 6. BOTONES */
+    .stButton>button {
+        background-color: #f1c40f !important; /* Botón amarillo para contraste */
+        color: #154360 !important; 
+        border-radius: 10px !important;
+        font-weight: bold !important;
+        border: none !important;
+        transition: 0.3s !important;
+    }
+    
+    .stButton>button:hover {
+        background-color: #d4ac0d !important;
+        transform: scale(1.02);
+    }
+
+    /* Botón de Reset (Rojo) */
+    div.stButton > button:first-child[kind="secondary"] {
+        background-color: #943126 !important;
+        color: white !important;
     }
     </style>
     """, unsafe_allow_html=True)
