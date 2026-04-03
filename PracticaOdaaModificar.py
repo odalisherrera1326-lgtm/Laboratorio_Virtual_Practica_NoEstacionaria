@@ -19,67 +19,105 @@ if 'ejecutando' not in st.session_state:
     st.session_state.ejecutando = False
 
 # =============================================================================
-# ESTILOS CSS UNIFICADOS: IDENTIDAD UCV + BIBLIOTECA LATERAL
+# INTERFAZ FINAL TESIS UCV: FULL PERSONALIZACIÓN (BARRAS, CURSOR, BOTONES)
 # =============================================================================
 st.markdown("""
     <style>
-
-    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR PERSONALIZADO (ENGRANAJE) */
+    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR DE ENGRANAJE ⚙️ */
     html, body, [data-testid="stAppViewContainer"] {
         background-color: #f4f7f9 !important; 
-        /* Cursor predeterminado: Engranaje⚙️ */
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto !important;
     }
 
-    /* Cambiar cursor a Engranaje con Puntero👆⚙️ en elementos interactivos */
-    button, a, [data-testid="stHeaderActionElements"] {
+    /* Cursor interactivo con puntero 👆⚙️ */
+    button, a, [data-testid="stHeaderActionElements"], .stSlider {
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text><text x='10' y='28' style='font-size: 14px;'>👆</text></svg>") 16 16, pointer !important;
     }
 
-    /* 2. BARRA SUPERIOR (HEADER) EN AZUL UCV */
+    /* 2. BARRA SUPERIOR (HEADER) AZUL UCV */
     header[data-testid="stHeader"] {
         background-color: #1a5276 !important;
         color: white !important;
     }
 
-    /* 3. BARRA LATERAL COMPLETA (SIDEBAR) EN AZUL UCV */
+    /* 3. BARRA LATERAL (SIDEBAR) AZUL UCV Y BORDE AMARILLO */
     [data-testid="stSidebar"] {
-        background-color: #1a5276 !important; /* Azul UCV profundo */
-        border-right: 3px solid #f1c40f !important; /* Línea divisoria amarilla */
+        background-color: #1a5276 !important;
+        border-right: 4px solid #f1c40f !important;
     }
 
-    /* 4. FORZAR TEXTOS BLANCOS EN BARRA LATERAL */
+    /* Forzar textos blancos en la barra lateral */
     [data-testid="stSidebar"] .stMarkdown, 
     [data-testid="stSidebar"] label, 
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] h1,
-    [data-testid="stSidebar"] h2,
-    [data-testid="stSidebar"] h3 {
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
         color: white !important;
+        font-weight: 500;
     }
 
-    /* 5. ENCABEZADO CENTRAL (BANNER) */
-    .header-container {
-        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
-        background-size: 400% 400%;
-        animation: gradient 15s ease infinite;
-        padding: 25px; 
-        border-radius: 15px; 
-        border-bottom: 6px solid #f1c40f; 
-        color: white; 
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    /* 4. MEJORA DE SLIDERS (LEGIBILIDAD DE NÚMEROS) */
+    .stSlider [data-baseweb="slider"] > div {
+        background-color: rgba(255, 255, 255, 0.2) !important;
     }
-    @keyframes gradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+    .stSlider [data-baseweb="slider"] div div {
+        background-color: #f1c40f !important; /* Progreso en amarillo */
+    }
+    .stSlider [data-baseweb="typography"] {
+        color: #f1c40f !important; /* Números extremos en amarillo */
+        font-weight: bold !important;
     }
 
-    /* 6. EFECTO TITILADO EN BARRA DE PROGRESO (AMARILLA) */
+    /* 5. CAMPOS DE ENTRADA (Ajustes de Parámetros) */
+    [data-testid="stSidebar"] .stNumberInput input {
+        background-color: #ffffff !important;
+        color: #1a5276 !important;
+        font-weight: bold !important;
+        border: 2px solid #f1c40f !important;
+        border-radius: 8px !important;
+    }
+
+    /* 6. BOTÓN DE DESCARGA (VERDE ESMERALDA) */
+    [data-testid="stSidebar"] .stDownloadButton button {
+        background-color: #27ae60 !important;
+        color: white !important;
+        border: 2px solid #2ecc71 !important;
+        border-radius: 12px !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+    }
+    [data-testid="stSidebar"] .stDownloadButton button:hover {
+        background-color: #2ecc71 !important;
+        box-shadow: 0 0 20px #2ecc71 !important;
+        transform: scale(1.03);
+    }
+
+    /* 7. BOTONES DE CONTROL (INICIAR/RESET) CON BRILLO */
+    .stButton>button {
+        background-color: #1a5276 !important; 
+        color: white !important; 
+        border: 2px solid white !important;
+        border-radius: 12px !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+    }
+    .stButton>button:hover {
+        border: 2px solid #f1c40f !important;
+        box-shadow: 0 0 25px #f1c40f !important; /* Brillo amarillo UCV */
+        transform: translateY(-2px);
+    }
+
+    /* Botón Reset con Brillo Rojo */
+    div.stButton > button:first-child[kind="secondary"] {
+        background-color: #943126 !important;
+    }
+    div.stButton > button:first-child[kind="secondary"]:hover {
+        box-shadow: 0 0 25px #cb4335 !important;
+    }
+
+    /* 8. BARRA DE PROGRESO (TITILADO AMARILLO) */
     .stProgress > div > div > div > div {
-        background-color: #f1c40f !important; /* Barra amarilla para que resalte */
+        background-color: #f1c40f !important;
         animation: titilado 1.5s ease-in-out infinite;
     }
     @keyframes titilado {
@@ -88,57 +126,21 @@ st.markdown("""
         100% { opacity: 0.5; }
     }
 
-    /* 7. BOTONES CON BRILLO AMARILLO (HOVER) */
-    .stButton>button {
-        background-color: #1a5276 !important; 
-        color: white !important; 
-        border: 2px solid white !important;
-        border-radius: 12px !important;
-        transition: all 0.3s ease !important;
+    /* 9. BANNER DE ENCABEZADO */
+    .header-container {
+        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
+        padding: 25px; border-radius: 15px; border-bottom: 6px solid #f1c40f;
+        color: white; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    .stButton>button:hover {
-        background-color: #21618c !important;
-        border: 2px solid #f1c40f !important;
-        box-shadow: 0 0 20px #f1c40f !important; /* El brillo amarillo */
-        transform: scale(1.05);
-    }
-
-    /* 8. MEJORA DE SLIDERS: LEGIBILIDAD DE NÚMEROS Y RIEL */
-    /* Fondo del riel (la pista) */
-    .stSlider [data-baseweb="slider"] > div {
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        height: 6px !important;
-    }
-
-    /* Color de la barra de progreso del slider */
-    .stSlider [data-baseweb="slider"] div div {
-        background-color: #f1c40f !important;
-    }
-
-    /* Estilo del botón (el círculo que arrastras) */
-    .stSlider [data-baseweb="thumb"] {
-        background-color: #f1c40f !important;
-        border: 2px solid white !important;
-        box-shadow: 0 0 10px rgba(241, 196, 15, 0.5) !important;
-    }
-
-    /* NÚMEROS DE LOS SLIDERS: Forzamos color blanco y negrita para que se lean */
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] span[data-baseweb="typography"] {
-        color: white !important;
-        font-weight: bold !important;
-        font-size: 1.05rem !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* Sombra para mayor contraste */
-    }
-
-    /* Fondo de los números pequeños (mínimo/máximo) */
-    .stSlider [data-baseweb="typography"] {
-        color: #f1c40f !important; /* Los valores extremos en amarillo brillante */
+    @keyframes gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
     </style>
     """, unsafe_allow_html=True)
-
 
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL CON FONDO 
