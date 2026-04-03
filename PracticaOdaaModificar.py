@@ -71,7 +71,7 @@ st.markdown("""
 
 
 # =============================================================================
-# ENCABEZADO INSTITUCIONAL CON FONDO (COLOCAR AQUÍ)
+# ENCABEZADO INSTITUCIONAL CON FONDO 
 # =============================================================================
 import base64
 
@@ -144,7 +144,7 @@ with col_teoria2:
         En este simulador, las ecuaciones se resuelven numéricamente mediante el **Método de Euler** con un paso de tiempo $\Delta t = 1.0$ s.
         """)
 with col_teoria3:
-    with st.expander("📊 Criterios de Desempeño (IAE/ITAE)", expanded=False):
+    with st.expander(" Criterios de Desempeño (IAE/ITAE)", expanded=False):
         st.markdown(r"""
         Para evaluar la eficiencia del control, se utilizan métricas integrales del error $e(t) = SP - PV$:
 
@@ -163,16 +163,16 @@ with col_teoria3:
 st.sidebar.header("⚙️ Configuración del Sistema")
 
 with st.sidebar.container(border=True):
-    op_tipo = st.sidebar.selectbox("🎯 Operación Principal", ["Llenado", "Vaciado"])
-    geom_tanque = st.sidebar.selectbox("📐 Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
+    op_tipo = st.sidebar.selectbox(" Operación Principal", ["Llenado", "Vaciado"])
+    geom_tanque = st.sidebar.selectbox(" Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
 
-with st.sidebar.expander("📏 Especificaciones del Tanque", expanded=True):
+with st.sidebar.expander(" Especificaciones del Tanque", expanded=True):
     r_max = st.number_input("Radio de Diseño (R) [m]", value=1.0, min_value=0.1, step=0.1)
     h_sug = 3.0 if geom_tanque != "Esférico" else r_max * 2
     h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
     sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.1, float(h_total), float(h_total/2))
 
-with st.sidebar.expander("🌪️ Escenario de Perturbación ($Q_p$)"):
+with st.sidebar.expander(" Escenario de Perturbación ($Q_p$)"):
     p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
     p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.045, format="%.4f") if p_activa else 0.0
     p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 80) if p_activa else 0
@@ -248,15 +248,15 @@ else:
     col_graf, col_met = st.columns([2, 1])
 
     with col_graf:
-        st.subheader("🖥️ Monitor del Proceso")
+        st.subheader("Monitor del Proceso")
         placeholder_tanque = st.empty()
-        st.subheader("📊 Tendencia Temporal")
+        st.subheader("Tendencia Temporal")
         placeholder_grafico = st.empty()
         st.subheader("⚙️ Acción del Controlador")
         placeholder_u = st.empty()
 
     with col_met:
-        st.subheader("📊 Métricas de Control")
+        st.subheader("Métricas de Control")
         # Forzamos la aparición de las tarjetas con un valor inicial
         placeholder_iae = st.empty()
         placeholder_itae = st.empty()
@@ -375,11 +375,11 @@ else:
     })
     
     # 2. Mostrar la tabla de resultados 
-    st.subheader("📋 Resumen de Datos Finales")
+    st.subheader("Resumen de Datos Finales")
     st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=True)
     
     # 3. Métricas de estabilidad y botón de descarga
-    st.subheader("📝 Resumen de Estabilidad")
+    st.subheader("Resumen de Estabilidad")
     err_f = abs(sp_nivel - h_log[-1])
     c1, c2, c3 = st.columns(3)
     c1.metric("IAE Final", f"{iae_acumulado:.2f}")
@@ -401,3 +401,47 @@ else:
         st.success(f"✅ Sistema Estabilizado en {h_log[-1]:.3f} m.")
     else:
         st.warning(f"⚠️ Desviación de {error_final:.3f} m. Ajuste Kp, Ki o Kd.")
+# =============================================================================
+# 7. ANÁLISIS DE RESPUESTA TRANSITORIA (AMPLITUD VS TIEMPO)
+# =============================================================================
+st.markdown("---")
+st.subheader("📈 Análisis de Respuesta al Escalón (Amplitud vs. Tiempo)")
+
+col_an1, col_an2 = st.columns([2, 1])
+
+with col_an1:
+    # Creamos la gráfica de "Amplitud" que es el Nivel Normalizado o Directo
+    fig_amp, ax_amp = plt.subplots(figsize=(10, 5))
+    
+    # Graficamos la respuesta del sistema (PV)
+    ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta del Sistema (Amplitud)')
+    
+    # Graficamos el escalón de entrada (Setpoint)
+    ax_amp.step(vector_t, sp_log, color='#d62728', linestyle='--', lw=2, label='Entrada Escalón (Setpoint)')
+    
+    # Estética tipo MatLab
+    ax_amp.set_title("Respuesta Transitoria del Lazo de Control", fontsize=12)
+    ax_amp.set_xlabel("Tiempo (s)", fontsize=10)
+    ax_amp.set_ylabel("Amplitud (Nivel en metros)", fontsize=10)
+    ax_amp.grid(True, which='both', linestyle='--', alpha=0.5)
+    ax_amp.legend(loc='lower right')
+    
+    # Añadir sombreado de estabilidad si el error es bajo
+    if abs(h_log[-1] - sp_nivel) < 0.05:
+        ax_amp.axhspan(sp_nivel-0.05, sp_nivel+0.05, color='green', alpha=0.1, label='Banda de Estabilidad')
+
+    st.pyplot(fig_amp)
+
+with col_an2:
+    st.info("""
+    **Interpretación de la Gráfica:**
+    Esta curva de Amplitud vs. Tiempo permite visualizar:
+    * **Sobrepico (Overshoot):** Cuánto excede el nivel al setpoint antes de bajar.
+    * **Tiempo de Asentamiento:** Cuánto tarda en quedarse "pegado" a la línea roja.
+    * **Error en Estado Estacionario:** La diferencia final entre la curva azul y la roja.
+    """)
+    
+    # Cálculo rápido de métricas para la defensa
+    sobrepico = ((max(h_log) - sp_nivel) / sp_nivel) * 100 if max(h_log) > sp_nivel else 0
+    st.metric("Sobrepico Máximo", f"{sobrepico:.2f} %")
+    st.metric("Tiempo Total", f"{tiempo_ensayo} s")
