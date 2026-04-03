@@ -21,57 +21,53 @@ if 'ejecutando' not in st.session_state:
 # =============================================================================
 # ESTILOS CSS UNIFICADOS: IDENTIDAD UCV + BIBLIOTECA LATERAL
 # =============================================================================
+# =============================================================================
+# ESTILOS REFINADOS: TITILADO + BRILLO UCV (Tesis Académica)
+# =============================================================================
 st.markdown("""
     <style>
     /* 1. CONFIGURACIÓN GLOBAL */
-    .main { 
+    .stApp { 
         background-color: #f4f7f9 !important; 
     }
 
-    /* 2. ENCABEZADO UCV (Banner dinámico) */
+    /* 2. ENCABEZADO UCV CON BORDE AMARILLO VIBRANTE */
     .header-container {
         background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
         padding: 25px; 
         border-radius: 15px; 
-        border-bottom: 6px solid #f1c40f; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
         color: white; 
         text-align: center;
+        border-bottom: 6px solid #f1c40f; /* Detalle amarillo UCV */
     }
+    
     @keyframes gradient {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
 
-    /* 3. BARRA LATERAL (SIDEBAR) CON COLOR TÉCNICO */
-    section[data-testid="stSidebar"] {
-        background-color: #1a5276 !important; /* Azul oscuro base */
-        color: white !important;
+    /* 3. BARRA LATERAL (SIDEBAR) TÉCNICA */
+    [data-testid="stSidebar"] {
+        background-color: #e1e8ee !important; 
+        border-right: 2px solid #1a5276;
     }
     
-    /* Ajuste de textos dentro de la sidebar para que sean blancos */
-    section[data-testid="stSidebar"] .stMarkdown, 
-    section[data-testid="stSidebar"] label, 
-    section[data-testid="stSidebar"] p {
-        color: white !important;
-    }
-
     /* 4. MARCO TEÓRICO (EXPANDERS COLORIZADOS) */
     .stDetails {
         border: 2px solid #1a5276 !important;
         border-radius: 12px !important;
         background-color: #ffffff !important;
-        overflow: hidden;
         margin-bottom: 15px !important;
     }
     
-    /* Color del título del expander */
     .stDetails summary {
         background-color: #1a5276 !important;
-        color: #f1c40f !important; /* Texto amarillo para resaltar */
+        color: white !important;
         padding: 15px !important;
         font-weight: bold !important;
         font-size: 1.1rem !important;
@@ -81,33 +77,45 @@ st.markdown("""
         background-color: #21618c !important;
     }
 
-    /* 5. TARJETAS DE MÉTRICAS */
-    div.stMetric {
-        background-color: #ffffff !important; 
-        border-left: 10px solid #1a5276 !important; 
-        border-radius: 12px !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+    /* 5. EFECTO: TITILADO EN BARRA DE PROGRESO (CUANDO PROCESA) */
+    .stProgress {
+        animation: titilado 1.5s ease-in-out infinite;
+        border-radius: 8px;
+    }
+    
+    @keyframes titilado {
+        0% { opacity: 0.6; box-shadow: 0 0 5px rgba(52, 152, 219, 0.4); }
+        50% { opacity: 1; box-shadow: 0 0 15px rgba(52, 152, 219, 0.8); }
+        100% { opacity: 0.6; box-shadow: 0 0 5px rgba(52, 152, 219, 0.4); }
     }
 
-    /* 6. BOTONES */
+    /* 6. EFECTO: BRILLO AMARILLO EN BOTONES (AL POSICIONAR CURSOR) */
     .stButton>button {
-        background-color: #f1c40f !important; /* Botón amarillo para contraste */
-        color: #154360 !important; 
-        border-radius: 10px !important;
-        font-weight: bold !important;
+        background-color: #1a5276 !important; 
+        color: white !important; 
+        border-radius: 12px !important;
+        font-weight: bold !important; 
+        transition: all 0.3s ease !important;
         border: none !important;
-        transition: 0.3s !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
     }
     
     .stButton>button:hover {
-        background-color: #d4ac0d !important;
-        transform: scale(1.02);
+        background-color: #21618c !important;
+        border: 1px solid #f1c40f !important; 
+        box-shadow: 0 0 20px #f1c40f !important; /* Brillo amarillo vibrante */
+        transform: translateY(-2px); 
     }
 
-    /* Botón de Reset (Rojo) */
+    /* Botón Secundario (Reset) con brillo rojo */
     div.stButton > button:first-child[kind="secondary"] {
-        background-color: #943126 !important;
+        background-color: #943126 !important; 
         color: white !important;
+    }
+    
+    div.stButton > button:first-child[kind="secondary"]:hover {
+        background-color: #cb4335 !important;
+        box-shadow: 0 0 20px #cb4335 !important;
     }
     </style>
     """, unsafe_allow_html=True)
