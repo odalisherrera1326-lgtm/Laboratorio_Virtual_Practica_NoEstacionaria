@@ -388,6 +388,32 @@ else:
         st.metric("IAE Final", f"{iae_acumulado:.2f}")
         st.metric("ITAE Final", f"{itae_acumulado:.2f}")
 
+         # --- RESULTADOS FINALES ---
+    
+    status_placeholder.empty()
+    st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
+    st.balloons()
+    
+    # 1. Crear el DataFrame con todos los datos recolectados
+    df_final = pd.DataFrame({
+        "Tiempo [s]": vector_t, 
+        "Nivel [m]": h_log, 
+        "u [m3/s]": u_log,
+        "Error [m]": e_log
+    })
+    
+    # 2. Mostrar la tabla de resultados 
+    st.subheader("📋 Resumen de Datos Finales")
+    st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=True)
+    
+    # 3. Métricas de estabilidad y botón de descarga
+    st.subheader("📝 Resumen de Estabilidad")
+    err_f = abs(sp_nivel - h_log[-1])
+    c1, c2, c3 = st.columns(3)
+    c1.metric("IAE Final", f"{iae_acumulado:.2f}")
+    c2.metric("ITAE Final", f"{itae_acumulado:.2f}")
+    c3.metric("Error Residual", f"{err_f:.4f} m")
+
         # Botón de descarga actualizado
         df_final = pd.DataFrame({
             "Tiempo [s]": vector_t, "Nivel [m]": h_log, "Control [m3/s]": u_log, "Error [m]": e_log
