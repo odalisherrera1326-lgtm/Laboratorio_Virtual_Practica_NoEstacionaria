@@ -471,7 +471,7 @@ else:
             ax_u.set_ylim(0, 0.7)
             ax_u.grid(True, alpha=0.2)
             ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
-            ax_u.set_ylabel('Altura [m3/s]', fontsize=10, fontweight='bold')
+            ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
             placeholder_u.pyplot(fig_u)
             plt.close(fig_u)
         
