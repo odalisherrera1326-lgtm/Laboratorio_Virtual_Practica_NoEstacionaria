@@ -183,6 +183,25 @@ with st.sidebar.expander("Parámetros del Controlador PID"):
     ki_val = c2.number_input("Ki", value=0.5)
     kd_val = c3.number_input("Kd", value=0.1)
     tiempo_ensayo = st.sidebar.slider("Tiempo de simulación [s]", 60, 600, 300)
+# =============================================================================
+st.sidebar.markdown("---")
+st.sidebar.subheader("📚 Biblioteca Técnica")
+
+with st.sidebar.container(border=True):
+    st.sidebar.write("Descargue el material de apoyo:")
+    nombre_pdf = "Guia_Practica_UCV.pdf" 
+    
+    if os.path.exists(nombre_pdf):
+        with open(nombre_pdf, "rb") as f:
+            st.sidebar.download_button(
+                label="📥 Descargar Guía (PDF)",
+                data=f,
+                file_name="Guia_Practica_EIQ_UCV.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+    else:
+        st.sidebar.warning("⚠️ Guía no encontrada")
 
 st.sidebar.markdown("---")
 # Botones de Control
