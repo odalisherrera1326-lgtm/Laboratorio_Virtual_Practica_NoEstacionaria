@@ -357,7 +357,7 @@ else:
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
     st.balloons()
 
-    # =============================================================================
+  # =============================================================================
     # 7. ANÁLISIS DE RESPUESTA TRANSITORIA (AMPLITUD VS TIEMPO)
     # =============================================================================
     st.markdown("---")
@@ -367,6 +367,7 @@ else:
 
     with col_an1:
         fig_amp, ax_amp = plt.subplots(figsize=(10, 5))
+        # Usamos los datos recolectados en la simulación
         ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta del Sistema (PV)')
         ax_amp.step(vector_t, sp_log, color='#d62728', linestyle='--', lw=2, label='Referencia (SP)')
         
@@ -376,8 +377,11 @@ else:
         ax_amp.grid(True, which='both', linestyle='--', alpha=0.5)
         ax_amp.legend(loc='lower right')
         
-        if abs(h_log[-1] - sp_nivel) < 0.05:
+        # Banda de estabilidad técnica (±5%)
+        error_f_val = abs(h_log[-1] - sp_nivel)
+        if error_f_val < 0.05:
             ax_amp.axhspan(sp_nivel-0.05, sp_nivel+0.05, color='green', alpha=0.1, label='Banda de Estabilidad')
+        
         st.pyplot(fig_amp)
         plt.close(fig_amp)
 
@@ -388,46 +392,42 @@ else:
         st.metric("IAE Final", f"{iae_acumulado:.2f}")
         st.metric("ITAE Final", f"{itae_acumulado:.2f}")
 
-         # --- RESULTADOS FINALES ---
-    
-    status_placeholder.empty()
-    st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
+    # --- RESULTADOS FINALES Y DESCARGA ---
+    st.markdown("---")
+    st.success(f"✅ Simulación del Tanque {geom_tanque} completada exitosamente.")
     st.balloons()
     
-    # 1. Crear el DataFrame con todos los datos recolectados
+    # 1. Crear el DataFrame único
     df_final = pd.DataFrame({
         "Tiempo [s]": vector_t, 
         "Nivel [m]": h_log, 
-        "u [m3/s]": u_log,
+        "Control [m3/s]": u_log,
         "Error [m]": e_log
     })
     
-    # 2. Mostrar la tabla de resultados 
-    st.subheader("📋 Resumen de Datos Finales")
-    st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=True)
+    # 2. Mostrar la tabla y métricas de cierre
+    st.subheader("📋 Resumen de Datos y Estabilidad")
     
-    # 3. Métricas de estabilidad y botón de descarga
-    st.subheader("📝 Resumen de Estabilidad")
-    err_f = abs(sp_nivel - h_log[-1])
-    c1, c2, c3 = st.columns(3)
-    c1.metric("IAE Final", f"{iae_acumulado:.2f}")
-    c2.metric("ITAE Final", f"{itae_acumulado:.2f}")
-    c3.metric("Error Residual", f"{err_f:.4f} m")
-
-        # Botón de descarga actualizado
-        df_final = pd.DataFrame({
-            "Tiempo [s]": vector_t, "Nivel [m]": h_log, "Control [m3/s]": u_log, "Error [m]": e_log
-        })
-        area_descarga.download_button(
+    col_tab, col_res = st.columns([2, 1])
+    
+    with col_tab:
+        st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=True)
+    
+    with col_res:
+        err_f = abs(sp_nivel - h_log[-1])
+        st.metric("Error Residual Final", f"{err_f:.4f} m")
+        
+        # El botón de descarga ahora usa el DataFrame ya creado
+        st.download_button(
             label="📥 Descargar Reporte (CSV)", 
             data=df_final.to_csv(index=False), 
-            file_name="resultados_ucv.csv",
+            file_name=f"resultados_tesis_{geom_tanque}.csv",
+            mime="text/csv",
             use_container_width=True
         )
 
-    # Análisis de Estabilidad Final
-    error_final = abs(sp_nivel - h_log[-1])
-    if error_final < 0.05:
-        st.success(f"✅ Sistema Estabilizado en {h_log[-1]:.3f} m.")
+    # Validación final de estado estacionario
+    if err_f < 0.05:
+        st.success(f"✅ El sistema alcanzó el estado estacionario en {h_log[-1]:.3f} m.")
     else:
-        st.warning(f"⚠️ Error residual de {error_final:.3f} m. Revise sintonía PID.")
+        st.warning(f"⚠️ El sistema presenta un error residual de {err_f:.3f} m. Se sugiere ajustar Kp/Ki.")
