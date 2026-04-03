@@ -103,9 +103,38 @@ st.markdown("""
         transform: scale(1.05);
     }
 
-    /* 8. SLIDER AMARILLO */
-    .stSlider [data-baseweb="slider"] div {
+    /* 8. MEJORA DE SLIDERS: LEGIBILIDAD DE NÚMEROS Y RIEL */
+    /* Fondo del riel (la pista) */
+    .stSlider [data-baseweb="slider"] > div {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        height: 6px !important;
+    }
+
+    /* Color de la barra de progreso del slider */
+    .stSlider [data-baseweb="slider"] div div {
         background-color: #f1c40f !important;
+    }
+
+    /* Estilo del botón (el círculo que arrastras) */
+    .stSlider [data-baseweb="thumb"] {
+        background-color: #f1c40f !important;
+        border: 2px solid white !important;
+        box-shadow: 0 0 10px rgba(241, 196, 15, 0.5) !important;
+    }
+
+    /* NÚMEROS DE LOS SLIDERS: Forzamos color blanco y negrita para que se lean */
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] span[data-baseweb="typography"] {
+        color: white !important;
+        font-weight: bold !important;
+        font-size: 1.05rem !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5); /* Sombra para mayor contraste */
+    }
+
+    /* Fondo de los números pequeños (mínimo/máximo) */
+    .stSlider [data-baseweb="typography"] {
+        color: #f1c40f !important; /* Los valores extremos en amarillo brillante */
     }
     </style>
     """, unsafe_allow_html=True)
