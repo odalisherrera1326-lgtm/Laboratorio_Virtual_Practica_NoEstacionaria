@@ -89,12 +89,12 @@ st.markdown("""
 
    /* Color de la línea del slider (la parte que se arrastra) */
     .stSlider [data-baseweb="slider"] div div {
-        background-color: #FFA500 !important; 
+        background-color: #ffa500 !important; 
     }
     
     /* Color del número/valor encima del slider */
     .stSlider [data-baseweb="typography"] {
-        color: #FFA500 !important;
+        color: #ffa500 !important;
         font-weight: bold !important;
     }
 
