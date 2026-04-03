@@ -406,7 +406,7 @@ else:
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
-        # Lógica de perturbación (si aplica en tu función resolver_sistema)
+        # Lógica de perturbación
         q_p_inst = p_magnitud if ('p_activa' in locals() and p_activa and t_act >= p_tiempo) else 0.0
         
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
@@ -438,31 +438,29 @@ else:
             if geom_tanque == "Cilíndrico":
                 ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, color='#3498db', alpha=0.6))
                 ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=3)
-            # ... (puedes mantener tus otras geometrías aquí)
             
             ax_t.axhline(y=sp_nivel, color='red', ls='--')
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
 
-                # C. Tendencia de Nivel
-               fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-    
-               # Graficamos el nivel con etiqueta para la leyenda
-               ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel del Tanque (h)')
-    
-              # Graficamos la consigna (Setpoint) con etiqueta
-              ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Consigna (Setpoint)')
-    
-             # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
-             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
-             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-             ax_tr.legend(loc='upper right', frameon=True, shadow=True, fontsize='small')
-                    # ---------------------------------------
-    
+            # C. Tendencia de Nivel (CORREGIDA IDENTACIÓN)
+            fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
+            
+            # Graficamos el nivel con etiqueta para la leyenda
+            ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel del Tanque (h)')
+            
+            # Graficamos la consigna (Setpoint) con etiqueta
+            ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Consigna (Setpoint)')
+            
+            # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
+            ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
+            ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
+            ax_tr.legend(loc='upper right', frameon=True, shadow=True, fontsize='small')
+            
             ax_tr.set_xlim(0, tiempo_ensayo)
             ax_tr.set_ylim(0, h_total*1.1)
             ax_tr.grid(True, alpha=0.2)
-    
+            
             placeholder_grafico.pyplot(fig_tr)
             plt.close(fig_tr)
             
@@ -477,8 +475,6 @@ else:
         time.sleep(0.01) 
         barra_p.progress((i+1)/len(vector_t))
 
-    # --- RESULTADOS FINALES (Dentro del bloque 'else', fuera del bucle 'for') ---
-    
     status_placeholder.empty()
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
     st.balloons()
