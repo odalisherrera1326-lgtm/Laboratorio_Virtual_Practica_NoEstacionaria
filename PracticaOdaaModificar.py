@@ -89,7 +89,7 @@ st.markdown("""
 
     /* 5. SLIDERS (SIN AMARILLO) */
     .stSlider [data-baseweb="slider"] div div {
-        background-color: #e67e22 !important;
+        background-color: #FFA500 !important;
     }
     .stSlider [data-baseweb="typography"] {
         color: #ffffff !important; /* Texto blanco para la barra lateral */
