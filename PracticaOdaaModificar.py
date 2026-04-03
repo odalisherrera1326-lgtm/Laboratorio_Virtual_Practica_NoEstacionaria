@@ -87,12 +87,14 @@ st.markdown("""
         100% { opacity: 0.6; }
     }
 
-    /* 5. SLIDERS (SIN AMARILLO) */
+   /* Color de la línea del slider (la parte que se arrastra) */
     .stSlider [data-baseweb="slider"] div div {
-        background-color: #E67E22 !important;
+        background-color: #FFA500 !important; 
     }
+    
+    /* Color del número/valor encima del slider */
     .stSlider [data-baseweb="typography"] {
-        color: #ffffff !important; /* Texto blanco para la barra lateral */
+        color: #FFA500 !important;
         font-weight: bold !important;
     }
 
