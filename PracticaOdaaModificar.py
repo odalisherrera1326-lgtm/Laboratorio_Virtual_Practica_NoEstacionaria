@@ -337,9 +337,7 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev):
     h_next = np.clip(h_prev + dh_dt * dt, 0, h_t)
     
     return h_next, q_entrada, err, e_sum, err
-# =============================================================================
-# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA (CORREGIDA)
-# =============================================================================
+
 
 # =============================================================================
 # 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA (CORREGIDA)
@@ -446,16 +444,28 @@ else:
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
 
-            # C. Tendencia de Nivel
-            fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-            ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2)
-            ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5)
+                # C. Tendencia de Nivel
+               fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
+    
+               # Graficamos el nivel con etiqueta para la leyenda
+               ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel del Tanque (h)')
+    
+              # Graficamos la consigna (Setpoint) con etiqueta
+              ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Consigna (Setpoint)')
+    
+             # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
+             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
+             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
+             ax_tr.legend(loc='upper right', frameon=True, shadow=True, fontsize='small')
+                    # ---------------------------------------
+    
             ax_tr.set_xlim(0, tiempo_ensayo)
             ax_tr.set_ylim(0, h_total*1.1)
             ax_tr.grid(True, alpha=0.2)
+    
             placeholder_grafico.pyplot(fig_tr)
             plt.close(fig_tr)
-
+            
             # D. Acción de Control
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
             ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
