@@ -365,43 +365,7 @@ else:
     status_placeholder.empty()
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
     st.balloons()
-    
-    # 1. Crear el DataFrame con todos los datos recolectados
-    df_final = pd.DataFrame({
-        "Tiempo [s]": vector_t, 
-        "Nivel [m]": h_log, 
-        "u [m3/s]": u_log,
-        "Error [m]": e_log
-    })
-    
-    # 2. Mostrar la tabla de resultados 
-    st.subheader("Resumen de Datos Finales")
-    st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=True)
-    
-    # 3. Métricas de estabilidad y botón de descarga
-    st.subheader("Resumen de Estabilidad")
-    err_f = abs(sp_nivel - h_log[-1])
-    c1, c2, c3 = st.columns(3)
-    c1.metric("IAE Final", f"{iae_acumulado:.2f}")
-    c2.metric("ITAE Final", f"{itae_acumulado:.2f}")
-    c3.metric("Error Residual", f"{err_f:.4f} m")
-
-    area_descarga.download_button(
-        label="📥 Descargar Datos (CSV)", 
-        data=df_final.to_csv(index=False), 
-        file_name="resultados_simulacion_ucv.csv",
-        use_container_width=True
-    )
-
-    # Análisis de Estabilidad
-    st.markdown("---")
-    st.subheader("Análisis de Estabilidad")
-    error_final = abs(sp_nivel - h_log[-1])
-    if error_final < 0.05:
-        st.success(f"✅ Sistema Estabilizado en {h_log[-1]:.3f} m.")
-    else:
-        st.warning(f"⚠️ Desviación de {error_final:.3f} m. Ajuste Kp, Ki o Kd.")
-# =============================================================================
+    # =============================================================================
 # 7. ANÁLISIS DE RESPUESTA TRANSITORIA (AMPLITUD VS TIEMPO)
 # =============================================================================
 st.markdown("---")
@@ -445,3 +409,40 @@ with col_an2:
     sobrepico = ((max(h_log) - sp_nivel) / sp_nivel) * 100 if max(h_log) > sp_nivel else 0
     st.metric("Sobrepico Máximo", f"{sobrepico:.2f} %")
     st.metric("Tiempo Total", f"{tiempo_ensayo} s")
+    
+    # 1. Crear el DataFrame con todos los datos recolectados
+    df_final = pd.DataFrame({
+        "Tiempo [s]": vector_t, 
+        "Nivel [m]": h_log, 
+        "u [m3/s]": u_log,
+        "Error [m]": e_log
+    })
+    
+    # 2. Mostrar la tabla de resultados 
+    st.subheader("Resumen de Datos Finales")
+    st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=True)
+    
+    # 3. Métricas de estabilidad y botón de descarga
+    st.subheader("Resumen de Estabilidad")
+    err_f = abs(sp_nivel - h_log[-1])
+    c1, c2, c3 = st.columns(3)
+    c1.metric("IAE Final", f"{iae_acumulado:.2f}")
+    c2.metric("ITAE Final", f"{itae_acumulado:.2f}")
+    c3.metric("Error Residual", f"{err_f:.4f} m")
+
+    area_descarga.download_button(
+        label="📥 Descargar Datos (CSV)", 
+        data=df_final.to_csv(index=False), 
+        file_name="resultados_simulacion_ucv.csv",
+        use_container_width=True
+    )
+
+    # Análisis de Estabilidad
+    st.markdown("---")
+    st.subheader("Análisis de Estabilidad")
+    error_final = abs(sp_nivel - h_log[-1])
+    if error_final < 0.05:
+        st.success(f"✅ Sistema Estabilizado en {h_log[-1]:.3f} m.")
+    else:
+        st.warning(f"⚠️ Desviación de {error_final:.3f} m. Ajuste Kp, Ki o Kd.")
+
