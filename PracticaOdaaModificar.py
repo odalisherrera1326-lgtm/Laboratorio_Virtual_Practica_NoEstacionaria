@@ -21,101 +21,91 @@ if 'ejecutando' not in st.session_state:
 # =============================================================================
 # ESTILOS CSS UNIFICADOS: IDENTIDAD UCV + BIBLIOTECA LATERAL
 # =============================================================================
-# =============================================================================
-# ESTILOS REFINADOS: TITILADO + BRILLO UCV (Tesis Académica)
-# =============================================================================
 st.markdown("""
     <style>
-    /* 1. CONFIGURACIÓN GLOBAL */
-    .stApp { 
+
+    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR PERSONALIZADO (ENGRANAJE) */
+    html, body, [data-testid="stAppViewContainer"] {
         background-color: #f4f7f9 !important; 
+        /* Cursor predeterminado: Engranaje⚙️ */
+        cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto !important;
     }
 
-    /* 2. ENCABEZADO UCV CON BORDE AMARILLO VIBRANTE */
+    /* Cambiar cursor a Engranaje con Puntero👆⚙️ en elementos interactivos */
+    button, a, [data-testid="stHeaderActionElements"] {
+        cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text><text x='10' y='28' style='font-size: 14px;'>👆</text></svg>") 16 16, pointer !important;
+    }
+
+    /* 2. BARRA SUPERIOR (HEADER) EN AZUL UCV */
+    header[data-testid="stHeader"] {
+        background-color: #1a5276 !important;
+        color: white !important;
+    }
+
+    /* 3. BARRA LATERAL COMPLETA (SIDEBAR) EN AZUL UCV */
+    [data-testid="stSidebar"] {
+        background-color: #1a5276 !important; /* Azul UCV profundo */
+        border-right: 3px solid #f1c40f !important; /* Línea divisoria amarilla */
+    }
+
+    /* 4. FORZAR TEXTOS BLANCOS EN BARRA LATERAL */
+    [data-testid="stSidebar"] .stMarkdown, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        color: white !important;
+    }
+
+    /* 5. ENCABEZADO CENTRAL (BANNER) */
     .header-container {
         background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
         padding: 25px; 
         border-radius: 15px; 
-        margin-bottom: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+        border-bottom: 6px solid #f1c40f; 
         color: white; 
         text-align: center;
-        border-bottom: 6px solid #f1c40f; /* Detalle amarillo UCV */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    
     @keyframes gradient {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
 
-    /* 3. BARRA LATERAL (SIDEBAR) TÉCNICA */
-    [data-testid="stSidebar"] {
-        background-color: #e1e8ee !important; 
-        border-right: 2px solid #1a5276;
-    }
-    
-    /* 4. MARCO TEÓRICO (EXPANDERS COLORIZADOS) */
-    .stDetails {
-        border: 2px solid #1a5276 !important;
-        border-radius: 12px !important;
-        background-color: #ffffff !important;
-        margin-bottom: 15px !important;
-    }
-    
-    .stDetails summary {
-        background-color: #1a5276 !important;
-        color: white !important;
-        padding: 15px !important;
-        font-weight: bold !important;
-        font-size: 1.1rem !important;
-    }
-    
-    .stDetails summary:hover {
-        background-color: #21618c !important;
-    }
-
-    /* 5. EFECTO: TITILADO EN BARRA DE PROGRESO (CUANDO PROCESA) */
-    .stProgress {
+    /* 6. EFECTO TITILADO EN BARRA DE PROGRESO (AMARILLA) */
+    .stProgress > div > div > div > div {
+        background-color: #f1c40f !important; /* Barra amarilla para que resalte */
         animation: titilado 1.5s ease-in-out infinite;
-        border-radius: 8px;
     }
-    
     @keyframes titilado {
-        0% { opacity: 0.6; box-shadow: 0 0 5px rgba(52, 152, 219, 0.4); }
-        50% { opacity: 1; box-shadow: 0 0 15px rgba(52, 152, 219, 0.8); }
-        100% { opacity: 0.6; box-shadow: 0 0 5px rgba(52, 152, 219, 0.4); }
+        0% { opacity: 0.5; }
+        50% { opacity: 1; }
+        100% { opacity: 0.5; }
     }
 
-    /* 6. EFECTO: BRILLO AMARILLO EN BOTONES (AL POSICIONAR CURSOR) */
+    /* 7. BOTONES CON BRILLO AMARILLO (HOVER) */
     .stButton>button {
         background-color: #1a5276 !important; 
         color: white !important; 
+        border: 2px solid white !important;
         border-radius: 12px !important;
-        font-weight: bold !important; 
         transition: all 0.3s ease !important;
-        border: none !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
     }
-    
     .stButton>button:hover {
         background-color: #21618c !important;
-        border: 1px solid #f1c40f !important; 
-        box-shadow: 0 0 20px #f1c40f !important; /* Brillo amarillo vibrante */
-        transform: translateY(-2px); 
+        border: 2px solid #f1c40f !important;
+        box-shadow: 0 0 20px #f1c40f !important; /* El brillo amarillo */
+        transform: scale(1.05);
     }
 
-    /* Botón Secundario (Reset) con brillo rojo */
-    div.stButton > button:first-child[kind="secondary"] {
-        background-color: #943126 !important; 
-        color: white !important;
-    }
-    
-    div.stButton > button:first-child[kind="secondary"]:hover {
-        background-color: #cb4335 !important;
-        box-shadow: 0 0 20px #cb4335 !important;
+    /* 8. SLIDER AMARILLO */
+    .stSlider [data-baseweb="slider"] div {
+        background-color: #f1c40f !important;
     }
     </style>
     """, unsafe_allow_html=True)
