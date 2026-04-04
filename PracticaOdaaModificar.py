@@ -86,32 +86,37 @@ st.markdown("""
         50% { opacity: 1; }
         100% { opacity: 0.6; }
     }
-/* 1. La línea de progreso del slider (la parte naranja que se arrastra) */
-    [data-baseweb="slider"] > div > div > div {
-        background-color: #ffa500 !important;
+//* 1. COLOR DE LA BARRA ACTIVA (SOLO LA LÍNEA QUE CRECE) */
+    div[data-baseweb="slider"] > div > div > div {
+        background-color: #FFA500 !important;
     }
 
-    /* 2. El círculo o manejador (el que mueves con el dedo/mouse) */
-    [data-baseweb="slider"] div[role="slider"] {
-        background-color: #ffa500 !important;
-        border: 2px solid #ffffff !important;
+    /* 2. COLOR DEL BOTÓN CIRCULAR */
+    div[role="slider"] {
+        background-color: #FFA500 !important;
+        border: 2px solid white !important;
     }
 
-    /* 3. Los números de los extremos (mínimo y máximo) */
-    [data-baseweb="slider"] [data-testid="stTickBar"] div {
-        color: #ffa500 !important;
+    /* 3. COLOR DEL NÚMERO QUE FLOTA (EL VALOR ACTUAL) */
+    /* Este selector apunta específicamente al valor dinámico */
+    div[data-baseweb="slider"] div[data-testid="stTickBar"] + div,
+    div[data-baseweb="slider"] ~ div span {
+        color: #FFA500 !important;
         font-weight: bold !important;
     }
+    
+    /* 4. COLOR DE LOS NÚMEROS DE LOS EXTREMOS (MIN Y MAX) */
+    div[data-testid="stTickBar"] div {
+        color: #FFA500 !important;
+        font-size: 0.8rem !important;
+    }
 
-    /* 4. El valor actual que aparece arriba del slider */
+    /* 5. RESTABLECER EL COLOR DE LAS ETIQUETAS (PARA QUE NO SEAN NARANJAS) */
+    /* Esto asegura que "Simular Falla/Fuga" y "Consigna de Nivel" vuelvan a ser blancos o negros */
     div[data-testid="stWidgetLabel"] p {
-        color: #ffa500 !important;
-        font-weight: bold !important;
+        color: white !important; /* O el color que prefieras para tus títulos */
+        font-weight: normal !important;
     }
-
-    /* 5. Específicamente para la barra lateral (Sidebar) */
-    section[data-testid="stSidebar"] [data-baseweb="slider"] > div > div > div {
-        background-color: #ffa500 !important;
     }
 
     /* 6. INPUTS Y BOTONES */
