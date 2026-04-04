@@ -340,7 +340,8 @@ if btn_reset:
 # =============================================================================
 # 4. LÓGICA DE CÁLCULO: MÉTODO DE EULER
 # =============================================================================
-def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev):
+def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op):
+    # 1. Cálculo de área según geometría
     if geom == "Cilíndrico":
         area_h = np.pi * (r**2)
     elif geom == "Cónico":
@@ -350,18 +351,33 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev):
     
     area_h = max(area_h, 0.01) 
 
+    # 2. Algoritmo PID
     err = sp - h_prev
     e_sum += err * dt
     e_der = (err - e_prev) / dt
     u_control = (kp_val * err) + (ki_val * e_sum) + (kd_val * e_der)
     
-    q_entrada = np.clip(u_control, 0, 0.6)
-    q_salida = 0.61 * 0.04 * np.sqrt(2 * 9.81 * h_prev) if h_prev > 0.005 else 0
+    # 3. Lógica de Operación y Balance de Masa
+    if modo_op == "Llenado":
+        # Controlamos la ENTRADA. La perturbación es una fuga o entrada extra.
+        q_entrada = np.clip(u_control, 0, 0.6)
+        q_salida = 0.61 * 0.04 * np.sqrt(2 * 9.81 * h_prev) if h_prev > 0.005 else 0
+        
+        # dh/dt = (Entrada_Control + Perturbación - Salida_Natural) / Área
+        dh_dt = (q_entrada + q_p_val - q_salida) / area_h
+        u_graficar = q_entrada
+    else:
+        # VACIADO: Controlamos la SALIDA. La perturbación es el FLUJO DE ENTRADA.
+        q_entrada = q_p_val  # La perturbación entra al tanque
+        q_salida = np.clip(-u_control, 0, 0.6) # PID abre la válvula de salida
+        
+        # dh/dt = (Entrada_Perturbación - Salida_Controlada) / Área
+        dh_dt = (q_entrada - q_salida) / area_h
+        u_graficar = q_salida
     
-    dh_dt = (q_entrada - q_salida + q_p_val) / area_h
     h_next = np.clip(h_prev + dh_dt * dt, 0, h_t)
     
-    return h_next, q_entrada, err, e_sum, err
+    return h_next, u_graficar, err, e_sum, err
 
 
 # =============================================================================
@@ -435,7 +451,7 @@ else:
         q_p_inst = p_magnitud if ('p_activa' in locals() and p_activa and t_act >= p_tiempo) else 0.0
         
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
-            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, err_int, err_pasado
+            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, err_int, err_pasado, op_tipo
         )
         
         # Cálculo de métricas integrales
@@ -493,7 +509,9 @@ else:
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
             ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
             ax_u.set_xlim(0, tiempo_ensayo)
-            ax_u.set_ylim(0, 0.7)
+            # El eje Y se ajusta al valor máximo de flujo detectado + un margen del 20%
+            techo_dinamico = max(max(u_log), 0.1) * 1.2 if u_log else 0.7
+            ax_u.set_ylim(0, techo_dinamico)
             ax_u.grid(True, alpha=0.2)
             ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
