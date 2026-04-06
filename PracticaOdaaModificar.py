@@ -476,11 +476,43 @@ else:
             ax_t.set_ylim(-0.1, h_total*1.1)
             ax_t.set_xticks([]); ax_t.set_ylabel("Nivel [m]")
             
+            # B. Gráfico del Tanque (Lógica Multigeometría)
+            fig_t, ax_t = plt.subplots(figsize=(5, 4))
+            ax_t.set_xlim(-r_max*1.2, r_max*1.2)
+            ax_t.set_ylim(-0.1, h_total*1.1)
+            ax_t.set_xticks([]); ax_t.set_ylabel("Nivel [m]")
+            
+            # Determinamos el color del agua: Azul normal o Rojo si hay mucho error
+            color_agua = '#3498db' if abs(e_inst) < 0.1 else '#e74c3c'
+
             if geom_tanque == "Cilíndrico":
-                ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, color='#3498db', alpha=0.6))
+                # Agua
+                ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, color=color_agua, alpha=0.6))
+                # Paredes
                 ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=3)
             
-            ax_t.axhline(y=sp_nivel, color='red', ls='--')
+            elif geom_tanque == "Cónico":
+                # Paredes del Cono
+                ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=3)
+                # Agua (Cálculo del radio dinámico h/H * R)
+                r_actual = (r_max / h_total) * h_corrida
+                agua_cono = plt.Polygon([[-r_actual, h_corrida], [r_actual, h_corrida], [0, 0]], color=color_agua, alpha=0.6)
+                ax_t.add_patch(agua_cono)
+
+            else: # Esférico
+                # Dibujo de la Esfera
+                circulo_guia = plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=3)
+                ax_t.add_patch(circulo_guia)
+                # Agua con efecto de recorte
+                agua_esfera = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.6)
+                ax_t.add_patch(agua_esfera)
+                # Tapamos lo que sobra para simular el nivel h
+                ax_t.add_patch(plt.Rectangle((-r_max*1.5, h_corrida), 3*r_max, h_total*2, color='#f4f7f9'))
+
+            # Línea roja del Setpoint (Consigna)
+            ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=1.5)
+            placeholder_tanque.pyplot(fig_t)
+            plt.close(fig_t)
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
 
