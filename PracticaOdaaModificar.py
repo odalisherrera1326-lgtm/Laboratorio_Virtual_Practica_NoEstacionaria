@@ -476,43 +476,57 @@ else:
             ax_t.set_ylim(-0.1, h_total*1.1)
             ax_t.set_xticks([]); ax_t.set_ylabel("Nivel [m]")
             
-            # B. Gráfico del Tanque (Lógica Multigeometría)
-            fig_t, ax_t = plt.subplots(figsize=(5, 4))
-            ax_t.set_xlim(-r_max*1.2, r_max*1.2)
-            ax_t.set_ylim(-0.1, h_total*1.1)
-            ax_t.set_xticks([]); ax_t.set_ylabel("Nivel [m]")
+           # B. GRÁFICO DEL TANQUE PRO CON TUBERÍAS Y VÁLVULAS (REEMPLAZO)
+            fig_t, ax_t = plt.subplots(figsize=(7, 5))
+            # Ajustamos límites para que se vean las tuberías laterales
+            ax_t.set_xlim(-r_max*2.5, r_max*2.5) 
+            ax_t.set_ylim(-0.5, h_total*1.3)
+            ax_t.set_axis_off() # Formato de diagrama de proceso
             
-            # Determinamos el color del agua: Azul normal o Rojo si hay mucho error
             color_agua = '#3498db' if abs(e_inst) < 0.1 else '#e74c3c'
+            ancho_tubo = 0.2
 
+            # --- DIBUJO DE INFRAESTRUCTURA (Tuberías y Válvulas) ---
+            # Tubería de Entrada
+            ax_t.add_patch(plt.Rectangle((-r_max*2.5, h_total*0.85), r_max*1.5, ancho_tubo, color='silver', zorder=0))
+            # Válvula de Entrada (V-01)
+            ve_x, ve_y = -r_max*1.8, h_total*0.85 + ancho_tubo/2
+            ax_t.add_patch(plt.Polygon([[ve_x-0.2, ve_y+0.25], [ve_x-0.2, ve_y-0.25], [ve_x+0.2, ve_y]], color='#2c3e50'))
+            ax_t.add_patch(plt.Polygon([[ve_x+0.2, ve_y+0.25], [ve_x+0.2, ve_y-0.25], [ve_x-0.2, ve_y]], color='#2c3e50'))
+            ax_t.text(ve_x, ve_y+0.4, "V-01", ha='center', fontsize=9, fontweight='bold')
+
+            # Tubería de Salida
+            ax_t.add_patch(plt.Rectangle((r_max, -0.1), r_max*1.5, ancho_tubo, color='silver', zorder=0))
+            # Válvula de Salida (Controladora)
+            vs_x, vs_y = r_max*1.8, -0.1 + ancho_tubo/2
+            ax_t.add_patch(plt.Polygon([[vs_x-0.2, vs_y+0.25], [vs_x-0.2, vs_y-0.25], [vs_x+0.2, vs_y]], color='#2c3e50'))
+            ax_t.add_patch(plt.Polygon([[vs_x+0.2, vs_y+0.25], [vs_x+0.2, vs_y-0.25], [vs_x-0.2, vs_y]], color='#2c3e50'))
+            ax_t.text(vs_x, vs_y-0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
+
+            # --- DIBUJO DEL CUERPO DEL TANQUE ---
             if geom_tanque == "Cilíndrico":
-                # Agua
-                ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, color=color_agua, alpha=0.6))
-                # Paredes
-                ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=3)
+                ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, color=color_agua, alpha=0.6, zorder=1))
+                ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=4, zorder=2)
             
             elif geom_tanque == "Cónico":
-                # Paredes del Cono
-                ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=3)
-                # Agua (Cálculo del radio dinámico h/H * R)
+                ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=4, zorder=2)
                 r_actual = (r_max / h_total) * h_corrida
-                agua_cono = plt.Polygon([[-r_actual, h_corrida], [r_actual, h_corrida], [0, 0]], color=color_agua, alpha=0.6)
-                ax_t.add_patch(agua_cono)
+                ax_t.add_patch(plt.Polygon([[-r_actual, h_corrida], [r_actual, h_corrida], [0, 0]], color=color_agua, alpha=0.6, zorder=1))
 
             else: # Esférico
-                # Dibujo de la Esfera
-                circulo_guia = plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=3)
-                ax_t.add_patch(circulo_guia)
-                # Agua con efecto de recorte
-                agua_esfera = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.6)
-                ax_t.add_patch(agua_esfera)
-                # Tapamos lo que sobra para simular el nivel h
-                ax_t.add_patch(plt.Rectangle((-r_max*1.5, h_corrida), 3*r_max, h_total*2, color='#f4f7f9'))
+                ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=4, zorder=2))
+                ax_t.add_patch(plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.6, zorder=1))
+                # Máscara para simular nivel
+                ax_t.add_patch(plt.Rectangle((-r_max*2.2, h_corrida), r_max*4.4, h_total*2, color='#f4f7f9', zorder=1.5))
 
-            # Línea roja del Setpoint (Consigna)
-            ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=1.5)
-            placeholder_tanque.pyplot(fig_t)
-            plt.close(fig_t)
+            # --- INDICADORES Y SETPOINT ---
+            ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3)
+            ax_t.text(-r_max*2.4, sp_nivel+0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
+            
+            # Globo de nivel actual
+            ax_t.text(0, h_total*1.2, f"NIVEL: {h_corrida:.3f} m", ha='center', fontsize=11, fontweight='bold',
+                     bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5'))
+
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
 
