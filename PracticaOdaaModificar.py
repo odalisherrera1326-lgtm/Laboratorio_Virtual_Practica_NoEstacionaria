@@ -586,9 +586,7 @@ else:
             placeholder_u.pyplot(fig_u)
            
            
-            # Mandamos el dibujo al nuevo espacio
-            placeholder_valvula.pyplot(fig_v)
-            plt.close(fig_v)
+            
             plt.close(fig_u)
         
         time.sleep(0.01) 
