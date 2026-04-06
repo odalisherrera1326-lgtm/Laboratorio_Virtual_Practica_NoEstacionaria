@@ -585,14 +585,7 @@ else:
             ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
             placeholder_u.pyplot(fig_u)
            
-            # Configuración estética para tu defensa
-            ax_v.set_title("Señal de Salida del Controlador (MV)", fontsize=10, fontweight='bold')
-            ax_v.set_ylabel("Apertura [0-1]")
-            ax_v.set_xlabel("Tiempo [s]")
-            ax_v.set_xlim(0, tiempo_ensayo)
-            ax_v.set_ylim(-0.05, 1.05) 
-            ax_v.grid(True, alpha=0.2, linestyle='--')
-            
+           
             # Mandamos el dibujo al nuevo espacio
             placeholder_valvula.pyplot(fig_v)
             plt.close(fig_v)
