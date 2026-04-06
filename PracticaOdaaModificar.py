@@ -577,32 +577,41 @@ else:
             # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-            # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
-        # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
+           
+         # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
+        st.markdown("---") 
+        st.subheader("📊 Validación del Modelo: Simulación vs. Planta")
+        
         if mostrar_ref:
+            fig_val, ax_val = plt.subplots(figsize=(8, 4))
+            
+            # 1. Extraemos y convertimos datos (de cm a m)
             t_usr = datos_usr["Tiempo (s)"]
-            # La conversión ocurre aquí internamente:
-            h_usr = [x / 100 for x in datos_usr["Nivel Medido (m)"]]
+            h_usr_m = [x / 100 for x in datos_usr["Nivel Medido (m)"]]
             
-            # Cambiamos el label para que sea más limpio
-            ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=100, 
-                          label='Datos Experimentales', zorder=5)
+            # 2. Graficamos los datos reales (Cruces Rojas)
+            ax_val.scatter(t_usr, h_usr_m, color='red', marker='x', s=100, label='Datos Experimentales (Reales)')
+            ax_val.plot(t_usr, h_usr_m, color='red', linestyle='--', alpha=0.4)
             
-            # Quitamos el label de la línea para no repetir en la leyenda
-            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3) 
-
-        # Configuración final de la leyenda
-            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
-            # Línea punteada de referencia
-            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
-            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
+            # 3. Graficamos la respuesta del modelo (Línea Azul) para comparar
+            # 't' y 'h' son las variables de tu simulación actual
+            ax_val.plot(t, h, color='#1f77b4', linewidth=2, label='Predicción del Modelo (Teórica)')
             
-            ax_tr.set_xlim(0, tiempo_ensayo)
-            ax_tr.set_ylim(0, h_total*1.1)
-            ax_tr.grid(True, alpha=0.2)
+            # 4. Estética de la gráfica de validación
+            ax_val.set_title("Comparativa de Desempeño: Realidad vs. Teoría", fontsize=12, fontweight='bold')
+            ax_val.set_xlabel('Tiempo [s]', fontsize=10)
+            ax_val.set_ylabel('Altura [m]', fontsize=10)
+            ax_val.set_ylim(0, h_total * 1.1) 
+            ax_val.grid(True, alpha=0.3, linestyle=':')
+            ax_val.legend(loc='best', fontsize='small')
             
-            placeholder_grafico.pyplot(fig_tr)
-            plt.close(fig_tr)
+            # 5. Mostrar la nueva figura
+            st.pyplot(fig_val)
+            plt.close(fig_val)
+            
+            st.success("✅ Validación generada: Comparación automática en metros.")
+        else:
+            st.info("💡 Activa la referencia para ver el análisis comparativo entre la simulación y tus datos.")
             
             # D. Acción de Control
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
