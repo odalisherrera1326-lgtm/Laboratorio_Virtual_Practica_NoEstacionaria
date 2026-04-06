@@ -577,8 +577,7 @@ else:
             # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-         
-           # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
+            # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
         if mostrar_ref:
             # Extraemos los datos y convertimos de cm a m
             t_usr = datos_manuales["Tiempo (s)"]
@@ -590,6 +589,12 @@ else:
             
             # Dibujamos la línea punteada (Asegúrate de que esta línea esté alineada con el scatter)
             ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
+
+        # La leyenda debe estar alineada con el IF, no dentro de él
+        ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
+         
+           
+      
 
         # La leyenda debe estar alineada con el IF, no dentro de él
         ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
