@@ -536,6 +536,22 @@ else:
             # Etiqueta de la válvula
             offset_texto = 0.4 if geom_tanque == "Cilíndrico" else 0
             ax_t.text(vs_x + offset_texto, vs_y - 0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
+            # --- 3. INDICADORES DINÁMICOS (RECUPERACIÓN) ---
+            # Línea de Setpoint (Referencia roja)
+            ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3)
+            ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", 
+                     color='red', fontweight='bold', fontsize=9)
+
+            # Burbuja de Nivel Interactiva (Globo superior)
+            # Se posiciona automáticamente sobre el tanque
+            ax_t.text(0, h_total * 1.2, f"NIVEL ACTUAL: {h_corrida:.3f} m", 
+                     ha='center', va='center', fontsize=11, fontweight='bold',
+                     bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', 
+                     boxstyle='round,pad=0.5', lw=2))
+
+            # Opcional: Pequeña flecha que apunta al nivel real si quieres más detalle
+            ax_t.annotate('', xy=(r_max*1.1, h_corrida), xytext=(r_max*1.5, h_corrida),
+                         arrowprops=dict(arrowstyle='->', color='#1a5276', lw=2))
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
 
