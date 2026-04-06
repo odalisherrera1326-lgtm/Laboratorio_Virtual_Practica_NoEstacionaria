@@ -515,15 +515,27 @@ else:
             ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50'))
             ax_t.text(c_in_x-0.6, c_in_y+0.4, "V-01", ha='center', fontsize=9, fontweight='bold')
 
+           # --- DIBUJO DE SALIDA Y VÁLVULA DE CONTROL (CORREGIDO) ---
+            t_ancho = 0.2
+            
             if geom_tanque == "Cilíndrico":
-                ax_t.add_patch(plt.Rectangle((c_out_x, c_out_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
+                # Salida Lateral
+                ax_t.add_patch(plt.Rectangle((c_out_x, c_out_y - t_ancho/2), 1.5, t_ancho, color='silver', zorder=0))
+                vs_x, vs_y = c_out_x + 0.8, c_out_y
             else:
-                ax_t.add_patch(plt.Rectangle((c_out_x - 0.1, c_out_y - 0.5), 0.2, 0.7, color='silver', zorder=0))
+                # Salida Inferior Vertical (Esfera/Cono)
+                # Dibujamos el tubo vertical
+                ax_t.add_patch(plt.Rectangle((c_out_x - t_ancho/2, c_out_y - 0.6), t_ancho, 0.6, color='silver', zorder=0))
+                vs_x, vs_y = c_out_x, c_out_y - 0.4
 
-            ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=1.5)
-            ax_t.text(0, h_total*1.2, f"NIVEL: {h_corrida:.3f} m", ha='center', fontweight='bold', 
-                     bbox=dict(facecolor='white', alpha=0.8, edgecolor='#2c3e50', boxstyle='round'))
-
+            # Dibujo de la Válvula V-02 (Símbolo de control)
+            # Usamos polígonos para crear la forma de "moño"
+            ax_t.add_patch(plt.Polygon([[vs_x-0.25, vs_y+0.2], [vs_x-0.25, vs_y-0.2], [vs_x+0.25, vs_y]], color='#2c3e50', zorder=2))
+            ax_t.add_patch(plt.Polygon([[vs_x+0.25, vs_y+0.2], [vs_x+0.25, vs_y-0.2], [vs_x-0.25, vs_y]], color='#2c3e50', zorder=2))
+            
+            # Etiqueta de la válvula
+            offset_texto = 0.4 if geom_tanque == "Cilíndrico" else 0
+            ax_t.text(vs_x + offset_texto, vs_y - 0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
 
