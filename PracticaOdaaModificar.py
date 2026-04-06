@@ -305,6 +305,15 @@ with st.sidebar.expander("Parámetros del Controlador PID"):
     ki_val = c2.number_input("Ki", value=0.5)
     kd_val = c3.number_input("Kd", value=0.1)
     tiempo_ensayo = st.sidebar.slider("Tiempo de simulación [s]", 60, 600, 300)
+    with st.sidebar.expander("📊 Cargar Datos Experimentales"):
+    st.write("Ingresa los datos medidos en el laboratorio:")
+    # Tabla interactiva para el usuario
+    datos_manuales = st.data_editor({
+        "Tiempo (s)": [0, 60, 120, 180, 240, 300],
+        "Nivel Medido (m)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    }, num_rows="dynamic")
+    
+    mostrar_ref = st.checkbox("Mostrar referencia en gráfica", value=True)
 # =============================================================================
 st.sidebar.markdown("---")
 st.sidebar.subheader("📚 Biblioteca Técnica")
@@ -568,7 +577,18 @@ else:
             # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-            ax_tr.legend(loc='upper right', frameon=True, shadow=True, fontsize='small')
+            # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
+        if ver_puntos: 
+            t_usr = datos_usr["Tiempo (s)"]
+            h_usr = datos_usr["Nivel (m)"]
+            
+            # Dibujamos los puntos como cruces rojas (X)
+            ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=50, 
+                          label='Datos Experimentales', zorder=5)
+            
+            # Línea punteada de referencia
+            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
+            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
             
             ax_tr.set_xlim(0, tiempo_ensayo)
             ax_tr.set_ylim(0, h_total*1.1)
