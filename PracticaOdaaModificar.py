@@ -591,19 +591,16 @@ else:
             ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
 
         # La leyenda debe estar alineada con el IF, no dentro de él
-        ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
+            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
          
-           
-      
-
         # La leyenda debe estar alineada con el IF, no dentro de él
-        ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
+            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
             
             # Dibujamos una línea punteada suave que una los puntos experimentales
-        ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
+            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
 
         # Actualizamos la leyenda para incluir los nuevos datos
-        ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
+            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
             
             # Línea punteada de referencia
             ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
