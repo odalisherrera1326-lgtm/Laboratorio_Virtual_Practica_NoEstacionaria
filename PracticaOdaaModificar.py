@@ -19,7 +19,7 @@ if 'ejecutando' not in st.session_state:
     st.session_state.ejecutando = False
 
 # =============================================================================
-# INTERFAZ FINAL TESIS UCV: FULL PERSONALIZACIÓN + MÉTRICAS EN RECUADROS
+# INTERFAZ TESIS 
 # =============================================================================
 st.markdown("""
     <style>
@@ -53,7 +53,7 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* 3. RECUADROS Y NÚMEROS DE MÉTRICAS (SIN AMARILLO) */
+    /* 3. RECUADROS Y NÚMEROS DE MÉTRICAS  */
     div[data-testid="stMetric"] {
         background-color: #ffffff !important;
         border: 2px solid #1a5276 !important;
@@ -86,7 +86,7 @@ st.markdown("""
         50% { opacity: 1; }
         100% { opacity: 0.6; }
     }
-//* 1. COLOR DE LA BARRA ACTIVA (SOLO LA LÍNEA QUE CRECE) */
+//* 1. COLOR DE LA BARRA ACTIVA  */
     div[data-baseweb="slider"] > div > div > div {
         background-color: #FFA500 !important;
     }
@@ -414,6 +414,9 @@ else:
         placeholder_grafico = st.empty()
         st.subheader("⚙️ Acción del Controlador")
         placeholder_u = st.empty()
+        st.markdown("---") # Una línea divisoria para que se vea ordenado
+        st.subheader("🎮 Apertura de la Válvula de Control (V-02)")
+        placeholder_valvula = st.empty()
 
     with col_met:
         st.subheader("Métricas de Control")
@@ -583,6 +586,24 @@ else:
             ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
             placeholder_u.pyplot(fig_u)
+            # --- AGREGADO: Generación de la gráfica de apertura ---
+            fig_v, ax_v = plt.subplots(figsize=(8, 2.5))
+            
+            # Graficamos la apertura usando 'u_log' que ya existe en tu código
+            ax_v.plot(vector_t[:i+1], u_log, color='#27ae60', lw=2)
+            ax_v.fill_between(vector_t[:i+1], u_log, color='#27ae60', alpha=0.1)
+            
+            # Configuración estética para tu defensa
+            ax_v.set_title("Señal de Salida del Controlador (MV)", fontsize=10, fontweight='bold')
+            ax_v.set_ylabel("Apertura [0-1]")
+            ax_v.set_xlabel("Tiempo [s]")
+            ax_v.set_xlim(0, tiempo_ensayo)
+            ax_v.set_ylim(-0.05, 1.05) 
+            ax_v.grid(True, alpha=0.2, linestyle='--')
+            
+            # Mandamos el dibujo al nuevo espacio
+            placeholder_valvula.pyplot(fig_v)
+            plt.close(fig_v)
             plt.close(fig_u)
         
         time.sleep(0.01) 
