@@ -414,6 +414,10 @@ else:
         placeholder_grafico = st.empty()
         st.subheader("⚙️ Acción del Controlador")
         placeholder_u = st.empty()
+        # --- NUEVO: Espacio para el estado de la válvula ---
+        st.markdown("---")
+        st.subheader("⚙️ Estado de Operación: Válvula V-02")
+        placeholder_valvula = st.empty()
        
 
     with col_met:
@@ -584,6 +588,27 @@ else:
             ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
             placeholder_u.pyplot(fig_u)
+            # --- LÓGICA DE LA VÁLVULA ---
+            fig_v, ax_v = plt.subplots(figsize=(8, 3))
+            
+            # Dibujamos la apertura (u_log) en color verde
+            ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5, label='Apertura Real')
+            ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
+            
+            # Configuramos los límites para que se vea claro el On/Off
+            ax_v.set_ylim(-0.1, 1.1) 
+            ax_v.set_yticks([0, 0.5, 1])
+            ax_v.set_yticklabels(['CERRADA (0%)', '50%', 'ABIERTA (100%)'])
+            
+            # Estética profesional para la UCV
+            ax_v.set_title("Comportamiento Dinámico de la Válvula de Control", fontsize=10, fontweight='bold')
+            ax_v.grid(True, axis='y', ls='--', alpha=0.5)
+            ax_v.set_xlabel("Tiempo de simulación [s]")
+            
+            # Mostramos en el espacio creado
+            placeholder_valvula.pyplot(fig_v)
+            plt.close(fig_v) # Importante cerrar para no saturar la memoria
+            
            
            
             
