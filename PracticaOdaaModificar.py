@@ -308,7 +308,7 @@ with st.sidebar.expander("Parámetros del Controlador PID"):
     with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     st.write("Ingresa los datos medidos en el laboratorio:")
     # Tabla interactiva para el usuario
-    datos_manuales = st.data_editor({
+    datos_usr = st.data_editor({
         "Tiempo (s)": [0, 60, 120, 180, 240, 300],
         "Nivel Medido (m)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     }, num_rows="dynamic")
