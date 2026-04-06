@@ -578,16 +578,21 @@ else:
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
          
-           # --- COMPARACIÓN CON DATOS EXPERIMENTALES  ---
+           # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
         if mostrar_ref:
-            # Extraemos los datos de la tabla de la barra lateral
+            # Extraemos los datos y convertimos de cm a m
             t_usr = datos_manuales["Tiempo (s)"]
-            # Convertimos automáticamente de cm a metros para que coincida con la gráfica
             h_usr = [x / 100 for x in datos_manuales["Nivel Medido (m)"]]
             
-            # Dibujamos las X rojas sobre la línea de tendencia
+            # Dibujamos los puntos (X)
             ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=100, 
                           label='Datos Experimentales (cm)', zorder=5)
+            
+            # Dibujamos la línea punteada (Asegúrate de que esta línea esté alineada con el scatter)
+            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
+
+        # La leyenda debe estar alineada con el IF, no dentro de él
+        ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
             
             # Dibujamos una línea punteada suave que una los puntos experimentales
             ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
