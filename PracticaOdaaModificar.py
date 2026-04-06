@@ -470,7 +470,7 @@ else:
             placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
             placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
 
-            # --- B. MONITOR DEL PROCESO (DINÁMICO) ---
+           # --- B. MONITOR DEL PROCESO (DINÁMICO) ---
             # Creamos una sola figura con el tamaño adecuado para el diagrama
             fig_t, ax_t = plt.subplots(figsize=(7, 5))
             ax_t.set_axis_off() 
@@ -532,8 +532,25 @@ else:
                 vs_x, vs_y = c_out_x, c_out_y - 0.4
 
             # Válvula V-02 (CV)
-            ax_t.add_patch(plt.Polygon([[vs_x-0.25, vs_y+0.
+            ax_t.add_patch(plt.Polygon([[vs_x-0.25, vs_y+0.2], [vs_x-0.25, vs_y-0.2], [vs_x+0.25, vs_y]], color='#2c3e50', zorder=2))
+            ax_t.add_patch(plt.Polygon([[vs_x+0.25, vs_y+0.2], [vs_x+0.25, vs_y-0.2], [vs_x-0.25, vs_y]], color='#2c3e50', zorder=2))
+            
+            offset_texto = 0.4 if geom_tanque == "Cilíndrico" else 0
+            ax_t.text(vs_x + offset_texto, vs_y - 0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
 
+            # --- INDICADORES FINALES ---
+            # Línea de Setpoint
+            ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3)
+            ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
+
+            # Burbuja de Nivel Actual
+            ax_t.text(0, h_total * 1.2, f"NIVEL ACTUAL: {h_corrida:.3f} m", 
+                     ha='center', va='center', fontsize=11, fontweight='bold',
+                     bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
+
+            # Renderizado en Streamlit
+            placeholder_tanque.pyplot(fig_t)
+            plt.close(fig_t)
             # C. Tendencia de Nivel 
             fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
             
