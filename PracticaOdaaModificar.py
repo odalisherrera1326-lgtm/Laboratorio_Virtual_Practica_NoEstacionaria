@@ -414,9 +414,7 @@ else:
         placeholder_grafico = st.empty()
         st.subheader("⚙️ Acción del Controlador")
         placeholder_u = st.empty()
-        st.markdown("---") # Una línea divisoria para que se vea ordenado
-        st.subheader("🎮 Apertura de la Válvula de Control (V-02)")
-        placeholder_valvula = st.empty()
+       
 
     with col_met:
         st.subheader("Métricas de Control")
@@ -474,7 +472,7 @@ else:
             placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
 
            # --- B. MONITOR DEL PROCESO (DINÁMICO) ---
-           # --- B. MONITOR DEL PROCESO (VERSIÓN FINAL UNIFICADA) ---
+         
             fig_t, ax_t = plt.subplots(figsize=(7, 5))
             ax_t.set_axis_off() 
             ax_t.set_xlim(-r_max*3, r_max*3) 
@@ -586,13 +584,7 @@ else:
             ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
             placeholder_u.pyplot(fig_u)
-            # --- AGREGADO: Generación de la gráfica de apertura ---
-            fig_v, ax_v = plt.subplots(figsize=(8, 2.5))
-            
-            # Graficamos la apertura usando 'u_log' que ya existe en tu código
-            ax_v.plot(vector_t[:i+1], u_log, color='#27ae60', lw=2)
-            ax_v.fill_between(vector_t[:i+1], u_log, color='#27ae60', alpha=0.1)
-            
+           
             # Configuración estética para tu defensa
             ax_v.set_title("Señal de Salida del Controlador (MV)", fontsize=10, fontweight='bold')
             ax_v.set_ylabel("Apertura [0-1]")
