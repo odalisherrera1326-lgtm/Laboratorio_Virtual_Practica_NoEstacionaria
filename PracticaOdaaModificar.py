@@ -580,7 +580,7 @@ else:
             # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
         if mostrar_ref: 
             t_usr = datos_usr["Tiempo (s)"]
-            h_usr = datos_usr["Nivel (m)"]
+            h_usr = datos_usr["Nivel Medido (m)"]
             
             # Dibujamos los puntos como cruces rojas (X)
             ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=50, 
