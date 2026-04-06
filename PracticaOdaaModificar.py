@@ -578,7 +578,7 @@ else:
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
             # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
-       if mostrar_ref:
+        if mostrar_ref:
             t_usr = datos_manuales["Tiempo (s)"]
             # --- CONVERSIÓN DE CM A METROS ---
             h_usr = [x / 100 for x in datos_manuales["Nivel Medido (m)"]] 
