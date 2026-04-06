@@ -498,16 +498,26 @@ else:
                 r_act_cono = (r_max / h_total) * h_corrida
                 ax_t.add_patch(plt.Polygon([[-r_act_cono, h_corrida], [r_act_cono, h_corrida], [0, 0]], color=color_agua, alpha=0.6))
 
-            else: # Esférico
+           else: # Esférico 
                 import math
+                # 1. Definimos la geometría base
                 c_in_y = h_total * 0.7
                 c_in_x = -math.sqrt(abs(r_max**2 - (c_in_y - r_max)**2))
                 c_out_x, c_out_y = 0, -0.2
-                ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=4))
-                agua_esf = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.6)
+                
+                # 2. Dibujamos el agua
+                # Creamos el círculo que representa el agua
+                agua_esf = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.6, zorder=1)
                 ax_t.add_patch(agua_esf)
-                from matplotlib.transforms import Bbox
-                agua_esf.set_clip_box(Bbox.from_extents(-r_max, 0, r_max, h_corrida))
+                
+                # 3. TRUCO DE RECORTE (CLIPPING): Solo muestra agua hasta h_corrida
+                # Creamos un rectángulo invisible que define el nivel actual
+                recorte_nivel = plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, transform=ax_t.transData)
+                agua_esf.set_clip_path(recorte_nivel)
+                
+                # 4. Dibujamos el borde del tanque (encima del agua)
+                borde_tanque = plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=4, zorder=2)
+                ax_t.add_patch(borde_tanque)
 
             # Dibujo de Tuberías y Válvulas
             ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
@@ -515,7 +525,7 @@ else:
             ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50'))
             ax_t.text(c_in_x-0.6, c_in_y+0.4, "V-01", ha='center', fontsize=9, fontweight='bold')
 
-           # --- DIBUJO DE SALIDA Y VÁLVULA DE CONTROL (CORREGIDO) ---
+           # --- DIBUJO DE SALIDA Y VÁLVULA DE CONTROL ---
             t_ancho = 0.2
             
             if geom_tanque == "Cilíndrico":
@@ -555,7 +565,7 @@ else:
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
 
-            # C. Tendencia de Nivel (CORREGIDA IDENTACIÓN)
+            # C. Tendencia de Nivel 
             fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
             
             # Graficamos el nivel con etiqueta para la leyenda
