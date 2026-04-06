@@ -580,8 +580,8 @@ else:
             # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
         if mostrar_ref:
             # Extraemos los datos y convertimos de cm a m
-            t_usr = datos_manuales["Tiempo (s)"]
-            h_usr = [x / 100 for x in datos_manuales["Nivel Medido (m)"]]
+            t_usr = datos_usr["Tiempo (s)"]
+            h_usr = [x / 100 for x in datos_usr["Nivel Medido (m)"]]
             
             # Dibujamos los puntos (X)
             ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=100, 
