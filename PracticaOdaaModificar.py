@@ -578,13 +578,14 @@ else:
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
             # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
-        if mostrar_ref: 
-            t_usr = datos_usr["Tiempo (s)"]
-            h_usr = datos_usr["Nivel Medido (m)"]
+       if mostrar_ref:
+            t_usr = datos_manuales["Tiempo (s)"]
+            # --- CONVERSIÓN DE CM A METROS ---
+            h_usr = [x / 100 for x in datos_manuales["Nivel Medido (m)"]] 
             
-            # Dibujamos los puntos como cruces rojas (X)
-            ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=50, 
-                          label='Datos Experimentales', zorder=5)
+            # Ahora graficamos
+            ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=100, 
+                          label='Datos Experimentales (cm -> m)', zorder=5)
             
             # Línea punteada de referencia
             ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
