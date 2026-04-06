@@ -578,27 +578,21 @@ else:
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
             # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
+        # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
         if mostrar_ref:
-            # Extraemos los datos y convertimos de cm a m
             t_usr = datos_usr["Tiempo (s)"]
+            # La conversión ocurre aquí internamente:
             h_usr = [x / 100 for x in datos_usr["Nivel Medido (m)"]]
             
-            # Dibujamos los puntos (X)
+            # Cambiamos el label para que sea más limpio
             ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=100, 
-                          label='Datos Experimentales (cm)', zorder=5)
+                          label='Datos Experimentales', zorder=5)
             
-            # Dibujamos la línea punteada (Asegúrate de que esta línea esté alineada con el scatter)
-            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
+            # Quitamos el label de la línea para no repetir en la leyenda
+            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3) 
 
-        # La leyenda debe estar alineada con el IF, no dentro de él
+        # Configuración final de la leyenda
             ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
-            
-            # Dibujamos una línea punteada suave que una los puntos experimentales
-            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
-
-        # Actualizamos la leyenda para incluir los nuevos datos
-            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
-            
             # Línea punteada de referencia
             ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
             ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
