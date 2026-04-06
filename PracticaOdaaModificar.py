@@ -305,7 +305,7 @@ with st.sidebar.expander("Parámetros del Controlador PID"):
     ki_val = c2.number_input("Ki", value=0.5)
     kd_val = c3.number_input("Kd", value=0.1)
     tiempo_ensayo = st.sidebar.slider("Tiempo de simulación [s]", 60, 600, 300)
-    with st.sidebar.expander("📊 Cargar Datos Experimentales"):
+with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     st.write("Ingresa los datos medidos en el laboratorio:")
     # Tabla interactiva para el usuario
     datos_usr = st.data_editor({
