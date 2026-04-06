@@ -577,15 +577,23 @@ else:
             # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-            # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
+         
+           # --- COMPARACIÓN CON DATOS EXPERIMENTALES  ---
         if mostrar_ref:
+            # Extraemos los datos de la tabla de la barra lateral
             t_usr = datos_manuales["Tiempo (s)"]
-            # --- CONVERSIÓN DE CM A METROS ---
-            h_usr = [x / 100 for x in datos_manuales["Nivel Medido (m)"]] 
+            # Convertimos automáticamente de cm a metros para que coincida con la gráfica
+            h_usr = [x / 100 for x in datos_manuales["Nivel Medido (m)"]]
             
-            # Ahora graficamos
+            # Dibujamos las X rojas sobre la línea de tendencia
             ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=100, 
-                          label='Datos Experimentales (cm -> m)', zorder=5)
+                          label='Datos Experimentales (cm)', zorder=5)
+            
+            # Dibujamos una línea punteada suave que una los puntos experimentales
+            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
+
+        # Actualizamos la leyenda para incluir los nuevos datos
+        ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
             
             # Línea punteada de referencia
             ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
