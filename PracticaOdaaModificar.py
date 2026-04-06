@@ -578,7 +578,7 @@ else:
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
             # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
-        if ver_puntos: 
+        if mostrar_ref: 
             t_usr = datos_usr["Tiempo (s)"]
             h_usr = datos_usr["Nivel (m)"]
             
