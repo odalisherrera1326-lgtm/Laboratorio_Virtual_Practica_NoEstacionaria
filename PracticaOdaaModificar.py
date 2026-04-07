@@ -193,7 +193,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =============================================================================
-# ENCABEZADO INSTITUCIONAL Y DIAGRAMA DE LA PRÁCTICA
+# ENCABEZADO INSTITUCIONAL CON FONDO 
 # =============================================================================
 import base64
 
@@ -203,35 +203,29 @@ def get_base64(path):
             return base64.b64encode(f.read()).decode()
     return None
 
-# Nombres de archivos (ASEGÚRATE DE QUE SE LLAMEN EXACTAMENTE ASÍ EN GITHUB)
 logo_ucv_64 = get_base64("logo_ucv.png")
 logo_eiq_64 = get_base64("logoquimicaborde.png")
-# Esta es la imagen que falta en tu captura:
-imagen_esquema = "esquema_proceso.png" 
 
 st.markdown(f"""
 <div class="header-container">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="width: 120px;">
+        <div class="img-fluid" style="width: 120px;">
             {f'<img src="data:image/png;base64,{logo_ucv_64}" width="100">' if logo_ucv_64 else "UCV"}
         </div>
         <div>
             <h1 style="color: white !important; font-size: 2.2rem;">Práctica Virtual: Balance en estado no estacionario</h1>
             <p style="color: #d4e6f1 !important; margin: 0;">Escuela de Ingeniería Química | Facultad de Ingeniería - UCV</p>
         </div>
-        <div style="width: 160px;">
+        <div class="img-fluid" style="width: 160px;">
             {f'<img src="data:image/png;base64,{logo_eiq_64}" width="150">' if logo_eiq_64 else "EIQ"}
         </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("---")
-with st.expander("🖼️ Ver Esquema de la Instalación Experimental", expanded=True):
-    if os.path.exists(Captura de pantalla 2026-03-29 163125.png):
-        st.image(Captura de pantalla 2026-03-29 163125.png, use_container_width=True, caption="Figura 1. Sistema de tanques interactuantes - Laboratorio de Operaciones Unitarias UCV")
-    else:
-        st.warning(f"⚠️ El archivo '{Captura de pantalla 2026-03-29 163125.png}' no se encuentra en la carpeta del proyecto. Por favor, súbelo a GitHub.")
+# =============================================================================
+# 2. MARCO TEÓRICO: BALANCE DE MASA Y TORRICELLI
+# =============================================================================
 # =============================================================================
 # 2. MARCO TEÓRICO INTEGRADO: FÍSICA Y CONTROL
 # =============================================================================
@@ -396,10 +390,74 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
 
 
 # =============================================================================
-# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA 
+# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA (CORREGIDA)
 # =============================================================================
 
- # 3. Bucle de Simulación
+if iniciar_sim:
+    st.session_state.ejecutando = True
+
+# Determinamos si el expander del diagrama debe estar abierto
+estado_expander = not st.session_state.ejecutando
+
+# --- PESTAÑA DEL DIAGRAMA ---
+with st.expander("Diagrama del Proceso", expanded=estado_expander):
+    col_img = st.columns([1, 5, 1])[1]
+    with col_img:
+        # Asegúrate de que el nombre del archivo coincida exactamente con el de tu PC
+        if os.path.exists("Captura de pantalla 2026-03-29 163125.png"):
+            st.image("Captura de pantalla 2026-03-29 163125.png", use_container_width=True)
+        else:
+            st.info("📍 El diagrama del sistema se mostrará aquí.")
+
+# --- LÓGICA DE CONTROL DE ESTADOS ---
+if not st.session_state.ejecutando:
+    st.info("💡 Ajuste los parámetros en la barra lateral y presione 'Iniciar' para comenzar.")
+else:
+    # 1. Dashboard de columnas
+    col_graf, col_met = st.columns([2, 1])
+
+    with col_graf:
+        st.subheader("Monitor del Proceso")
+        placeholder_tanque = st.empty()
+        st.subheader("Tendencia Temporal")
+        placeholder_grafico = st.empty()
+        st.subheader("⚙️ Acción del Controlador")
+        placeholder_u = st.empty()
+        # --- NUEVO: Espacio para el estado de la válvula ---
+        st.markdown("---")
+        st.subheader("⚙️ Estado de Operación: Válvula V-02")
+        placeholder_valvula = st.empty()
+       
+
+    with col_met:
+        st.subheader("Métricas de Control")
+        placeholder_iae = st.empty()
+        placeholder_itae = st.empty()
+        placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
+        placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
+        
+        st.markdown("---")
+        m_h = st.empty()
+        m_e = st.empty()
+        m_h.metric("Nivel PV [m]", "0.000")
+        m_e.metric("Error [m]", "0.000")
+        
+        st.markdown("---")
+        area_descarga = st.empty()
+
+    # 2. Preparación de datos
+    status_placeholder = st.empty()
+    dt = 1.0 
+    vector_t = np.arange(0, tiempo_ensayo, dt)
+    h_log, u_log, sp_log, e_log = [], [], [], []
+    h_corrida = h_total if op_tipo == "Vaciado" else 0.05
+    err_int, err_pasado = 0, 0
+    iae_acumulado = 0
+    itae_acumulado = 0
+    
+    barra_p = st.progress(0)
+
+    # 3. Bucle de Simulación
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
@@ -520,7 +578,31 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
             # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
-      
+        # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
+        if mostrar_ref:
+            t_usr = datos_usr["Tiempo (s)"]
+            # La conversión ocurre aquí internamente:
+            h_usr = [x / 100 for x in datos_usr["Nivel Medido (m)"]]
+            
+            # Cambiamos el label para que sea más limpio
+            ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=100, 
+                          label='Datos Experimentales', zorder=5)
+            
+            # Quitamos el label de la línea para no repetir en la leyenda
+            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3) 
+
+        # Configuración final de la leyenda
+            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
+            # Línea punteada de referencia
+            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
+            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
+            
+            ax_tr.set_xlim(0, tiempo_ensayo)
+            ax_tr.set_ylim(0, h_total*1.1)
+            ax_tr.grid(True, alpha=0.2)
+            
+            placeholder_grafico.pyplot(fig_tr)
+            plt.close(fig_tr)
             
             # D. Acción de Control
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
@@ -566,31 +648,6 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
     st.balloons()
 
-    # --- FINAL DE LA SIMULACIÓN (FUERA DEL BUCLE) ---
-    status_placeholder.empty()
-    st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
-    st.balloons()
-
-    # --- SECCIÓN DE VALIDACIÓN ---
-    st.markdown("---") 
-    st.subheader("📊 Validación del Modelo: Simulación vs. Planta")
-
-    if mostrar_ref:
-        fig_val, ax_val = plt.subplots(figsize=(8, 4))
-        t_usr = datos_usr["Tiempo (s)"]
-        h_usr_m = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
-        
-        ax_val.scatter(t_usr, h_usr_m, color='red', marker='x', s=100, label='Planta Real')
-        ax_val.plot(t_usr, h_usr_m, color='red', linestyle='--', alpha=0.3)
-        
-        if 'historial' in st.session_state and not st.session_state.historial.empty:
-            df_sim = st.session_state.historial
-            ax_val.plot(df_sim["Tiempo [s]"], df_sim["Nivel [m]"], 
-                        color='#1f77b4', linewidth=2, label='Modelo Teórico')
-        
-        ax_val.legend(loc='best')
-        st.pyplot(fig_val)
-        plt.close(fig_val)
   # =============================================================================
     # 7. ANÁLISIS DE RESPUESTA TRANSITORIA (AMPLITUD VS TIEMPO)
     # =============================================================================
