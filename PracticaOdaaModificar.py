@@ -294,6 +294,14 @@ with st.sidebar.expander(" Especificaciones del Tanque", expanded=True):
     h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
     sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.1, float(h_total), float(h_total/2))
 
+with st.sidebar.expander(" Dimensiones de Salida", expanded=True):
+    # Entrada en pulgadas porque es el estándar de las tuberías en el laboratorio
+    d_pulgadas = st.number_input("Diámetro del Orificio (pulgadas)", value=1.0, min_value=0.1, step=0.1)
+    # Conversión a metros para los cálculos de ingeniería
+    d_metros = d_pulgadas * 0.0254
+    area_orificio = np.pi * (d_metros / 2)**2
+    st.caption(f"Área calculada: {area_orificio:.6f} m²")
+
 with st.sidebar.expander(" Escenario de Perturbación ($Q_p$)"):
     p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
     p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.045, format="%.4f") if p_activa else 0.0
@@ -314,6 +322,22 @@ with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     }, num_rows="dynamic")
     
     mostrar_ref = st.checkbox("Mostrar referencia en gráfica", value=True)
+# --- EN EL SIDEBAR ---
+with st.sidebar:
+    st.header("Calibración Experimental")
+    
+    # Campo para el diámetro que definimos antes
+    d_pulg = st.number_input("Diámetro salida (pulg)", value=1.0)
+    area_o = np.pi * ((d_pulg * 0.0254) / 2)**2
+
+    # El botón que activa la función que acabas de pegar
+    if st.button("🧪 Ejecutar Calibración LOU"):
+        # Llamamos a la función usando los datos de la tabla (datos_usr)
+        cd_calculado = calcular_cd_inteligente(datos_usr, r_max, h_total, geom_tanque, area_o)
+        
+        # Guardamos el resultado en el session_state para que no se borre al refrescar
+        st.session_state['cd_final'] = cd_calculado
+        st.success(f"Cd calculado: {cd_calculado:.4f}")
 # =============================================================================
 st.sidebar.markdown("---")
 st.sidebar.subheader("📚 Biblioteca Técnica")
@@ -349,6 +373,22 @@ if btn_reset:
 # =============================================================================
 # 4. LÓGICA DE CÁLCULO: MÉTODO DE EULER
 # =============================================================================
+
+
+def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
+    """
+    Calcula el Coeficiente de Descarga (Cd) usando el balance de masa 
+    ajustado a la geometría específica del tanque.
+    """
+    if len(df_usr) < 2:
+        return 0.61
+    
+    # ... (el resto del código que pusiste) ...
+    return float(np.clip(cd_result, 0.4, 1.0))
+
+def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val):
+    # (Aquí va tu función principal del simulador)
+    pass
 def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op):
     # 1. Cálculo de área según geometría
     if geom == "Cilíndrico":
@@ -465,15 +505,18 @@ else:
    
 
     # 3. Bucle de Simulación
+    cd_para_simular = st.session_state.get('cd_final', 0.61)
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
         # Lógica de perturbación
         q_p_inst = p_magnitud if ('p_activa' in locals() and p_activa and t_act >= p_tiempo) else 0.0
-        
+    
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
-            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, err_int, err_pasado, op_tipo
+        dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, 
+        err_int, err_pasado, op_tipo, cd_para_simular
         )
+        
         
         # Cálculo de métricas integrales
         iae_acumulado += abs(e_inst) * dt
