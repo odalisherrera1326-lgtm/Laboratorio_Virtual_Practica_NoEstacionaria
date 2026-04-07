@@ -577,8 +577,7 @@ else:
             # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-           
-         # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
+           # --- NUEVA SECCIÓN: GRÁFICA DE VALIDACIÓN (METROS) ---
         st.markdown("---") 
         st.subheader("📊 Validación del Modelo: Simulación vs. Planta")
         
@@ -590,26 +589,24 @@ else:
             h_usr_m = [x / 100 for x in datos_usr["Nivel Medido (m)"]]
             
             # 2. Graficamos los datos reales (Cruces Rojas)
-            ax_val.scatter(t_usr, h_usr_m, color='red', marker='x', s=100, label='Datos Experimentales (Reales)')
+            ax_val.scatter(t_usr, h_usr_m, color='red', marker='x', s=100, label='Real')
             ax_val.plot(t_usr, h_usr_m, color='red', linestyle='--', alpha=0.4)
             
-            # 3. Graficamos la respuesta del modelo (Línea Azul) para comparar
-            # 't' y 'h' son las variables de tu simulación actual
-            ax_val.plot(t, h, color='#1f77b4', linewidth=2, label='Predicción del Modelo (Teórica)')
+            # 3. Graficamos la respuesta teórica (Línea Azul)
+            # Asegúrate de que esta línea esté escrita tal cual aquí:
+            ax_val.plot(t, h, color='#1f77b4', linewidth=2, label='Teórico')
             
-            # 4. Estética de la gráfica de validación
-            ax_val.set_title("Comparativa de Desempeño: Realidad vs. Teoría", fontsize=12, fontweight='bold')
-            ax_val.set_xlabel('Tiempo [s]', fontsize=10)
-            ax_val.set_ylabel('Altura [m]', fontsize=10)
+            # 4. Estética de la gráfica
+            ax_val.set_title("Comparativa: Realidad vs. Teoría", fontsize=12, fontweight='bold')
+            ax_val.set_xlabel('Tiempo [s]')
+            ax_val.set_ylabel('Altura [m]')
             ax_val.set_ylim(0, h_total * 1.1) 
             ax_val.grid(True, alpha=0.3, linestyle=':')
-            ax_val.legend(loc='best', fontsize='small')
+            ax_val.legend(loc='best')
             
-            # 5. Mostrar la nueva figura
             st.pyplot(fig_val)
             plt.close(fig_val)
-            
-            st.success("✅ Validación generada: Comparación automática en metros.")
+            st.success("✅ Validación generada correctamente.")
         else:
             st.info("💡 Activa la referencia para ver el análisis comparativo entre la simulación y tus datos.")
             
