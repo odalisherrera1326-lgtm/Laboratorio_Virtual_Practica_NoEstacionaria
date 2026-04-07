@@ -224,9 +224,6 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # =============================================================================
-# 2. MARCO TEÓRICO: BALANCE DE MASA Y TORRICELLI
-# =============================================================================
-# =============================================================================
 # 2. MARCO TEÓRICO INTEGRADO: FÍSICA Y CONTROL
 # =============================================================================
 col_teoria1, col_teoria2,col_teoria3 = st.columns(3)
@@ -390,74 +387,10 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
 
 
 # =============================================================================
-# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA (CORREGIDA)
+# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA 
 # =============================================================================
 
-if iniciar_sim:
-    st.session_state.ejecutando = True
-
-# Determinamos si el expander del diagrama debe estar abierto
-estado_expander = not st.session_state.ejecutando
-
-# --- PESTAÑA DEL DIAGRAMA ---
-with st.expander("Diagrama del Proceso", expanded=estado_expander):
-    col_img = st.columns([1, 5, 1])[1]
-    with col_img:
-        # Asegúrate de que el nombre del archivo coincida exactamente con el de tu PC
-        if os.path.exists("Captura de pantalla 2026-03-29 163125.png"):
-            st.image("Captura de pantalla 2026-03-29 163125.png", use_container_width=True)
-        else:
-            st.info("📍 El diagrama del sistema se mostrará aquí.")
-
-# --- LÓGICA DE CONTROL DE ESTADOS ---
-if not st.session_state.ejecutando:
-    st.info("💡 Ajuste los parámetros en la barra lateral y presione 'Iniciar' para comenzar.")
-else:
-    # 1. Dashboard de columnas
-    col_graf, col_met = st.columns([2, 1])
-
-    with col_graf:
-        st.subheader("Monitor del Proceso")
-        placeholder_tanque = st.empty()
-        st.subheader("Tendencia Temporal")
-        placeholder_grafico = st.empty()
-        st.subheader("⚙️ Acción del Controlador")
-        placeholder_u = st.empty()
-        # --- NUEVO: Espacio para el estado de la válvula ---
-        st.markdown("---")
-        st.subheader("⚙️ Estado de Operación: Válvula V-02")
-        placeholder_valvula = st.empty()
-       
-
-    with col_met:
-        st.subheader("Métricas de Control")
-        placeholder_iae = st.empty()
-        placeholder_itae = st.empty()
-        placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
-        placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
-        
-        st.markdown("---")
-        m_h = st.empty()
-        m_e = st.empty()
-        m_h.metric("Nivel PV [m]", "0.000")
-        m_e.metric("Error [m]", "0.000")
-        
-        st.markdown("---")
-        area_descarga = st.empty()
-
-    # 2. Preparación de datos
-    status_placeholder = st.empty()
-    dt = 1.0 
-    vector_t = np.arange(0, tiempo_ensayo, dt)
-    h_log, u_log, sp_log, e_log = [], [], [], []
-    h_corrida = h_total if op_tipo == "Vaciado" else 0.05
-    err_int, err_pasado = 0, 0
-    iae_acumulado = 0
-    itae_acumulado = 0
-    
-    barra_p = st.progress(0)
-
-    # 3. Bucle de Simulación
+ # 3. Bucle de Simulación
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
@@ -577,65 +510,75 @@ else:
             # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-        # --- 1. FINAL DE LA GRÁFICA PRINCIPAL ---
-        st.pyplot(fig)
-        plt.close(fig)
-
-# --- D. ACCIÓN DEL CONTROLADOR (DENTRO DEL BUCLE) ---
+            # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
+      
+            
+            # D. Acción de Control
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
             ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
             ax_u.set_xlim(0, tiempo_ensayo)
+            # El eje Y se ajusta al valor máximo de flujo detectado + un margen del 20%
             techo_dinamico = max(max(u_log), 0.1) * 1.2 if u_log else 0.7
             ax_u.set_ylim(0, techo_dinamico)
             ax_u.grid(True, alpha=0.2)
             ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
             placeholder_u.pyplot(fig_u)
-            plt.close(fig_u)
-
-            # --- E. LÓGICA DE LA VÁLVULA (DENTRO DEL BUCLE) ---
+            # --- LÓGICA DE LA VÁLVULA ---
             fig_v, ax_v = plt.subplots(figsize=(8, 3))
+            
+            # Dibujamos la apertura (u_log) en color verde
             ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5, label='Apertura Real')
             ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
+            
+            # Configuramos los límites para que se vea claro el On/Off
             ax_v.set_ylim(-0.1, 1.1) 
             ax_v.set_yticks([0, 0.5, 1])
             ax_v.set_yticklabels(['CERRADA (0%)', '50%', 'ABIERTA (100%)'])
-            ax_v.set_title("Comportamiento Dinámico de la Válvula", fontsize=10, fontweight='bold')
-            ax_v.grid(True, axis='y', ls='--', alpha=0.5)
-            placeholder_valvula.pyplot(fig_v)
-            plt.close(fig_v) 
             
-            time.sleep(0.01) 
-            barra_p.progress((i+1)/len(vector_t))
+            # Estética profesional para la UCV
+            ax_v.set_title("Comportamiento Dinámico de la Válvula de Control", fontsize=10, fontweight='bold')
+            ax_v.grid(True, axis='y', ls='--', alpha=0.5)
+            ax_v.set_xlabel("Tiempo de simulación [s]")
+            
+            # Mostramos en el espacio creado
+            placeholder_valvula.pyplot(fig_v)
+            plt.close(fig_v) # Importante cerrar para no saturar la memoria
+            
+           
+           
+            
+            plt.close(fig_u)
+        
+        time.sleep(0.01) 
+        barra_p.progress((i+1)/len(vector_t))
+
+    status_placeholder.empty()
+    st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
+    st.balloons()
 
     # --- FINAL DE LA SIMULACIÓN (FUERA DEL BUCLE) ---
     status_placeholder.empty()
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
     st.balloons()
 
-    # --- SECCIÓN DE VALIDACIÓN (DIBUJA UNA SOLA VEZ AL FINAL) ---
+    # --- SECCIÓN DE VALIDACIÓN ---
     st.markdown("---") 
     st.subheader("📊 Validación del Modelo: Simulación vs. Planta")
 
     if mostrar_ref:
         fig_val, ax_val = plt.subplots(figsize=(8, 4))
-        
-        # Datos experimentales convertidos a metros
         t_usr = datos_usr["Tiempo (s)"]
         h_usr_m = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
         
         ax_val.scatter(t_usr, h_usr_m, color='red', marker='x', s=100, label='Planta Real')
         ax_val.plot(t_usr, h_usr_m, color='red', linestyle='--', alpha=0.3)
         
-        # Recuperamos la curva azul del historial
         if 'historial' in st.session_state and not st.session_state.historial.empty:
             df_sim = st.session_state.historial
             ax_val.plot(df_sim["Tiempo [s]"], df_sim["Nivel [m]"], 
                         color='#1f77b4', linewidth=2, label='Modelo Teórico')
         
-        ax_val.set_title("Comparativa de Resultados Finales", fontsize=12, fontweight='bold')
-        ax_val.set_xlabel('Tiempo [s]')
-        ax_val.set_ylabel('Altura [m]')
         ax_val.legend(loc='best')
         st.pyplot(fig_val)
         plt.close(fig_val)
