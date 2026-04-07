@@ -305,16 +305,6 @@ with st.sidebar.expander("Parámetros del Controlador PID"):
     ki_val = c2.number_input("Ki", value=0.5)
     kd_val = c3.number_input("Kd", value=0.1)
     tiempo_ensayo = st.sidebar.slider("Tiempo de simulación [s]", 60, 600, 300)
-
-
-with st.sidebar.expander("🎯 Ajuste de Modelo (Validación)", expanded=True):
-    cd_input = st.slider(
-        "Coeficiente de Descarga (Cd)", 
-        min_value=0.40, 
-        max_value=1.00, 
-        value=0.61, 
-        help="Ajusta este valor para que el simulador coincida con tus datos reales."
-    )
 with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     st.write("Ingresa los datos medidos en el laboratorio:")
     # Tabla interactiva para el usuario
@@ -359,8 +349,8 @@ if btn_reset:
 # =============================================================================
 # 4. LÓGICA DE CÁLCULO: MÉTODO DE EULER
 # =============================================================================
-def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val):
-    # Cálculo de área según geometría
+def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op):
+    # 1. Cálculo de área según geometría
     if geom == "Cilíndrico":
         area_h = np.pi * (r**2)
     elif geom == "Cónico":
@@ -370,28 +360,32 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
     
     area_h = max(area_h, 0.01) 
 
-    # Algoritmo PID
+    # 2. Algoritmo PID
     err = sp - h_prev
     e_sum += err * dt
     e_der = (err - e_prev) / dt
     u_control = (kp_val * err) + (ki_val * e_sum) + (kd_val * e_der)
     
-    # Balance de Masa con CD dinámico
+    # 3. Lógica de Operación y Balance de Masa
     if modo_op == "Llenado":
+        # Controlamos la ENTRADA. La perturbación es una fuga o entrada extra.
         q_entrada = np.clip(u_control, 0, 0.6)
-        # Se aplica cd_val a la salida natural por el orificio
-        q_salida = cd_val * 0.04 * np.sqrt(2 * 9.81 * h_prev) if h_prev > 0.005 else 0
+        q_salida = 0.61 * 0.04 * np.sqrt(2 * 9.81 * h_prev) if h_prev > 0.005 else 0
+        
+        # dh/dt = (Entrada_Control + Perturbación - Salida_Natural) / Área
         dh_dt = (q_entrada + q_p_val - q_salida) / area_h
         u_graficar = q_entrada
     else:
-        q_entrada = q_p_val  
-        # Se aplica cd_val a la capacidad máxima de descarga controlada
-        capacidad_max = cd_val * 0.04 * np.sqrt(2 * 9.81 * h_prev) if h_prev > 0.005 else 0
-        q_salida = np.clip(-u_control, 0, capacidad_max) 
+        # VACIADO: Controlamos la SALIDA. La perturbación es el FLUJO DE ENTRADA.
+        q_entrada = q_p_val  # La perturbación entra al tanque
+        q_salida = np.clip(-u_control, 0, 0.6) # PID abre la válvula de salida
+        
+        # dh/dt = (Entrada_Perturbación - Salida_Controlada) / Área
         dh_dt = (q_entrada - q_salida) / area_h
         u_graficar = q_salida
     
     h_next = np.clip(h_prev + dh_dt * dt, 0, h_t)
+    
     return h_next, u_graficar, err, e_sum, err
 
 
@@ -478,7 +472,7 @@ else:
         q_p_inst = p_magnitud if ('p_activa' in locals() and p_activa and t_act >= p_tiempo) else 0.0
         
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
-            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, err_int, err_pasado, op_tipo ,cd_input
+            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, err_int, err_pasado, op_tipo
         )
         
         # Cálculo de métricas integrales
@@ -738,3 +732,4 @@ else:
         st.success(f"✅ El sistema alcanzó el estado estacionario en {h_log[-1]:.3f} m.")
     else:
         st.warning(f"⚠️ El sistema presenta un error residual de {err_f:.3f} m. Se sugiere ajustar Kp/Ki.")
+
