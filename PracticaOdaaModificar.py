@@ -572,42 +572,28 @@ else:
             # Renderizado final
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
-            # C. Tendencia de Nivel 
+            # --- C. Tendencia de Nivel (SOLO SIMULACIÓN) --- 
             fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
             
-            # Graficamos el nivel con etiqueta para la leyenda
+            # Graficamos solo el nivel simulado
             ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel del Tanque (h)')
             
-            # Graficamos la consigna (Setpoint) con etiqueta
+            # Graficamos la consigna (Setpoint)
             ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Consigna (Setpoint)')
             
             # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-            # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
-        # --- COMPARACIÓN CON DATOS EXPERIMENTALES (UCV) ---
-        if mostrar_ref:
-            t_usr = datos_usr["Tiempo (s)"]
-            # La conversión ocurre aquí internamente:
-            h_usr = [x / 100 for x in datos_usr["Nivel Medido (m)"]]
             
-            # Cambiamos el label para que sea más limpio
-            ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=100, 
-                          label='Datos Experimentales', zorder=5)
-            
-            # Quitamos el label de la línea para no repetir en la leyenda
-            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3) 
-
-        # Configuración final de la leyenda
-            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
-            # Línea punteada de referencia
-            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
+            # Configuración de la leyenda (sin datos experimentales)
             ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
             
+            # Límites y rejilla
             ax_tr.set_xlim(0, tiempo_ensayo)
-            ax_tr.set_ylim(0, h_total*1.1)
+            ax_tr.set_ylim(0, h_total * 1.1)
             ax_tr.grid(True, alpha=0.2)
             
+            # Renderizado
             placeholder_grafico.pyplot(fig_tr)
             plt.close(fig_tr)
             
