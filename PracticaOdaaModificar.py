@@ -310,7 +310,7 @@ with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     # Tabla interactiva para el usuario
     datos_usr = st.data_editor({
         "Tiempo (s)": [0, 60, 120, 180, 240, 300],
-        "Nivel Medido (cm)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        "Nivel Medido (m)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     }, num_rows="dynamic")
     
     mostrar_ref = st.checkbox("Mostrar referencia en gráfica", value=True)
