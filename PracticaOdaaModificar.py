@@ -592,17 +592,17 @@ else:
             h_usr = [x / 100 for x in datos_usr["Nivel Medido (m)"]]
             
             # Cambiamos el label para que sea más limpio
-            ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=100, 
+            #ax_tr.scatter(t_usr, h_usr, color='red', marker='x', s=100, 
                           label='Datos Experimentales', zorder=5)
             
             # Quitamos el label de la línea para no repetir en la leyenda
-            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3) 
+            #ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3) 
 
         # Configuración final de la leyenda
             ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
             # Línea punteada de referencia
-            ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
-            ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
+            #ax_tr.plot(t_usr, h_usr, color='red', linestyle='--', alpha=0.3)
+            #ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
             
             ax_tr.set_xlim(0, tiempo_ensayo)
             ax_tr.set_ylim(0, h_total*1.1)
