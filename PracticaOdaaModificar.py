@@ -310,7 +310,7 @@ with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     # Tabla interactiva para el usuario
     datos_usr = st.data_editor({
         "Tiempo (s)": [0, 60, 120, 180, 240, 300],
-        "Nivel Medido (m)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        "Nivel Medido (cm)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     }, num_rows="dynamic")
     
     mostrar_ref = st.checkbox("Mostrar referencia en gráfica", value=True)
@@ -427,6 +427,10 @@ else:
         st.markdown("---")
         st.subheader("⚙️ Estado de Operación: Válvula V-02")
         placeholder_valvula = st.empty()
+        # --- NUEVO: Gráfica Independiente de Validación ---
+        st.markdown("---")
+        st.subheader("📊 Comparativa: Modelo Teórico vs Planta Real")
+        placeholder_comparativa = st.empty()
        
 
     with col_met:
@@ -454,8 +458,11 @@ else:
     err_int, err_pasado = 0, 0
     iae_acumulado = 0
     itae_acumulado = 0
-    
+   
+    t_exp = datos_usr["Tiempo (s)"]
+    h_exp = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
     barra_p = st.progress(0)
+   
 
     # 3. Bucle de Simulación
     for i, t_act in enumerate(vector_t):
@@ -634,6 +641,23 @@ else:
             
             # Mostramos en el espacio creado
             placeholder_valvula.pyplot(fig_v)
+            # --- PEGAR AQUÍ: GRÁFICA COMPARATIVA ---
+            fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
+            ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación')
+            
+            if mostrar_ref:
+                ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos UCV')
+                ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
+
+            ax_comp.set_title("Validación de Resultados", fontsize=10, fontweight='bold')
+            ax_comp.set_xlabel("Tiempo [s]")
+            ax_comp.set_ylabel("Nivel [m]")
+            ax_comp.set_ylim(0, h_total * 1.1)
+            ax_comp.grid(True, alpha=0.3)
+            ax_comp.legend(loc='lower right')
+            
+            placeholder_comparativa.pyplot(fig_comp)
+            plt.close(fig_comp)
             plt.close(fig_v) # Importante cerrar para no saturar la memoria
             
            
