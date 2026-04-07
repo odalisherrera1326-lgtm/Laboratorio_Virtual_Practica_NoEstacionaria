@@ -193,7 +193,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # =============================================================================
-# ENCABEZADO INSTITUCIONAL CON FONDO 
+# ENCABEZADO INSTITUCIONAL Y DIAGRAMA DE LA PRÁCTICA
 # =============================================================================
 import base64
 
@@ -203,26 +203,35 @@ def get_base64(path):
             return base64.b64encode(f.read()).decode()
     return None
 
+# Nombres de archivos (ASEGÚRATE DE QUE SE LLAMEN EXACTAMENTE ASÍ EN GITHUB)
 logo_ucv_64 = get_base64("logo_ucv.png")
 logo_eiq_64 = get_base64("logoquimicaborde.png")
+# Esta es la imagen que falta en tu captura:
+imagen_esquema = "esquema_proceso.png" 
 
 st.markdown(f"""
 <div class="header-container">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div class="img-fluid" style="width: 120px;">
+        <div style="width: 120px;">
             {f'<img src="data:image/png;base64,{logo_ucv_64}" width="100">' if logo_ucv_64 else "UCV"}
         </div>
         <div>
             <h1 style="color: white !important; font-size: 2.2rem;">Práctica Virtual: Balance en estado no estacionario</h1>
             <p style="color: #d4e6f1 !important; margin: 0;">Escuela de Ingeniería Química | Facultad de Ingeniería - UCV</p>
         </div>
-        <div class="img-fluid" style="width: 160px;">
+        <div style="width: 160px;">
             {f'<img src="data:image/png;base64,{logo_eiq_64}" width="150">' if logo_eiq_64 else "EIQ"}
         </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
+st.markdown("---")
+with st.expander("🖼️ Ver Esquema de la Instalación Experimental", expanded=True):
+    if os.path.exists(Captura de pantalla 2026-03-29 163125.png):
+        st.image(Captura de pantalla 2026-03-29 163125.png, use_container_width=True, caption="Figura 1. Sistema de tanques interactuantes - Laboratorio de Operaciones Unitarias UCV")
+    else:
+        st.warning(f"⚠️ El archivo '{Captura de pantalla 2026-03-29 163125.png}' no se encuentra en la carpeta del proyecto. Por favor, súbelo a GitHub.")
 # =============================================================================
 # 2. MARCO TEÓRICO INTEGRADO: FÍSICA Y CONTROL
 # =============================================================================
