@@ -313,7 +313,7 @@ with st.sidebar.expander("🎯 Ajuste de Modelo (Validación)", expanded=True):
         min_value=0.40, 
         max_value=1.00, 
         value=0.61, 
-        help="Ajusta este valor para que el simulador coincida con tus datos reales de la UCV."
+        help="Ajusta este valor para que el simulador coincida con tus datos reales."
     )
 with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     st.write("Ingresa los datos medidos en el laboratorio:")
