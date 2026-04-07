@@ -581,82 +581,61 @@ else:
         st.pyplot(fig)
         plt.close(fig)
 
-# --- 2. SECCIÓN DE VALIDACIÓN (FUERA DE CUALQUIER BUCLE) ---
-# Fíjate que st.markdown NO tiene espacios a la izquierda (alineado al borde)
-st.markdown("---") 
-st.subheader("📊 Validación del Modelo: Simulación vs. Planta")
-
-if mostrar_ref:
-    # Creamos la figura de validación
-    fig_val, ax_val = plt.subplots(figsize=(8, 4))
-    
-    # Extraemos y convertimos cm a metros
-    t_usr = datos_usr["Tiempo (s)"]
-    h_usr_m = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
-    
-    # Graficamos datos reales
-    ax_val.scatter(t_usr, h_usr_m, color='red', marker='x', s=100, label='Planta Real')
-    ax_val.plot(t_usr, h_usr_m, color='red', linestyle='--', alpha=0.3)
-    
-    # Graficamos el modelo solo si hay datos en el historial
-    if 'historial' in st.session_state and not st.session_state.historial.empty:
-        df_sim = st.session_state.historial
-        ax_val.plot(df_sim["Tiempo [s]"], df_sim["Nivel [m]"], 
-                    color='#1f77b4', linewidth=2, label='Modelo Teórico')
-    
-    # Estética de la gráfica
-    ax_val.set_title("Comparativa de Desempeño Final", fontsize=12, fontweight='bold')
-    ax_val.set_xlabel('Tiempo [s]')
-    ax_val.set_ylabel('Altura [m]')
-    ax_val.grid(True, alpha=0.2)
-    ax_val.legend(loc='best')
-    
-    # Mostramos la gráfica una sola vez
-    st.pyplot(fig_val)
-    plt.close(fig_val)
-            # D. Acción de Control
+# --- D. Acción de Control (DENTRO DEL BUCLE) ---
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
             ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
             ax_u.set_xlim(0, tiempo_ensayo)
-            # El eje Y se ajusta al valor máximo de flujo detectado + un margen del 20%
             techo_dinamico = max(max(u_log), 0.1) * 1.2 if u_log else 0.7
             ax_u.set_ylim(0, techo_dinamico)
             ax_u.grid(True, alpha=0.2)
             ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
             placeholder_u.pyplot(fig_u)
-            # --- LÓGICA DE LA VÁLVULA ---
+            plt.close(fig_u)
+
+            # --- E. Lógica de la Válvula (DENTRO DEL BUCLE) ---
             fig_v, ax_v = plt.subplots(figsize=(8, 3))
-            
-            # Dibujamos la apertura (u_log) en color verde
             ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5, label='Apertura Real')
             ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
-            
-            # Configuramos los límites para que se vea claro el On/Off
             ax_v.set_ylim(-0.1, 1.1) 
             ax_v.set_yticks([0, 0.5, 1])
             ax_v.set_yticklabels(['CERRADA (0%)', '50%', 'ABIERTA (100%)'])
-            
-            # Estética profesional para la UCV
-            ax_v.set_title("Comportamiento Dinámico de la Válvula de Control", fontsize=10, fontweight='bold')
+            ax_v.set_title("Comportamiento Dinámico de la Válvula", fontsize=10, fontweight='bold')
             ax_v.grid(True, axis='y', ls='--', alpha=0.5)
-            ax_v.set_xlabel("Tiempo de simulación [s]")
-            
-            # Mostramos en el espacio creado
             placeholder_valvula.pyplot(fig_v)
-            plt.close(fig_v) # Importante cerrar para no saturar la memoria
+            plt.close(fig_v) 
             
-           
-           
-            
-            plt.close(fig_u)
-        
-        time.sleep(0.01) 
-        barra_p.progress((i+1)/len(vector_t))
+            time.sleep(0.01) 
+            barra_p.progress((i+1)/len(vector_t))
 
+    # --- FUERA DEL BUCLE (CUANDO TERMINA TODO) ---
     status_placeholder.empty()
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada.")
     st.balloons()
+
+    # --- SECCIÓN DE VALIDACIÓN (AQUÍ ES DONDE VA AHORA) ---
+    st.markdown("---") 
+    st.subheader("📊 Validación del Modelo: Simulación vs. Planta")
+
+    if mostrar_ref:
+        fig_val, ax_val = plt.subplots(figsize=(8, 4))
+        t_usr = datos_usr["Tiempo (s)"]
+        h_usr_m = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
+        
+        ax_val.scatter(t_usr, h_usr_m, color='red', marker='x', s=100, label='Planta Real')
+        ax_val.plot(t_usr, h_usr_m, color='red', linestyle='--', alpha=0.3)
+        
+        if 'historial' in st.session_state and not st.session_state.historial.empty:
+            df_sim = st.session_state.historial
+            ax_val.plot(df_sim["Tiempo [s]"], df_sim["Nivel [m]"], 
+                        color='#1f77b4', linewidth=2, label='Modelo Teórico')
+        
+        ax_val.set_title("Comparativa Final de Resultados", fontsize=12, fontweight='bold')
+        ax_val.set_xlabel('Tiempo [s]')
+        ax_val.set_ylabel('Altura [m]')
+        ax_val.legend(loc='best')
+        st.pyplot(fig_val)
+        plt.close(fig_val)
 
   # =============================================================================
     # 7. ANÁLISIS DE RESPUESTA TRANSITORIA (AMPLITUD VS TIEMPO)
