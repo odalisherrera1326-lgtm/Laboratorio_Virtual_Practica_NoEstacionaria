@@ -577,39 +577,43 @@ else:
             # --- CONFIGURACIÓN DE LEYENDA Y EJES ---
             ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
             ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-        # --- 1. CREA UN ESPACIO VACÍO FUERA DEL BUCLE ---
-contenedor_validacion = st.empty()
+        # --- 1. FINAL DE LA GRÁFICA PRINCIPAL ---
+        st.pyplot(fig)
+        plt.close(fig)
 
-# ... (Aquí va todo tu código de simulación y el bucle que ya tienes) ...
+# --- 2. SECCIÓN DE VALIDACIÓN (FUERA DE CUALQUIER BUCLE) ---
+# Fíjate que st.markdown NO tiene espacios a la izquierda (alineado al borde)
+st.markdown("---") 
+st.subheader("📊 Validación del Modelo: Simulación vs. Planta")
 
-# --- 2. DIBUJA LA VALIDACIÓN AQUÍ (AL FINAL DE TODO EL ARCHIVO) ---
-with contenedor_validacion.container():
-    st.markdown("---") 
-    st.subheader("📊 Validación del Modelo: Simulación vs. Planta")
+if mostrar_ref:
+    # Creamos la figura de validación
+    fig_val, ax_val = plt.subplots(figsize=(8, 4))
     
-    if mostrar_ref:
-        fig_val, ax_val = plt.subplots(figsize=(8, 4))
-        
-        t_usr = datos_usr["Tiempo (s)"]
-        h_usr_m = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
-        
-        ax_val.scatter(t_usr, h_usr_m, color='red', marker='x', s=100, label='Planta Real')
-        ax_val.plot(t_usr, h_usr_m, color='red', linestyle='--', alpha=0.3)
-        
-        # Solo graficamos si la simulación ya terminó o tiene datos
-        if 'historial' in st.session_state and not st.session_state.historial.empty:
-            df_sim = st.session_state.historial
-            ax_val.plot(df_sim["Tiempo [s]"], df_sim["Nivel [m]"], 
-                        color='#1f77b4', linewidth=2, label='Modelo Teórico')
-        
-        ax_val.set_title("Comparativa de Desempeño Final", fontsize=12, fontweight='bold')
-        ax_val.set_xlabel('Tiempo [s]')
-        ax_val.set_ylabel('Altura [m]')
-        ax_val.grid(True, alpha=0.2)
-        ax_val.legend(loc='best')
-        
-        st.pyplot(fig_val)
-        plt.close(fig_val)
+    # Extraemos y convertimos cm a metros
+    t_usr = datos_usr["Tiempo (s)"]
+    h_usr_m = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
+    
+    # Graficamos datos reales
+    ax_val.scatter(t_usr, h_usr_m, color='red', marker='x', s=100, label='Planta Real')
+    ax_val.plot(t_usr, h_usr_m, color='red', linestyle='--', alpha=0.3)
+    
+    # Graficamos el modelo solo si hay datos en el historial
+    if 'historial' in st.session_state and not st.session_state.historial.empty:
+        df_sim = st.session_state.historial
+        ax_val.plot(df_sim["Tiempo [s]"], df_sim["Nivel [m]"], 
+                    color='#1f77b4', linewidth=2, label='Modelo Teórico')
+    
+    # Estética de la gráfica
+    ax_val.set_title("Comparativa de Desempeño Final", fontsize=12, fontweight='bold')
+    ax_val.set_xlabel('Tiempo [s]')
+    ax_val.set_ylabel('Altura [m]')
+    ax_val.grid(True, alpha=0.2)
+    ax_val.legend(loc='best')
+    
+    # Mostramos la gráfica una sola vez
+    st.pyplot(fig_val)
+    plt.close(fig_val)
             # D. Acción de Control
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
             ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
