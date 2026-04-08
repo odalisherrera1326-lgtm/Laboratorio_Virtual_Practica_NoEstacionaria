@@ -448,17 +448,25 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
 # =============================================================================
 
 if iniciar_sim:
+    # 1. Activamos el estado de ejecución
     st.session_state.ejecutando = True
     
-    # --- ESTO ES LO QUE DEBE IR AQUÍ ---
-    # Calculamos el Cd usando los datos de la tabla 'datos_usr'
-    cd_calc = calcular_cd_inteligente(datos_usr, r_max, h_total, geom_tanque, area_orificio)
-    
-    # Lo guardamos en la "memoria" del navegador para que no se pierda
-    st.session_state['cd_final'] = cd_calc
-    
-    # Avisamos al usuario con un mensaje flotante
-    st.toast(f"✅ Sistema calibrado: Cd = {cd_calc:.4f}")
+    # 2. Intentamos la calibración solo si hay datos en la tabla
+    try:
+        # Convertimos a DataFrame por seguridad si no lo es
+        df_calibracion = pd.DataFrame(datos_usr)
+        
+        # Llamamos a la función
+        cd_calc = calcular_cd_inteligente(df_calibracion, r_max, h_total, geom_tanque, area_orificio)
+        
+        # Guardamos en sesión
+        st.session_state['cd_final'] = cd_calc
+        st.toast(f"✅ Sistema calibrado: Cd = {cd_calc:.4f}")
+        
+    except Exception as e:
+        # Si la tabla está vacía o mal llenada, usamos el estándar
+        st.session_state['cd_final'] = 0.61
+        st.warning("⚠️ No se pudo calibrar con datos. Usando Cd estándar (0.61)")
 
 # Determinamos si el expander del diagrama debe estar abierto
 estado_expander = not st.session_state.ejecutando
