@@ -294,13 +294,22 @@ with st.sidebar.expander(" Especificaciones del Tanque", expanded=True):
     h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
     sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.1, float(h_total), float(h_total/2))
 
+
 with st.sidebar.expander(" Dimensiones de Salida", expanded=True):
-    # Entrada en pulgadas porque es el estándar de las tuberías en el laboratorio
+    # Entrada única en pulgadas
     d_pulgadas = st.number_input("Diámetro del Orificio (pulgadas)", value=1.0, min_value=0.1, step=0.1)
-    # Conversión a metros para los cálculos de ingeniería
+    
+    # Conversión a metros
     d_metros = d_pulgadas * 0.0254
     area_orificio = np.pi * (d_metros / 2)**2
     st.caption(f"Área calculada: {area_orificio:.6f} m²")
+
+    # Botón de calibración dentro del mismo expander para mayor orden
+    if st.button("🧪 Calibrar Cd con Datos LOU"):
+        # Importante: usamos 'area_orificio' (la variable de arriba)
+        cd_calculado = calcular_cd_inteligente(datos_usr, r_max, h_total, geom_tanque, area_orificio)
+        st.session_state['cd_final'] = cd_calculado
+        st.sidebar.success(f"Modelo Ajustado: Cd = {cd_calculado:.4f}")
 
 with st.sidebar.expander(" Escenario de Perturbación ($Q_p$)"):
     p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
@@ -322,22 +331,7 @@ with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     }, num_rows="dynamic")
     
     mostrar_ref = st.checkbox("Mostrar referencia en gráfica", value=True)
-# --- EN EL SIDEBAR ---
-with st.sidebar:
-    st.header("Calibración Experimental")
-    
-    # Campo para el diámetro que definimos antes
-    d_pulg = st.number_input("Diámetro salida (pulg)", value=1.0)
-    area_o = np.pi * ((d_pulg * 0.0254) / 2)**2
 
-    # El botón que activa la función que acabas de pegar
-    if st.button("🧪 Ejecutar Calibración LOU"):
-        # Llamamos a la función usando los datos de la tabla (datos_usr)
-        cd_calculado = calcular_cd_inteligente(datos_usr, r_max, h_total, geom_tanque, area_o)
-        
-        # Guardamos el resultado en el session_state para que no se borre al refrescar
-        st.session_state['cd_final'] = cd_calculado
-        st.success(f"Cd calculado: {cd_calculado:.4f}")
 # =============================================================================
 st.sidebar.markdown("---")
 st.sidebar.subheader("📚 Biblioteca Técnica")
@@ -378,18 +372,47 @@ if btn_reset:
 def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
     """
     Calcula el Coeficiente de Descarga (Cd) usando el balance de masa 
-    ajustado a la geometría específica del tanque.
+    ajustado a la geometría específica del tanque (Fórmulas UCV).
     """
-    if len(df_usr) < 2:
+    # Si no hay suficientes datos o el nivel es cero, retornar valor estándar
+    if len(df_usr) < 2 or df_usr["Nivel Medido (m)"].sum() == 0:
         return 0.61
     
-    # ... (el resto del código que pusiste) ...
+    # Extraer los dos primeros puntos significativos
+    t1, t2 = df_usr["Tiempo (s)"].iloc[0], df_usr["Tiempo (s)"].iloc[1]
+    h1, h2 = df_usr["Nivel Medido (m)"].iloc[0], df_usr["Nivel Medido (m)"].iloc[1]
+    dt = abs(t2 - t1)
+    
+    if dt == 0: return 0.61
+
+    # 1. Cálculo del Volumen Real según la Geometría
+    if geom == "Cilíndrico":
+        v1 = np.pi * (r**2) * h1
+        v2 = np.pi * (r**2) * h2
+    elif geom == "Cónico":
+        # Relación de semejanza r/h
+        v1 = (1/3) * np.pi * ((r / h_t) * h1)**2 * h1
+        v2 = (1/3) * np.pi * ((r / h_t) * h2)**2 * h2
+    else: # Esférico
+        v1 = (np.pi * (h1**2) / 3) * (3 * r - h1)
+        v2 = (np.pi * (h2**2) / 3) * (3 * r - h2)
+
+    # 2. Caudal Experimental (Q = ΔV / Δt)
+    q_real = abs(v1 - v2) / dt
+    
+    # 3. Caudal Teórico (Torricelli)
+    h_prom = (h1 + h2) / 2
+    if h_prom <= 0: return 0.61
+    
+    q_teorico = area_ori * np.sqrt(2 * 9.81 * h_prom)
+    
+    # 4. Cálculo del Cd (Real / Teórico)
+    cd_result = q_real / q_teorico if q_teorico > 0 else 0.61
+    
+    # Limitar el resultado a valores físicamente lógicos (0.4 a 1.0)
     return float(np.clip(cd_result, 0.4, 1.0))
 
 def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val):
-    # (Aquí va tu función principal del simulador)
-    pass
-def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op):
     # 1. Cálculo de área según geometría
     if geom == "Cilíndrico":
         area_h = np.pi * (r**2)
@@ -407,25 +430,23 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
     u_control = (kp_val * err) + (ki_val * e_sum) + (kd_val * e_der)
     
     # 3. Lógica de Operación y Balance de Masa
+    # Usamos el área del orificio calculada en el sidebar (0.0254 es ejemplo, usa la real)
+    # Para ser exactos, pasamos el área_orificio global o la calculamos aquí
+    a_o = np.pi * ((d_pulgadas * 0.0254) / 2)**2 
+
     if modo_op == "Llenado":
-        # Controlamos la ENTRADA. La perturbación es una fuga o entrada extra.
         q_entrada = np.clip(u_control, 0, 0.6)
-        q_salida = 0.61 * 0.04 * np.sqrt(2 * 9.81 * h_prev) if h_prev > 0.005 else 0
-        
-        # dh/dt = (Entrada_Control + Perturbación - Salida_Natural) / Área
+        # USAMOS EL CD CALCULADO (cd_val)
+        q_salida = cd_val * a_o * np.sqrt(2 * 9.81 * h_prev) if h_prev > 0.005 else 0
         dh_dt = (q_entrada + q_p_val - q_salida) / area_h
         u_graficar = q_entrada
     else:
-        # VACIADO: Controlamos la SALIDA. La perturbación es el FLUJO DE ENTRADA.
-        q_entrada = q_p_val  # La perturbación entra al tanque
-        q_salida = np.clip(-u_control, 0, 0.6) # PID abre la válvula de salida
-        
-        # dh/dt = (Entrada_Perturbación - Salida_Controlada) / Área
+        q_entrada = q_p_val  
+        q_salida = np.clip(-u_control, 0, 0.6) 
         dh_dt = (q_entrada - q_salida) / area_h
         u_graficar = q_salida
     
     h_next = np.clip(h_prev + dh_dt * dt, 0, h_t)
-    
     return h_next, u_graficar, err, e_sum, err
 
 
