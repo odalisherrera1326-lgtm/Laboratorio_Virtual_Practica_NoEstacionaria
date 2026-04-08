@@ -304,13 +304,6 @@ with st.sidebar.expander(" Dimensiones de Salida", expanded=True):
     area_orificio = np.pi * (d_metros / 2)**2
     st.caption(f"Área calculada: {area_orificio:.6f} m²")
 
-    # Botón de calibración dentro del mismo expander para mayor orden
-    if st.button("🧪 Calibrar Cd con Datos LOU"):
-        # Importante: usamos 'area_orificio' (la variable de arriba)
-        cd_calculado = calcular_cd_inteligente(datos_usr, r_max, h_total, geom_tanque, area_orificio)
-        st.session_state['cd_final'] = cd_calculado
-        st.sidebar.success(f"Modelo Ajustado: Cd = {cd_calculado:.4f}")
-
 with st.sidebar.expander(" Escenario de Perturbación ($Q_p$)"):
     p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
     p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.045, format="%.4f") if p_activa else 0.0
@@ -456,6 +449,16 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
 
 if iniciar_sim:
     st.session_state.ejecutando = True
+    
+    # --- ESTO ES LO QUE DEBE IR AQUÍ ---
+    # Calculamos el Cd usando los datos de la tabla 'datos_usr'
+    cd_calc = calcular_cd_inteligente(datos_usr, r_max, h_total, geom_tanque, area_orificio)
+    
+    # Lo guardamos en la "memoria" del navegador para que no se pierda
+    st.session_state['cd_final'] = cd_calc
+    
+    # Avisamos al usuario con un mensaje flotante
+    st.toast(f"✅ Sistema calibrado: Cd = {cd_calc:.4f}")
 
 # Determinamos si el expander del diagrama debe estar abierto
 estado_expander = not st.session_state.ejecutando
