@@ -460,50 +460,41 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
     h_next = np.clip(h_prev + dh_dt * dt, 0, h_t)
     return h_next, u_graficar, err, e_sum, err
 
+# =============================================================================
+# 5. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA
+# =============================================================================
 
-# =============================================================================
-# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA 
-# =============================================================================
 if iniciar_sim:
     st.session_state.ejecutando = True
     
     try:
-        # 1. CONVERSIÓN DE DATOS
+        # Convertimos los datos de la tabla para evitar el AttributeError
         import pandas as pd
-        # Convertimos la lista de la tabla a un DataFrame de Pandas
         df_calibracion = pd.DataFrame(datos_usr)
         
-        # 2. CÁLCULO DINÁMICO DEL Cd
-        # Se recalcula cada vez que das a "Iniciar" con los datos de la tabla
+        # Sintonización Dinámica: Solo ocurre cuando presionas el botón
         cd_calc = calcular_cd_inteligente(df_calibracion, r_max, h_total, geom_tanque, area_orificio)
         
-        # 3. SINTONIZACIÓN AUTOMÁTICA INTELIGENTE
-        # Determina Kp, Ki y Kd según la geometría y el Cd real
+        # Usamos la sintonía agresiva para asegurar que llegue al Setpoint
         kp_auto, ki_auto, kd_auto = sintonizar_controlador_dinamico(
             geom_tanque, r_max, h_total, cd_calc, area_orificio
         )
         
-        # 4. ASIGNACIÓN A LA SIMULACIÓN
-        # Estas variables son las que usará el bucle for para graficar
+        # Asignación de variables para el bucle
         k_p, k_i, k_d = kp_auto, ki_auto, kd_auto
         
-        # Guardamos en session_state para que las métricas de la pantalla se actualicen
         st.session_state['cd_final'] = cd_calc
-        st.session_state['kp_auto'] = k_p
-        st.session_state['ki_auto'] = k_i
-        st.session_state['kd_auto'] = k_d
-        
-        st.toast(f"🎯 Sintonía Dinámica: Cd={cd_calc:.2f} | Kp={k_p:.2f}, Ki={k_i:.2f}")
+        st.toast(f"🎯 Control Activo: Kp={k_p}, Ki={k_i}")
 
-    except Exception as e:
-        # Si la tabla está vacía o hay error, valores de seguridad para que la app no falle
-        st.warning("⚠️ Usando sintonía base. Llena la tabla para autocalibrar.")
-        k_p, k_i, k_d = 1.5, 0.2, 0.05
+    except:
+        # Valores de respaldo si la tabla está vacía
+        k_p, k_i, k_d = 1.5, 0.5, 0.05
         st.session_state['cd_final'] = 0.61
-        st.session_state['kp_auto'] = k_p
 
-# Determinamos si el expander del diagrama debe estar abierto
-estado_expander = not st.session_state.ejecutando
+# Esta línea debe ir aquí, fuera de los bloques 'if' para que no dé error de definición
+estado_expander = not st.session_state.get('ejecutando', False)
+
+
 
 # --- PESTAÑA DEL DIAGRAMA ---
 with st.expander("Diagrama del Proceso", expanded=estado_expander):
