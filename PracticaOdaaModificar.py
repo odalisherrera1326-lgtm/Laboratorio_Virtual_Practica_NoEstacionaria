@@ -488,7 +488,7 @@ if iniciar_sim:
             k_p, k_i, k_d = kp_auto, ki_auto, kd_auto
             
             st.session_state['cd_final'] = cd_calc
-            st.toast(f"🎯 Control Adaptativo Activo: Kp={k_p} | Ki={k_i}")
+            st.toast(f"🎯 Control Adaptativo Activo: Cd={cd_calc:.2f} | Kp={k_p} | Ki={k_i}")
         else:
             # Sintonía de respaldo robusta si la tabla está vacía
             k_p, k_i, k_d = 5.0, 1.2, 0.1
