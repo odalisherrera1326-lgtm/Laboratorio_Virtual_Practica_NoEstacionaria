@@ -498,29 +498,7 @@ if iniciar_sim:
         # Respaldo de seguridad
         k_p, k_i, k_d = 5.0, 1.2, 0.1
         st.session_state['cd_final'] = 0.61
-    # ... (Aquí termina el bucle 'for' que hace la animación) ...
-        
-        # 1. Marcamos que la simulación terminó
-        st.session_state.ejecutando = False 
-
-        # 2. Preparamos el DataFrame con los nuevos parámetros
-        df_resultados = pd.DataFrame({
-            'Tiempo (s)': vector_t,
-            'Nivel (m)': vector_h,
-            'Setpoint (m)': [setpoint] * len(vector_t),
-            'Cd_Calculado': [st.session_state.get('cd_final', 0.61)] * len(vector_t),
-            'Kp_Sintonizado': [k_p] * len(vector_t),
-            'Ki_Sintonizado': [k_i] * len(vector_t)
-        })
-
-        # 3. Colocamos el botón de descarga
-        st.success("✅ Simulación completada con éxito.")
-        st.download_button(
-            label="📥 Descargar Resultados y Parámetros PID",
-            data=df_resultados.to_csv(index=False).encode('utf-8'),
-            file_name='Reporte_Simulacion_UCV.csv',
-            mime='text/csv'
-        )    
+      
 
 # Esta línea debe ir aquí, fuera de los bloques 'if' para que no dé error de definición
 estado_expander = not st.session_state.get('ejecutando', False)
@@ -620,6 +598,33 @@ else:
         u_log.append(u_inst)
         sp_log.append(sp_nivel) 
         e_log.append(e_inst)
+       
+    
+    # 1. Indicamos que la simulación terminó para que Streamlit se detenga
+    st.session_state.ejecutando = False 
+    status_placeholder.success("✅ Simulación completada.")
+
+    # 2. CREACIÓN DEL DATAFRAME (Ahora sí con todos los datos llenos)
+    df_resultados = pd.DataFrame({
+        'Tiempo (s)': vector_t,
+        'Nivel (m)': h_log, # Usamos h_log que es la lista que llenamos en el for
+        'Setpoint (m)': sp_log,
+        'Accion_Control': u_log,
+        'Cd_Calculado': [st.session_state.get('cd_final', 0.61)] * len(vector_t),
+        'Kp': [k_p] * len(vector_t),
+        'Ki': [k_i] * len(vector_t)
+    })
+
+    # 3. EL BOTÓN DE DESCARGA
+    st.markdown("---")
+    st.subheader("📥 Exportar Resultados de Tesis")
+    st.download_button(
+        label="Descargar Reporte de Simulación (CSV)",
+        data=df_resultados.to_csv(index=False).encode('utf-8'),
+        file_name=f'Simulacion_UCV_{geom_tanque}.csv',
+        mime='text/csv',
+        use_container_width=True
+    )
         
         if i % 2 == 0:
             # A. Actualización de métricas
