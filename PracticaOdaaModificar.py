@@ -464,7 +464,7 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
 if iniciar_sim:
     st.session_state.ejecutando = True
     
-    # --- REINICIO DE MEMORIA DE CONTROL ---
+  # --- REINICIO DE MEMORIA DE CONTROL ---
     # Esto asegura que el Ki empiece a contar desde cero para el nuevo Setpoint
     st.session_state['error_acumulado'] = 0.0
     st.session_state['ultimo_error'] = 0.0
@@ -498,6 +498,29 @@ if iniciar_sim:
         # Respaldo de seguridad
         k_p, k_i, k_d = 5.0, 1.2, 0.1
         st.session_state['cd_final'] = 0.61
+    # ... (Aquí termina el bucle 'for' que hace la animación) ...
+        
+        # 1. Marcamos que la simulación terminó
+        st.session_state.ejecutando = False 
+
+        # 2. Preparamos el DataFrame con los nuevos parámetros
+        df_resultados = pd.DataFrame({
+            'Tiempo (s)': vector_t,
+            'Nivel (m)': vector_h,
+            'Setpoint (m)': [setpoint] * len(vector_t),
+            'Cd_Calculado': [st.session_state.get('cd_final', 0.61)] * len(vector_t),
+            'Kp_Sintonizado': [k_p] * len(vector_t),
+            'Ki_Sintonizado': [k_i] * len(vector_t)
+        })
+
+        # 3. Colocamos el botón de descarga
+        st.success("✅ Simulación completada con éxito.")
+        st.download_button(
+            label="📥 Descargar Resultados y Parámetros PID",
+            data=df_resultados.to_csv(index=False).encode('utf-8'),
+            file_name='Reporte_Simulacion_UCV.csv',
+            mime='text/csv'
+        )    
 
 # Esta línea debe ir aquí, fuera de los bloques 'if' para que no dé error de definición
 estado_expander = not st.session_state.get('ejecutando', False)
@@ -832,14 +855,7 @@ else:
         err_f = abs(sp_nivel - h_log[-1])
         st.metric("Error Residual Final", f"{err_f:.4f} m")
         
-        # El botón de descarga ahora usa el DataFrame ya creado
-        st.download_button(
-            label="📥 Descargar Reporte de datos (CSV)", 
-            data=df_final.to_csv(index=False), 
-            file_name=f"resultados_tesis_{geom_tanque}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
+        
 
     # Validación final de estado estacionario
     if err_f < 0.05:
