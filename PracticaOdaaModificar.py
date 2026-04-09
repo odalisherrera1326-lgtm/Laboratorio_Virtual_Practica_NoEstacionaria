@@ -834,7 +834,7 @@ else:
         
         # El botón de descarga ahora usa el DataFrame ya creado
         st.download_button(
-            label="📥 Descargar Reporte (CSV)", 
+            label="📥 Descargar Reporte de datos (CSV)", 
             data=df_final.to_csv(index=False), 
             file_name=f"resultados_tesis_{geom_tanque}.csv",
             mime="text/csv",
