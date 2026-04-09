@@ -464,7 +464,7 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
 if iniciar_sim:
     st.session_state.ejecutando = True
     
-  # --- REINICIO DE MEMORIA DE CONTROL ---
+    # --- REINICIO DE MEMORIA DE CONTROL ---
     # Esto asegura que el Ki empiece a contar desde cero para el nuevo Setpoint
     st.session_state['error_acumulado'] = 0.0
     st.session_state['ultimo_error'] = 0.0
@@ -498,7 +498,6 @@ if iniciar_sim:
         # Respaldo de seguridad
         k_p, k_i, k_d = 5.0, 1.2, 0.1
         st.session_state['cd_final'] = 0.61
-      
 
 # Esta línea debe ir aquí, fuera de los bloques 'if' para que no dé error de definición
 estado_expander = not st.session_state.get('ejecutando', False)
@@ -598,33 +597,6 @@ else:
         u_log.append(u_inst)
         sp_log.append(sp_nivel) 
         e_log.append(e_inst)
-       
-    
-    # 1. Indicamos que la simulación terminó para que Streamlit se detenga
-    st.session_state.ejecutando = False 
-    status_placeholder.success("✅ Simulación completada.")
-
-    # 2. CREACIÓN DEL DATAFRAME (Ahora sí con todos los datos llenos)
-    df_resultados = pd.DataFrame({
-        'Tiempo (s)': vector_t,
-        'Nivel (m)': h_log, # Usamos h_log que es la lista que llenamos en el for
-        'Setpoint (m)': sp_log,
-        'Accion_Control': u_log,
-        'Cd_Calculado': [st.session_state.get('cd_final', 0.61)] * len(vector_t),
-        'Kp': [k_p] * len(vector_t),
-        'Ki': [k_i] * len(vector_t)
-    })
-
-    # 3. EL BOTÓN DE DESCARGA
-    st.markdown("---")
-    st.subheader("📥 Exportar Resultados de Tesis")
-    st.download_button(
-        label="Descargar Reporte de Simulación (CSV)",
-        data=df_resultados.to_csv(index=False).encode('utf-8'),
-        file_name=f'Simulacion_UCV_{geom_tanque}.csv',
-        mime='text/csv',
-        use_container_width=True
-    )
         
         if i % 2 == 0:
             # A. Actualización de métricas
@@ -860,7 +832,14 @@ else:
         err_f = abs(sp_nivel - h_log[-1])
         st.metric("Error Residual Final", f"{err_f:.4f} m")
         
-        
+        # El botón de descarga ahora usa el DataFrame ya creado
+        st.download_button(
+            label="📥 Descargar Reporte de datos (CSV)", 
+            data=df_final.to_csv(index=False), 
+            file_name=f"resultados_tesis_{geom_tanque}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
 
     # Validación final de estado estacionario
     if err_f < 0.05:
