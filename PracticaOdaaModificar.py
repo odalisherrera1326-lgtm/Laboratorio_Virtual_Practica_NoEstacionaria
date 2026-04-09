@@ -382,43 +382,42 @@ def sintonizar_controlador_dinamico(geom, r, h_t, cd_calculado, area_ori):
     return round(kp_sintonizado, 2), round(ki_sintonizado, 2), kd_sintonizado
 def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
     """
-    Calcula el Coeficiente de Descarga (Cd) usando el balance de masa 
-    ajustado a la geometría específica del tanque (Fórmulas UCV).
+    Calcula el Coeficiente de Descarga (Cd) usando el balance de masa.
     """
-    # Si no hay suficientes datos o el nivel es cero, retornar valor estándar
-    if len(df_usr) < 2 or df_usr["Nivel Medido (m)"].sum() == 0:
+    import pandas as pd
+    # Convertimos a DataFrame para evitar el AttributeError de la lista
+    df = pd.DataFrame(df_usr) if isinstance(df_usr, list) else df_usr
+    
+    # Validamos que existan datos suficientes
+    if len(df) < 2:
         return 0.61
     
-    # Extraer los dos primeros puntos significativos
-    t1, t2 = df_usr["Tiempo (s)"].iloc[0], df_usr["Tiempo (s)"].iloc[1]
-    h1, h2 = df_usr["Nivel Medido (m)"].iloc[0], df_usr["Nivel Medido (m)"].iloc[1]
-    dt = abs(t2 - t1)
-    
-    if dt == 0: return 0.61
+    try:
+        # Extraemos los datos de tiempo y nivel
+        t1, t2 = df["Tiempo (s)"].iloc[0], df["Tiempo (s)"].iloc[1]
+        h1, h2 = df["Nivel Medido (m)"].iloc[0], df["Nivel Medido (m)"].iloc[1]
+        dt = abs(t2 - t1)
+        
+        if dt == 0: return 0.61
 
-    # 1. Cálculo del Volumen Real según la Geometría
-    if geom == "Cilíndrico":
-        v1 = np.pi * (r**2) * h1
-        v2 = np.pi * (r**2) * h2
-    elif geom == "Cónico":
-        # Relación de semejanza r/h
-        v1 = (1/3) * np.pi * ((r / h_t) * h1)**2 * h1
-        v2 = (1/3) * np.pi * ((r / h_t) * h2)**2 * h2
-    else: # Esférico
-        v1 = (np.pi * (h1**2) / 3) * (3 * r - h1)
-        v2 = (np.pi * (h2**2) / 3) * (3 * r - h2)
+        # Cálculo de volúmenes según la geometría del tanque
+        if geom == "Cilíndrico":
+            v1, v2 = np.pi*(r**2)*h1, np.pi*(r**2)*h2
+        elif geom == "Cónico":
+            v1 = (1/3)*np.pi*((r/h_t)*h1)**2*h1
+            v2 = (1/3)*np.pi*((r/h_t)*h2)**2*h2
+        else: # Esférico
+            v1 = (np.pi*(h1**2)/3)*(3*r-h1)
+            v2 = (np.pi*(h2**2)/3)*(3*r-h2)
 
-    # 2. Caudal Experimental (Q = ΔV / Δt)
-    q_real = abs(v1 - v2) / dt
-    
-    # 3. Caudal Teórico (Torricelli)
-    h_prom = (h1 + h2) / 2
-    if h_prom <= 0: return 0.61
-    
-    q_teorico = area_ori * np.sqrt(2 * 9.81 * h_prom)
-    
-    # 4. Cálculo del Cd (Real / Teórico)
-    cd_result = q_real / q_teorico if q_teorico > 0 else 0.61
+        q_real = abs(v1 - v2) / dt
+        h_prom = (h1 + h2) / 2
+        q_teorico = area_ori * np.sqrt(2 * 9.81 * max(h_prom, 0.001))
+        
+        # El Cd real suele estar entre 0.6 y 0.85
+        return float(np.clip(q_real / q_teorico, 0.4, 1.0))
+    except:
+        return 0.61
     
     # Limitar el resultado a valores físicamente lógicos (0.4 a 1.0)
     return float(np.clip(cd_result, 0.4, 1.0))
@@ -463,33 +462,39 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
 # =============================================================================
 # 5. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA
 # =============================================================================
-
+# --- LÓGICA DE SIMULACIÓN Y SINTONÍA DINÁMICA ---
 if iniciar_sim:
-    st.session_state.ejecutando = True
-    
-    try:
-        # Convertimos los datos de la tabla para evitar el AttributeError
-        import pandas as pd
-        df_calibracion = pd.DataFrame(datos_usr)
-        
-        # Sintonización Dinámica: Solo ocurre cuando presionas el botón
-        cd_calc = calcular_cd_inteligente(df_calibracion, r_max, h_total, geom_tanque, area_orificio)
-        
-        # Usamos la sintonía agresiva para asegurar que llegue al Setpoint
-        kp_auto, ki_auto, kd_auto = sintonizar_controlador_dinamico(
-            geom_tanque, r_max, h_total, cd_calc, area_orificio
-        )
-        
-        # Asignación de variables para el bucle
-        k_p, k_i, k_d = kp_auto, ki_auto, kd_auto
-        
-        st.session_state['cd_final'] = cd_calc
-        st.toast(f"🎯 Control Activo: Kp={k_p}, Ki={k_i}")
+    # 1. Verificamos que la tabla tenga al menos 2 puntos de datos
+    if datos_usr and len([d for d in datos_usr if d.get("Nivel Medido (m)") is not None]) >= 2:
+        try:
+            import pandas as pd
+            df_calibracion = pd.DataFrame(datos_usr).dropna(subset=["Nivel Medido (m)"])
+            
+            # Solo calculamos si hay datos reales para evitar el AttributeError
+            cd_calc = calcular_cd_inteligente(df_calibracion, r_max, h_total, geom_tanque, area_orificio)
+            
+            # Sintonía automática basada en los datos actuales
+            kp_auto, ki_auto, kd_auto = sintonizar_controlador_dinamico(
+                geom_tanque, r_max, h_total, cd_calc, area_orificio
+            )
+            
+            # Asignamos los valores que usará el bucle de la gráfica
+            k_p, k_i, k_d = kp_auto, ki_auto, kd_auto
+            
+            st.session_state['cd_final'] = cd_calc
+            st.toast(f"🎯 Control Adaptativo: Kp={k_p} | Ki={k_i}")
+            st.session_state.ejecutando = True
 
-    except:
-        # Valores de respaldo si la tabla está vacía
-        k_p, k_i, k_d = 1.5, 0.5, 0.05
+        except Exception as e:
+            st.error(f"Error en sintonía: {e}")
+            k_p, k_i, k_d = 1.2, 0.3, 0.05 # Valores de respaldo
+            st.session_state.ejecutando = True
+    else:
+        # Si la tabla está incompleta, usamos valores estándar para que no falle
+        st.warning("⚠️ Llena al menos 2 filas en la tabla para autocalibrar. Usando sintonía base.")
+        k_p, k_i, k_d = 1.2, 0.3, 0.05
         st.session_state['cd_final'] = 0.61
+        st.session_state.ejecutando = True
 
 # Esta línea debe ir aquí, fuera de los bloques 'if' para que no dé error de definición
 estado_expander = not st.session_state.get('ejecutando', False)
