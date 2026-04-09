@@ -465,27 +465,36 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
 # 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA 
 # =============================================================================
 if iniciar_sim:
-    st.session_state.ejecutando = True
-    
-    try:
-        df_calibracion = pd.DataFrame(datos_usr)
-        cd_calc = calcular_cd_inteligente(df_calibracion, r_max, h_total, geom_tanque, area_orificio)
-        st.session_state['cd_final'] = cd_calc
-        
-        # --- NUEVA SINTONIZACIÓN ---
-        kp_s, ki_s, kd_s = sintonizar_controlador_dinamico(geom_tanque, r_max, h_total, cd_calc, area_orificio)
-        st.session_state['kp_auto'] = kp_s
-        st.session_state['ki_auto'] = ki_s
-        st.session_state['kd_auto'] = kd_s
-        
-        st.toast(f"🎯 Calibrado: Cd={cd_calc:.3f} | PID Sintonizado")
-        
-    except Exception as e:
-        st.session_state['cd_final'] = 0.61
-        st.session_state['kp_auto'] = kp_val
-        st.session_state['ki_auto'] = ki_val
-        st.session_state['kd_auto'] = kd_val
-        st.warning("⚠️ Usando valores de sintonía manual.")
+    # Validación de seguridad: solo sintoniza si hay datos en la tabla
+    if datos_usr and len(datos_usr) >= 2:
+        try:
+            # 1. PASO CLAVE: Cálculo dinámico basado en lo que pusiste en la interfaz
+            cd_calc = calcular_cd_inteligente(datos_usr, r_max, h_total, geom_tanque, area_orificio)
+            
+            # 2. Sintonización automática (usa la función de agresividad que definimos)
+            kp_auto, ki_auto, kd_auto = sintonizar_controlador_dinamico(
+                geom_tanque, r_max, h_total, cd_calc, area_orificio
+            )
+            
+            # 3. Asignación directa a las variables de la simulación
+            k_p, k_i, k_d = kp_auto, ki_auto, kd_auto
+            
+            # Guardamos en el estado de sesión para las métricas
+            st.session_state['cd_final'] = cd_calc
+            st.session_state['kp_auto'] = k_p
+            st.session_state['ki_auto'] = k_i
+            
+            st.toast(f"✅ Calibrado: Cd={cd_calc:.2f} | Kp={k_p:.2f}, Ki={k_i:.2f}")
+            st.session_state.ejecutando = True
+            
+        except Exception as e:
+            st.error(f"Error en sintonía dinámica: {e}")
+            k_p, k_i, k_d = 1.0, 0.1, 0.05 # Valores por defecto en caso de fallo
+    else:
+        # Si la tabla está vacía, usa valores estándar para que la app no explote
+        k_p, k_i, k_d = 1.2, 0.2, 0.05
+        st.warning("⚠️ Usando sintonía estándar (llena la tabla para autocalibrar)")
+        st.session_state.ejecutando = True
 
 # Determinamos si el expander del diagrama debe estar abierto
 estado_expander = not st.session_state.ejecutando
