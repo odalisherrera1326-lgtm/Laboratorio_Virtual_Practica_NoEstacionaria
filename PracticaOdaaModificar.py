@@ -360,8 +360,26 @@ if btn_reset:
 # =============================================================================
 # 4. LÓGICA DE CÁLCULO: MÉTODO DE EULER
 # =============================================================================
+def sintonizar_controlador_dinamico(geom, r, h_t, cd_calculado, area_ori):
+    """
+    Sintoniza el PID basándose en el Cd real obtenido en el laboratorio.
+    """
+    if geom == "Cilíndrico":
+        area_t = np.pi * (r**2)
+    elif geom == "Cónico":
+        area_t = np.pi * (r/2)**2 # Aproximación de área media
+    else: # Esférico
+        area_t = (2/3) * np.pi * (r**2)
 
-
+    # Lógica: Si el fluido sale más fácil (Cd alto), el Kp debe ser más bajo
+    # para evitar inestabilidad en el sistema.
+    kp_base = area_t / (cd_calculado * area_ori * 10) 
+    kp_sintonizado = np.clip(kp_base, 0.5, 15.0) # Límites de seguridad
+    
+    ki_sintonizado = 0.2 * (1 / cd_calculado) 
+    kd_sintonizado = 0.05 # Valor de amortiguación base
+    
+    return round(kp_sintonizado, 2), round(ki_sintonizado, 2), kd_sintonizado
 def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
     """
     Calcula el Coeficiente de Descarga (Cd) usando el balance de masa 
@@ -405,7 +423,7 @@ def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
     # Limitar el resultado a valores físicamente lógicos (0.4 a 1.0)
     return float(np.clip(cd_result, 0.4, 1.0))
 
-def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val):
+def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val,kp,ki,kd):
     # 1. Cálculo de área según geometría
     if geom == "Cilíndrico":
         area_h = np.pi * (r**2)
@@ -416,11 +434,11 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
     
     area_h = max(area_h, 0.01) 
 
-    # 2. Algoritmo PID
+   # 2. Algoritmo PID (Ahora usa las variables kp, ki, kd pasadas por argumento)
     err = sp - h_prev
     e_sum += err * dt
     e_der = (err - e_prev) / dt
-    u_control = (kp_val * err) + (ki_val * e_sum) + (kd_val * e_der)
+    u_control = (kp * err) + (ki * e_sum) + (kd * e_der)
     
     # 3. Lógica de Operación y Balance de Masa
     # Usamos el área del orificio calculada en el sidebar (0.0254 es ejemplo, usa la real)
@@ -444,29 +462,30 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
 
 
 # =============================================================================
-# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA (CORREGIDA)
+# 5 y 6. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA 
 # =============================================================================
-
 if iniciar_sim:
-    # 1. Activamos el estado de ejecución
     st.session_state.ejecutando = True
     
-    # 2. Intentamos la calibración solo si hay datos en la tabla
     try:
-        # Convertimos a DataFrame por seguridad si no lo es
         df_calibracion = pd.DataFrame(datos_usr)
-        
-        # Llamamos a la función
         cd_calc = calcular_cd_inteligente(df_calibracion, r_max, h_total, geom_tanque, area_orificio)
-        
-        # Guardamos en sesión
         st.session_state['cd_final'] = cd_calc
-        st.toast(f"✅ Sistema calibrado: Cd = {cd_calc:.4f}")
+        
+        # --- NUEVA SINTONIZACIÓN ---
+        kp_s, ki_s, kd_s = sintonizar_controlador_dinamico(geom_tanque, r_max, h_total, cd_calc, area_orificio)
+        st.session_state['kp_auto'] = kp_s
+        st.session_state['ki_auto'] = ki_s
+        st.session_state['kd_auto'] = kd_s
+        
+        st.toast(f"🎯 Calibrado: Cd={cd_calc:.3f} | PID Sintonizado")
         
     except Exception as e:
-        # Si la tabla está vacía o mal llenada, usamos el estándar
         st.session_state['cd_final'] = 0.61
-        st.warning("⚠️ No se pudo calibrar con datos. Usando Cd estándar (0.61)")
+        st.session_state['kp_auto'] = kp_val
+        st.session_state['ki_auto'] = ki_val
+        st.session_state['kd_auto'] = kd_val
+        st.warning("⚠️ Usando valores de sintonía manual.")
 
 # Determinamos si el expander del diagrama debe estar abierto
 estado_expander = not st.session_state.ejecutando
@@ -544,9 +563,15 @@ else:
         # Lógica de perturbación
         q_p_inst = p_magnitud if ('p_activa' in locals() and p_activa and t_act >= p_tiempo) else 0.0
     
+        # Obtenemos los valores que acabamos de sintonizar
+        k_p = st.session_state.get('kp_auto', kp_val)
+        k_i = st.session_state.get('ki_auto', ki_val)
+        k_d = st.session_state.get('kd_auto', kd_val)
+
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
-        dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, 
-        err_int, err_pasado, op_tipo, cd_para_simular
+            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, 
+            err_int, err_pasado, op_tipo, cd_para_simular,
+            k_p, k_i, k_d  # <--- NUEVOS ARGUMENTOS
         )
         
         
