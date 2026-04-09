@@ -223,9 +223,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# =============================================================================
-# 2. MARCO TEÓRICO: BALANCE DE MASA Y TORRICELLI
-# =============================================================================
+
 # =============================================================================
 # 2. MARCO TEÓRICO INTEGRADO: FÍSICA Y CONTROL
 # =============================================================================
@@ -361,23 +359,24 @@ if btn_reset:
 # 4. LÓGICA DE CÁLCULO: MÉTODO DE EULER
 # =============================================================================
 def sintonizar_controlador_dinamico(geom, r, h_t, cd_calculado, area_ori):
-    """
-    Sintoniza el PID basándose en el Cd real obtenido en el laboratorio.
-    """
+    # Calculamos el área transversal según la geometría seleccionada
     if geom == "Cilíndrico":
         area_t = np.pi * (r**2)
     elif geom == "Cónico":
-        area_t = np.pi * (r/2)**2 # Aproximación de área media
-    else: # Esférico
+        area_t = np.pi * (r/2)**2 
+    else: 
         area_t = (2/3) * np.pi * (r**2)
 
-    # Lógica: Si el fluido sale más fácil (Cd alto), el Kp debe ser más bajo
-    # para evitar inestabilidad en el sistema.
-    kp_base = area_t / (cd_calculado * area_ori * 10) 
-    kp_sintonizado = np.clip(kp_base, 0.5, 15.0) # Límites de seguridad
+    # Kp: Proporcional a la inercia del tanque. 
+    # Si el tanque es grande (area_t alta), necesitamos más fuerza.
+    kp_sintonizado = np.clip(area_t / (cd_calculado * area_ori * 1.5), 3.0, 30.0)
     
-    ki_sintonizado = 0.2 * (1 / cd_calculado) 
-    kd_sintonizado = 0.05 # Valor de amortiguación base
+    # Ki: Acción Integral reforzada. 
+    # Es la que elimina el error estacionario y asegura llegar al Setpoint.
+    ki_sintonizado = np.clip(1.2 * (1 / cd_calculado), 0.5, 5.0) 
+    
+    # Kd: Amortiguación para evitar que el nivel "rebote" mucho al llegar.
+    kd_sintonizado = 0.15 
     
     return round(kp_sintonizado, 2), round(ki_sintonizado, 2), kd_sintonizado
 def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
@@ -462,39 +461,43 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
 # =============================================================================
 # 5. LÓGICA DE VISUALIZACIÓN Y SIMULACIÓN UNIFICADA
 # =============================================================================
-# --- LÓGICA DE SIMULACIÓN Y SINTONÍA DINÁMICA ---
 if iniciar_sim:
-    # 1. Verificamos que la tabla tenga al menos 2 puntos de datos
-    if datos_usr and len([d for d in datos_usr if d.get("Nivel Medido (m)") is not None]) >= 2:
-        try:
-            import pandas as pd
-            df_calibracion = pd.DataFrame(datos_usr).dropna(subset=["Nivel Medido (m)"])
+    st.session_state.ejecutando = True
+    
+    # --- REINICIO DE MEMORIA DE CONTROL ---
+    # Esto asegura que el Ki empiece a contar desde cero para el nuevo Setpoint
+    st.session_state['error_acumulado'] = 0.0
+    st.session_state['ultimo_error'] = 0.0
+    
+    try:
+        import pandas as pd
+        df_calibracion = pd.DataFrame(datos_usr)
+        
+        # 1. Verificamos que existan datos en la columna
+        if "Nivel Medido (m)" in df_calibracion.columns and not df_calibracion["Nivel Medido (m)"].isnull().all():
             
-            # Solo calculamos si hay datos reales para evitar el AttributeError
+            # Cálculo dinámico del Cd
             cd_calc = calcular_cd_inteligente(df_calibracion, r_max, h_total, geom_tanque, area_orificio)
             
-            # Sintonía automática basada en los datos actuales
+            # Sintonización automática con los parámetros agresivos
             kp_auto, ki_auto, kd_auto = sintonizar_controlador_dinamico(
                 geom_tanque, r_max, h_total, cd_calc, area_orificio
             )
             
-            # Asignamos los valores que usará el bucle de la gráfica
+            # Asignación final para la simulación
             k_p, k_i, k_d = kp_auto, ki_auto, kd_auto
             
             st.session_state['cd_final'] = cd_calc
-            st.toast(f"🎯 Control Adaptativo: Kp={k_p} | Ki={k_i}")
-            st.session_state.ejecutando = True
-
-        except Exception as e:
-            st.error(f"Error en sintonía: {e}")
-            k_p, k_i, k_d = 1.2, 0.3, 0.05 # Valores de respaldo
-            st.session_state.ejecutando = True
-    else:
-        # Si la tabla está incompleta, usamos valores estándar para que no falle
-        st.warning("⚠️ Llena al menos 2 filas en la tabla para autocalibrar. Usando sintonía base.")
-        k_p, k_i, k_d = 1.2, 0.3, 0.05
+            st.toast(f"🎯 Control Adaptativo Activo: Kp={k_p} | Ki={k_i}")
+        else:
+            # Sintonía de respaldo robusta si la tabla está vacía
+            k_p, k_i, k_d = 5.0, 1.2, 0.1
+            st.session_state['cd_final'] = 0.61
+            
+    except Exception as e:
+        # Respaldo de seguridad
+        k_p, k_i, k_d = 5.0, 1.2, 0.1
         st.session_state['cd_final'] = 0.61
-        st.session_state.ejecutando = True
 
 # Esta línea debe ir aquí, fuera de los bloques 'if' para que no dé error de definición
 estado_expander = not st.session_state.get('ejecutando', False)
