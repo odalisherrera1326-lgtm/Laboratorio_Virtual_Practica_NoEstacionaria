@@ -544,7 +544,7 @@ else:
         placeholder_comparativa = st.empty()
        
 
-   with col_met:
+    with col_met:
         st.subheader("Métricas de Control")
         
         # 1. Parámetros calculados o manuales que se están usando
