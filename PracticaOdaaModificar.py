@@ -544,12 +544,10 @@ else:
         placeholder_comparativa = st.empty()
        
 
-    with col_met:
-        
-        with col_met:
+ with col_met:
         st.subheader("Métricas de Control")
         
-        # 1. Parámetros calculados o manuales
+        # 1. Parámetros calculados o manuales que se están usando
         kp_show = st.session_state.get('kp_ejecucion', kp_val)
         cd_show = st.session_state.get('cd_final', 0.61)
         
@@ -557,15 +555,24 @@ else:
         st.caption(f"Kp: {kp_show} | Cd: {cd_show}")
         st.markdown("---")
         
-        # 2. Espacios reservados para métricas dinámicas
+        # 2. Espacios reservados para métricas dinámicas (placeholders)
         placeholder_iae = st.empty()
         placeholder_itae = st.empty()
         
-        # Inicialización de etiquetas
+        # Inicialización visual de las tarjetas
         placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
         placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
         
         st.markdown("---")
+        
+        # 3. Monitoreo instantáneo del nivel y error
+        m_h = st.empty()
+        m_e = st.empty()
+        m_h.metric("Nivel PV [m]", "0.000")
+        m_e.metric("Error [m]", "0.000")
+        
+        st.markdown("---")
+        area_descarga = st.empty()
         
         # 3. Monitoreo instantáneo
         m_h = st.empty()
