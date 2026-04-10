@@ -308,10 +308,16 @@ with st.sidebar.expander(" Escenario de Perturbación ($Q_p$)"):
     p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 80) if p_activa else 0
 
 with st.sidebar.expander("Parámetros del Controlador PID"):
+    # 1. El "interruptor" para decidir el modo
+    modo_auto = st.checkbox("Sintonización Automática (Tesis)", value=True)
+    
+    st.markdown("---")
+    # 2. Los campos de entrada (siempre visibles, pero solo se usan si modo_auto es False)
     c1, c2, c3 = st.columns(3)
-    kp_val = c1.number_input("Kp", value=2.6)
-    ki_val = c2.number_input("Ki", value=0.5)
-    kd_val = c3.number_input("Kd", value=0.1)
+    kp_val = c1.number_input("Kp manual", value=2.6, help="Solo se usa si desactivas la sintonía automática")
+    ki_val = c2.number_input("Ki manual", value=0.5)
+    kd_val = c3.number_input("Kd manual", value=0.1)
+    
     tiempo_ensayo = st.sidebar.slider("Tiempo de simulación [s]", 60, 600, 300)
 with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     st.write("Ingresa los datos medidos en el laboratorio:")
@@ -465,41 +471,57 @@ if iniciar_sim:
     st.session_state.ejecutando = True
     
     # --- REINICIO DE MEMORIA DE CONTROL ---
-    # Esto asegura que el Ki empiece a contar desde cero para el nuevo Setpoint
     st.session_state['error_acumulado'] = 0.0
     st.session_state['ultimo_error'] = 0.0
     
     try:
-        import pandas as pd
         df_calibracion = pd.DataFrame(datos_usr)
         
-        # 1. Verificamos que existan datos en la columna
-        if "Nivel Medido (m)" in df_calibracion.columns and not df_calibracion["Nivel Medido (m)"].isnull().all():
-            
-            # Cálculo dinámico del Cd
-            cd_calc = calcular_cd_inteligente(df_calibracion, r_max, h_total, geom_tanque, area_orificio)
-            
-            # Sintonización automática con los parámetros agresivos
-            kp_auto, ki_auto, kd_auto = sintonizar_controlador_dinamico(
-                geom_tanque, r_max, h_total, cd_calc, area_orificio
-            )
-            
-            # Asignación final para la simulación
-            k_p, k_i, k_d = kp_auto, ki_auto, kd_auto
-            
-            st.session_state['cd_final'] = cd_calc
-            st.toast(f"🎯 Control Adaptativo Activo: Cd={cd_calc:.2f} | Kp={k_p} | Ki={k_i}")
+        # LÓGICA DE DECISIÓN: ¿Automático o Manual?
+        if modo_auto:
+            # 1. Verificamos que existan datos válidos para el cálculo
+            if "Nivel Medido (m)" in df_calibracion.columns and not df_calibracion["Nivel Medido (m)"].isnull().all():
+                
+                # Cálculo dinámico del Cd (Tu lógica de tesis)
+                cd_calc = calcular_cd_inteligente(df_calibracion, r_max, h_total, geom_tanque, area_orificio)
+                
+                # Sintonización automática adaptativa
+                kp_a, ki_a, kd_a = sintonizar_controlador_dinamico(
+                    geom_tanque, r_max, h_total, cd_calc, area_orificio
+                )
+                
+                # Guardamos los resultados calculados
+                st.session_state['kp_ejecucion'] = kp_a
+                st.session_state['ki_ejecucion'] = ki_a
+                st.session_state['kd_ejecucion'] = kd_a
+                st.session_state['cd_final'] = cd_calc
+                
+                st.toast(f"🎯 Control Adaptativo Activo: Cd={cd_calc:.2f} | Kp={kp_a} | Ki={ki_a}")
+            else:
+                # Si activaste auto pero la tabla está vacía, usamos respaldo
+                st.session_state['kp_ejecucion'] = 5.0
+                st.session_state['ki_ejecucion'] = 1.2
+                st.session_state['kd_ejecucion'] = 0.1
+                st.session_state['cd_final'] = 0.61
+                st.warning("⚠️ No hay datos experimentales. Usando sintonía de respaldo.")
+        
         else:
-            # Sintonía de respaldo robusta si la tabla está vacía
-            k_p, k_i, k_d = 5.0, 1.2, 0.1
-            st.session_state['cd_final'] = 0.61
-            
-    except Exception as e:
-        # Respaldo de seguridad
-        k_p, k_i, k_d = 5.0, 1.2, 0.1
-        st.session_state['cd_final'] = 0.61
+            # MODO MANUAL: Usamos exactamente lo que pusiste en la barra lateral
+            st.session_state['kp_ejecucion'] = kp_val
+            st.session_state['ki_ejecucion'] = ki_val
+            st.session_state['kd_ejecucion'] = kd_val
+            st.session_state['cd_final'] = 0.61 # Valor por defecto para manual
+            st.info("⚙️ Modo Manual: Usando parámetros definidos por el usuario.")
 
-# Esta línea debe ir aquí, fuera de los bloques 'if' para que no dé error de definición
+    except Exception as e:
+        # Respaldo de seguridad total por si algo falla en los cálculos
+        st.session_state['kp_ejecucion'] = 5.0
+        st.session_state['ki_ejecucion'] = 1.2
+        st.session_state['kd_ejecucion'] = 0.1
+        st.session_state['cd_final'] = 0.61
+        st.error(f"❌ Error en el cálculo: {e}. Usando valores de seguridad.")
+
+# Mantén esta línea justo después del bloque anterior
 estado_expander = not st.session_state.get('ejecutando', False)
 
 
@@ -585,7 +607,12 @@ else:
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, 
             err_int, err_pasado, op_tipo, cd_para_simular,
-            k_p, k_i, k_d  # <--- NUEVOS ARGUMENTOS
+            k_p, k_i, k_d 
+            st.session_state.get('cd_final', 0.61),    # Cd decidido en el inicio
+            st.session_state.get('kp_ejecucion', 5.0), # Kp decidido en el inicio
+            st.session_state.get('ki_ejecucion', 1.2), # Ki decidido en el inicio
+            st.session_state.get('kd_ejecucion', 0.1)  # Kd decidido en el inicio
+        )
         )
         
         
@@ -812,12 +839,15 @@ else:
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada exitosamente.")
     st.balloons()
     
-    # 1. Crear el DataFrame único
+    # 1. Crear el DataFrame único con las constantes usadas
     df_final = pd.DataFrame({
         "Tiempo [s]": vector_t, 
         "Nivel [m]": h_log, 
         "Control [m3/s]": u_log,
-        "Error [m]": e_log
+        "Error [m]": e_log,
+        "Kp_Sintonizado": [st.session_state.get('kp_ejecucion')] * len(vector_t),
+        "Ki_Sintonizado": [st.session_state.get('ki_ejecucion')] * len(vector_t)
+    })
     })
     
     # 2. Mostrar la tabla y métricas de cierre
