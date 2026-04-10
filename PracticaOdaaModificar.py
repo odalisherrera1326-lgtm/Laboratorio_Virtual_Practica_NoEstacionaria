@@ -544,7 +544,7 @@ else:
         placeholder_comparativa = st.empty()
        
 
- with col_met:
+   with col_met:
         st.subheader("Métricas de Control")
         
         # 1. Parámetros calculados o manuales que se están usando
@@ -599,53 +599,37 @@ else:
    
 
     # 3. Bucle de Simulación
+    # 3. Bucle de Simulación
     cd_para_simular = st.session_state.get('cd_final', 0.61)
-    
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
-        # Lógica de perturbación
         q_p_inst = p_magnitud if ('p_activa' in locals() and p_activa and t_act >= p_tiempo) else 0.0
     
-        # OBTENEMOS LOS VALORES QUE DECIDIMOS EN EL PASO ANTERIOR (Manual o Auto)
-        k_p = st.session_state.get('kp_ejecucion', 5.0)
-        k_i = st.session_state.get('ki_ejecucion', 1.2)
-        k_d = st.session_state.get('kd_ejecucion', 0.1)
+        k_p = st.session_state.get('kp_ejecucion', kp_val)
+        k_i = st.session_state.get('ki_ejecucion', ki_val)
+        k_d = st.session_state.get('kd_ejecucion', kd_val)
 
-        # RESOLVER SISTEMA (Llamada limpia sin repeticiones)
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
-            dt, 
-            h_corrida, 
-            sp_nivel, 
-            geom_tanque, 
-            r_max, 
-            h_total, 
-            q_p_inst, 
-            err_int, 
-            err_pasado, 
-            op_tipo, 
-            cd_para_simular,
-            k_p, 
-            k_i, 
-            k_d
+            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, 
+            err_int, err_pasado, op_tipo, cd_para_simular,
+            k_p, k_i, k_d
         )
         
-        # Cálculo de métricas integrales
         iae_acumulado += abs(e_inst) * dt
         itae_acumulado += (t_act * abs(e_inst)) * dt
         
-        # Guardar en logs
         h_log.append(h_corrida)
         u_log.append(u_inst)
         sp_log.append(sp_nivel) 
         e_log.append(e_inst)
         
         if i % 2 == 0:
-            # Actualización de métricas en pantalla
+            m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
+            m_e.metric("Error [m]", f"{e_inst:.4f}")
             placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
             placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
-            m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
-            m_e.metric("Error [m]", f"{e_inst:.3f}")
+            
            # --- B. MONITOR DEL PROCESO (DINÁMICO) ---
          
             fig_t, ax_t = plt.subplots(figsize=(7, 5))
@@ -876,7 +860,6 @@ else:
         err_f = abs(sp_nivel - h_log[-1])
         st.metric("Error Residual Final", f"{err_f:.4f} m")
         
-        # El botón de descarga ahora usa el DataFrame ya creado
         st.download_button(
             label="📥 Descargar Reporte de datos (CSV)", 
             data=df_final.to_csv(index=False), 
