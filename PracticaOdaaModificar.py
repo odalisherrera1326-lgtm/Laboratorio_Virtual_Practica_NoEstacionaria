@@ -479,49 +479,33 @@ if iniciar_sim:
         
         # LÓGICA DE DECISIÓN: ¿Automático o Manual?
         if modo_auto:
-            # 1. Verificamos que existan datos válidos para el cálculo
             if "Nivel Medido (m)" in df_calibracion.columns and not df_calibracion["Nivel Medido (m)"].isnull().all():
-                
-                # Cálculo dinámico del Cd (Tu lógica de tesis)
+                # Sintonía automática de la tesis
                 cd_calc = calcular_cd_inteligente(df_calibracion, r_max, h_total, geom_tanque, area_orificio)
+                kp_a, ki_a, kd_a = sintonizar_controlador_dinamico(geom_tanque, r_max, h_total, cd_calc, area_orificio)
                 
-                # Sintonización automática adaptativa
-                kp_a, ki_a, kd_a = sintonizar_controlador_dinamico(
-                    geom_tanque, r_max, h_total, cd_calc, area_orificio
-                )
-                
-                # Guardamos los resultados calculados
                 st.session_state['kp_ejecucion'] = kp_a
                 st.session_state['ki_ejecucion'] = ki_a
                 st.session_state['kd_ejecucion'] = kd_a
                 st.session_state['cd_final'] = cd_calc
-                
-                st.toast(f"🎯 Control Adaptativo Activo: Cd={cd_calc:.2f} | Kp={kp_a} | Ki={ki_a}")
+                st.toast(f"🎯 Control Adaptativo: Cd={cd_calc:.2f} | Kp={kp_a}")
             else:
-                # Si activaste auto pero la tabla está vacía, usamos respaldo
-                st.session_state['kp_ejecucion'] = 5.0
-                st.session_state['ki_ejecucion'] = 1.2
-                st.session_state['kd_ejecucion'] = 0.1
-                st.session_state['cd_final'] = 0.61
-                st.warning("⚠️ No hay datos experimentales. Usando sintonía de respaldo.")
-        
+                raise ValueError("Tabla vacía")
         else:
-            # MODO MANUAL: Usamos exactamente lo que pusiste en la barra lateral
+            # Modo Manual (Sidebar)
             st.session_state['kp_ejecucion'] = kp_val
             st.session_state['ki_ejecucion'] = ki_val
             st.session_state['kd_ejecucion'] = kd_val
-            st.session_state['cd_final'] = 0.61 # Valor por defecto para manual
-            st.info("⚙️ Modo Manual: Usando parámetros definidos por el usuario.")
+            st.session_state['cd_final'] = 0.61
 
     except Exception as e:
-        # Respaldo de seguridad total por si algo falla en los cálculos
         st.session_state['kp_ejecucion'] = 5.0
         st.session_state['ki_ejecucion'] = 1.2
         st.session_state['kd_ejecucion'] = 0.1
         st.session_state['cd_final'] = 0.61
-        st.error(f"❌ Error en el cálculo: {e}. Usando valores de seguridad.")
+        st.warning("⚠️ Usando valores de respaldo.")
 
-# Mantén esta línea justo después del bloque anterior
+# Esta línea va fuera de los bloques 'if' y corregida (sin el paréntesis extra del error 616)
 estado_expander = not st.session_state.get('ejecutando', False)
 
 
@@ -561,13 +545,29 @@ else:
        
 
     with col_met:
+        
+        with col_met:
         st.subheader("Métricas de Control")
+        
+        # 1. Parámetros calculados o manuales
+        kp_show = st.session_state.get('kp_ejecucion', kp_val)
+        cd_show = st.session_state.get('cd_final', 0.61)
+        
+        st.write(f"**Parámetros Activos:**")
+        st.caption(f"Kp: {kp_show} | Cd: {cd_show}")
+        st.markdown("---")
+        
+        # 2. Espacios reservados para métricas dinámicas
         placeholder_iae = st.empty()
         placeholder_itae = st.empty()
+        
+        # Inicialización de etiquetas
         placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
         placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
         
         st.markdown("---")
+        
+        # 3. Monitoreo instantáneo
         m_h = st.empty()
         m_e = st.empty()
         m_h.metric("Nivel PV [m]", "0.000")
@@ -575,7 +575,7 @@ else:
         
         st.markdown("---")
         area_descarga = st.empty()
-
+        
     # 2. Preparación de datos
     status_placeholder = st.empty()
     dt = 1.0 
@@ -593,45 +593,52 @@ else:
 
     # 3. Bucle de Simulación
     cd_para_simular = st.session_state.get('cd_final', 0.61)
+    
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
         # Lógica de perturbación
         q_p_inst = p_magnitud if ('p_activa' in locals() and p_activa and t_act >= p_tiempo) else 0.0
     
-        # Obtenemos los valores que acabamos de sintonizar
-        k_p = st.session_state.get('kp_auto', kp_val)
-        k_i = st.session_state.get('ki_auto', ki_val)
-        k_d = st.session_state.get('kd_auto', kd_val)
+        # OBTENEMOS LOS VALORES QUE DECIDIMOS EN EL PASO ANTERIOR (Manual o Auto)
+        k_p = st.session_state.get('kp_ejecucion', 5.0)
+        k_i = st.session_state.get('ki_ejecucion', 1.2)
+        k_d = st.session_state.get('kd_ejecucion', 0.1)
 
+        # RESOLVER SISTEMA (Llamada limpia sin repeticiones)
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
-            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, 
-            err_int, err_pasado, op_tipo, cd_para_simular,
-            k_p, k_i, k_d 
-            st.session_state.get('cd_final', 0.61),    # Cd decidido en el inicio
-            st.session_state.get('kp_ejecucion', 5.0), # Kp decidido en el inicio
-            st.session_state.get('ki_ejecucion', 1.2), # Ki decidido en el inicio
-            st.session_state.get('kd_ejecucion', 0.1)  # Kd decidido en el inicio
+            dt, 
+            h_corrida, 
+            sp_nivel, 
+            geom_tanque, 
+            r_max, 
+            h_total, 
+            q_p_inst, 
+            err_int, 
+            err_pasado, 
+            op_tipo, 
+            cd_para_simular,
+            k_p, 
+            k_i, 
+            k_d
         )
-        )
-        
         
         # Cálculo de métricas integrales
         iae_acumulado += abs(e_inst) * dt
         itae_acumulado += (t_act * abs(e_inst)) * dt
         
+        # Guardar en logs
         h_log.append(h_corrida)
         u_log.append(u_inst)
         sp_log.append(sp_nivel) 
         e_log.append(e_inst)
         
         if i % 2 == 0:
-            # A. Actualización de métricas
-            m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
-            m_e.metric("Error [m]", f"{e_inst:.4f}")
+            # Actualización de métricas en pantalla
             placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
             placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
-
+            m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
+            m_e.metric("Error [m]", f"{e_inst:.3f}")
            # --- B. MONITOR DEL PROCESO (DINÁMICO) ---
          
             fig_t, ax_t = plt.subplots(figsize=(7, 5))
