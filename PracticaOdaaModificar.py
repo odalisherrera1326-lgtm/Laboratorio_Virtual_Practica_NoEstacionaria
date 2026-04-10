@@ -855,7 +855,7 @@ else:
         "Kp_Sintonizado": [st.session_state.get('kp_ejecucion')] * len(vector_t),
         "Ki_Sintonizado": [st.session_state.get('ki_ejecucion')] * len(vector_t)
     })
-    })
+    
     
     # 2. Mostrar la tabla y métricas de cierre
     st.subheader("📋 Resumen de Datos y Estabilidad")
