@@ -18,150 +18,203 @@ st.set_page_config(
 if 'ejecutando' not in st.session_state:
     st.session_state.ejecutando = False
 
-
 # =============================================================================
 # INTERFAZ TESIS 
 # =============================================================================
-temas = {
-    "Azul UCV (Oficial)": {
-        "bg": "#f4f7f9", 
-        "sidebar": "#1a5276", 
-        "texto_side": "#ffffff", 
-        "header": "#1a5276",
-        "metric_bg": "#ffffff",
-        "metric_label": "#1a5276",
-        "plot_style": "default"
-    },
-    "Modo Oscuro Profundo": {
-        "bg": "#121212", # Gris oscuro profundo, mejor que negro puro
-        "sidebar": "#1e1e1e", 
-        "texto_side": "#e0e0e0", 
-        "header": "#000000",
-        "metric_bg": "#1f1f1f",
-        "metric_label": "#00ffcc",
-        "plot_style": "dark_background" # Esto arregla las gráficas automáticamente
-    },
-    "Gris Minimalista": {
-        "bg": "#ffffff", 
-        "sidebar": "#f0f2f6", 
-        "texto_side": "#1a5276", 
-        "header": "#e5e7eb",
-        "metric_bg": "#f8f9fa",
-        "metric_label": "#333333",
-        "plot_style": "ggplot"
-    }
-}
-
-# 2. Selector de tema (Asegúrate de que 'tema_elegido' se use después)
-tema_elegido = st.sidebar.selectbox("🎨 Seleccione el tema:", list(temas.keys()))
-c = temas[tema_elegido]
-
-# 3. Aplicación del estilo dinámico con CURSOR y ANIMACIONES
-css_style = f"""
+st.markdown("""
     <style>
-    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR */
-    html, body, [data-testid="stAppViewContainer"] {{
-        background-color: {c['bg']} !important; 
+    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR DE ENGRANAJE ⚙️ */
+    html, body, [data-testid="stAppViewContainer"] {
+        background-color: #f4f7f9 !important; 
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto !important;
-    }}
+    }
 
-    button, a, [data-testid="stHeaderActionElements"], .stSlider {{
+    button, a, [data-testid="stHeaderActionElements"], .stSlider {
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text><text x='10' y='28' style='font-size: 14px;'>👆</text></svg>") 16 16, pointer !important;
-    }}
+    }
 
-    /* 2. BARRAS DE INTERFAZ */
-    header[data-testid="stHeader"] {{
-        background-color: {c['header']} !important;
-    }}
+    /* 2. BARRAS DE INTERFAZ (AZUL UCV) */
+    header[data-testid="stHeader"] {
+        background-color: #1a5276 !important;
+        color: white !important;
+    }
 
-    [data-testid="stSidebar"] {{
-        background-color: {c['sidebar']} !important;
+    [data-testid="stSidebar"] {
+        background-color: #1a5276 !important;
         border-right: 4px solid #154360 !important;
-    }}
-
-    /* --- TÍTULOS EN BLANCO --- */
-    [data-testid="stSidebar"] h1, 
-    [data-testid="stSidebar"] h2, 
-    [data-testid="stSidebar"] h3,
-    [data-testid="stSidebar"] .stSubheader p,
-    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {{
-        color: #FFFFFF !important; 
-        font-weight: bold !important;
-    }}
+    }
 
     [data-testid="stSidebar"] .stMarkdown, 
     [data-testid="stSidebar"] label, 
     [data-testid="stSidebar"] p, 
-    [data-testid="stSidebar"] span {{
-        color: {c['texto_side']} !important;
-    }}
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        color: white !important;
+        font-weight: 500;
+    }
 
-    /* 3. BOTONES: BLOQUEO TOTAL DE FONDO BLANCO */
-    /* Esta regla aplica a todos los botones, incluyendo los de la barra lateral */
-    .stButton>button {{
+    /* 3. RECUADROS Y NÚMEROS DE MÉTRICAS  */
+    div[data-testid="stMetric"] {
+        background-color: #ffffff !important;
+        border: 2px solid #1a5276 !important;
+        border-radius: 15px !important;
+        padding: 15px !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+        text-align: center !important;
+    }
+    div[data-testid="stMetric"] label {
+        color: #1a5276 !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+    }
+    /* Color de los números: Azul oscuro para legibilidad */
+    div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
+        color: #154360 !important; 
+        font-size: 2rem !important;
+        font-weight: 800 !important;
+    }
+
+    /* 4. BARRA DE PROGRESO "PROCESANDO" (AHORA AZUL) */
+    .stProgress > div > div > div > div {
+        background-color: #2980b9 !important;
+        animation: pulso_azul 2s ease-in-out infinite;
+        box-shadow: 0 0 12px rgba(41, 128, 185, 0.6);
+    }
+    
+    @keyframes pulso_azul {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
+//* 1. COLOR DE LA BARRA ACTIVA  */
+    div[data-baseweb="slider"] > div > div > div {
+        background-color: #FFA500 !important;
+    }
+
+    /* 2. COLOR DEL BOTÓN CIRCULAR */
+    div[role="slider"] {
+        background-color: #FFA500 !important;
+        border: 2px solid white !important;
+    }
+
+    /* 3. COLOR DEL NÚMERO QUE FLOTA (EL VALOR ACTUAL) */
+    /* Este selector apunta específicamente al valor dinámico */
+    div[data-baseweb="slider"] div[data-testid="stTickBar"] + div,
+    div[data-baseweb="slider"] ~ div span {
+        color: #FFA500 !important;
+        font-weight: bold !important;
+    }
+    
+    /* 4. COLOR DE LOS NÚMEROS DE LOS EXTREMOS (MIN Y MAX) */
+    div[data-testid="stTickBar"] div {
+        color: #FFA500 !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* 5. RESTABLECER EL COLOR DE LAS ETIQUETAS (PARA QUE NO SEAN NARANJAS) */
+    /* Esto asegura que "Simular Falla/Fuga" y "Consigna de Nivel" vuelvan a ser blancos o negros */
+    div[data-testid="stWidgetLabel"] p {
+        color: white !important; /* O el color que prefieras para tus títulos */
+        font-weight: normal !important;
+    }
+    }
+
+    /* 6. INPUTS Y BOTONES */
+    [data-testid="stSidebar"] .stNumberInput input {
+        background-color: #ffffff !important;
+        color: #1a5276 !important;
+        border: 2px solid #2980b9 !important;
+        border-radius: 8px !important;
+    }
+
+    [data-testid="stSidebar"] .stDownloadButton button {
+        background-color: #27ae60 !important;
+        color: white !important;
+        border-radius: 12px !important;
+    }
+
+    .stButton>button {
         background-color: #1a5276 !important; 
         color: white !important; 
         border: 2px solid white !important;
         border-radius: 12px !important;
-        transition: all 0.3s ease-in-out !important;
-    }}
-
-    /* Forzamos que en HOVER, ACTIVE y FOCUS siempre mantenga el azul */
-    .stButton>button:hover, 
-    .stButton>button:active, 
-    .stButton>button:focus,
-    .stButton>button:hover:active {{
-        background-color: #1a5276 !important; 
+    }
+    
+    .stButton>button:hover {
+        border: 2px solid #2980b9 !important;
+        box-shadow: 0 0 20px rgba(41, 128, 185, 0.5) !important;
+    }
+    /* --- CORRECCIÓN PARA EL BOTÓN EN LA BARRA LATERAL --- */
+    
+    /* Evita que el botón cambie a blanco al hacer clic o al estar seleccionado */
+    .stButton>button:active, .stButton>button:focus {
+        background-color: #1a5276 !important; /* Mantiene el azul UCV */
         color: white !important;
-        border: 2px solid #f1c40f !important;
-        box-shadow: 0 0 15px rgba(241, 196, 15, 0.4) !important;
-    }}
+        border: 2px solid #f1c40f !important; /* Mantiene el borde amarillo si quieres */
+        outline: none !important;
+    }
 
-    /* 4. ELIMINAR RECUADROS BLANCOS EN ELEMENTOS DE LA BARRA LATERAL */
-    /* Esto evita que selectores o sliders se pongan blancos al interactuar */
-    [data-testid="stSidebar"] [data-baseweb="select"] > div,
-    [data-testid="stSidebar"] [data-baseweb="base-input"] {{
-        background-color: #ffffff !important;
-    }}
-
-    /* Bloqueo específico para cuando pasas el ratón sobre widgets en el sidebar */
-    [data-testid="stSidebar"] button:hover {{
-        background-color: #154360 !important; /* Un azul ligeramente más oscuro en lugar de blanco */
+    /* Si es el botón de RESET (el rojo) */
+    div.stButton > button:first-child[kind="secondary"]:active,
+    div.stButton > button:first-child[kind="secondary"]:focus {
+        background-color: #943126 !important; /* Mantiene el rojo oscuro */
         color: white !important;
-    }}
+        outline: none !important;
+    }
 
-    /* 5. BANNER ANIMADO */
-    .header-container {{
-        background: linear-gradient(-45deg, #154360, {c['header']}, #21618c, #1a5276);
+    /* Específico para botones dentro de la barra lateral */
+    [data-testid="stSidebar"] .stButton>button:active {
+        background-color: #154360 !important; /* Un azul un poco más oscuro al presionar */
+        color: white !important;
+    }
+
+    /* 7. BANNER DE ENCABEZADO */
+    .header-container {
+        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
         background-size: 400% 400%;
-        animation: gradient_anim 15s ease infinite;
-        padding: 25px; border-radius: 15px; border-bottom: 6px solid #f1c40f;
+        animation: gradient 15s ease infinite;
+        padding: 25px; border-radius: 15px; border-bottom: 6px solid #1a5276;
         color: white; text-align: center;
-    }}
+    }
 
-    @keyframes gradient_anim {{
-        0% {{ background-position: 0% 50%; }}
-        50% {{ background-position: 100% 50%; }}
-        100% {{ background-position: 0% 50%; }}
-    }}
-    /* Asegurar que todos los textos generales sean visibles */
-    [data-testid="stMarkdownContainer"] p, 
-    [data-testid="stWidgetLabel"] p,
-    .stSelectbox label, 
-    .stNumberInput label {{
-        color: {c['texto_side']} !important;
-    }}
+    /* 8. BOTONES DE CONTROL (INICIAR/RESET) CON BRILLO */
+    .stButton>button {
+        background-color: #1a5276 !important; 
+        color: white !important; 
+        border: 2px solid white !important;
+        border-radius: 12px !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+    }
+    .stButton>button:hover {
+        border: 2px solid #f1c40f !important;
+        box-shadow: 0 0 25px #f1c40f !important;
+        transform: translateY(-2px);
+    }
 
-    /* Estilo para los títulos de la barra lateral (siempre blancos) */
-    [data-testid="stSidebar"] h1, 
-    [data-testid="stSidebar"] h2, 
-    [data-testid="stSidebar"] h3 {{
-        color: #ffffff !important;
-    }}
+    div.stButton > button:first-child[kind="secondary"] {
+        background-color: #943126 !important;
+    }
+    div.stButton > button:first-child[kind="secondary"]:hover {
+        box-shadow: 0 0 25px #cb4335 !important;
+    }
+
+    /* 9. BANNER DE ENCABEZADO UCV */
+    .header-container {
+        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
+        padding: 25px; border-radius: 15px; border-bottom: 6px solid #f1c40f;
+        color: white; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    @keyframes gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
     </style>
-"""
+    """, unsafe_allow_html=True)
 
-st.markdown(css_style, unsafe_allow_html=True)
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL CON FONDO 
 # =============================================================================
@@ -477,32 +530,6 @@ if iniciar_sim:
 
 # Esta línea va fuera de los bloques 'if' y corregida (sin el paréntesis extra del error 616)
 estado_expander = not st.session_state.get('ejecutando', False)
-# 2. AQUÍ ES DONDE DEBES PEGAR EL CÓDIGO DE LAS GRÁFICAS
-# --- SECCIÓN DE GRÁFICAS ---
-st.subheader("📊 Monitoreo de Variables")
-
-if 'vector_t' in locals() or 'vector_t' in globals():
-    # 1. Aplicar el estilo de gráfica según el tema elegido
-    plt.style.use(c['plot_style'])
-    color_linea = "#00ffcc" if tema_elegido == "Modo Oscuro Profundo" else "#1a5276"
-
-    # 2. Crear la figura
-    fig_h, ax_h = plt.subplots(figsize=(10, 4))
-    ax_h.plot(vector_t, h_log, color=color_linea, linewidth=2, label="Nivel h(t)")
-    
-    # 3. Personalización estética
-    ax_h.set_title("Dinámica de Nivel", color=c['texto_side'])
-    ax_h.set_xlabel("Tiempo [s]", color=c['texto_side'])
-    ax_h.set_ylabel("Altura [m]", color=c['texto_side'])
-    ax_h.tick_params(colors=c['texto_side']) 
-    
-    st.pyplot(fig_h)
-else:
-    st.info("💡 Configure los parámetros y presione 'Iniciar Simulación' para visualizar los resultados.")
-
-# 3. LUEGO SIGUE TU SECCIÓN DE RESULTADOS FINALES
-# --- RESULTADOS FINALES Y DESCARGA ---
-st.markdown("---")
 
 
 
@@ -594,7 +621,7 @@ else:
     barra_p = st.progress(0)
    
 
-    
+    # 3. Bucle de Simulación
     # 3. Bucle de Simulación
     cd_para_simular = st.session_state.get('cd_final', 0.61)
     for i, t_act in enumerate(vector_t):
@@ -708,7 +735,6 @@ else:
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
             # --- C. Tendencia de Nivel (SOLO SIMULACIÓN) --- 
-                       
             fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
             
             # Graficamos solo el nivel simulado
@@ -734,7 +760,6 @@ else:
             plt.close(fig_tr)
             
             # D. Acción de Control
-            
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
             ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
             ax_u.set_xlim(0, tiempo_ensayo)
@@ -749,7 +774,6 @@ else:
             fig_v, ax_v = plt.subplots(figsize=(8, 3))
             
             # Dibujamos la apertura (u_log) en color verde
-           
             ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5, label='Apertura Real')
             ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
             
@@ -872,4 +896,3 @@ else:
         st.success(f"✅ El sistema alcanzó el estado estacionario en {h_log[-1]:.3f} m.")
     else:
         st.warning(f"⚠️ El sistema presenta un error residual de {err_f:.3f} m. Se sugiere ajustar Kp/Ki.")
-
