@@ -202,13 +202,7 @@ with col_teoria3:
 # 3. BARRA LATERAL: PARÁMETROS TÉCNICOS
 # =============================================================================
 st.sidebar.header("⚙️ Configuración del Sistema")
-# Colócalo al principio de la barra lateral
-with st.sidebar:
-    st.subheader("🎨 Personalización")
-    tema_elegido = st.selectbox(
-        "Seleccione el tema de la interfaz:",
-        ["Azul UCV (Oficial)", "Modo Oscuro Profundo", "Gris Minimalista"]
-    )
+
 with st.sidebar.container(border=True):
     op_tipo = st.sidebar.selectbox(" Operación Principal", ["Llenado", "Vaciado"])
     geom_tanque = st.sidebar.selectbox(" Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
