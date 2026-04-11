@@ -21,200 +21,117 @@ if 'ejecutando' not in st.session_state:
 # =============================================================================
 # INTERFAZ TESIS 
 # =============================================================================
+# 1. Definición de colores según el tema
+temas = {
+    "Azul UCV (Oficial)": {
+        "bg": "#f4f7f9", 
+        "sidebar": "#1a5276", 
+        "texto_side": "#ffffff", 
+        "header": "#1a5276",
+        "metric_bg": "#ffffff",
+        "metric_label": "#1a5276"
+    },
+    "Modo Oscuro Profundo": {
+        "bg": "#0e1117", 
+        "sidebar": "#262730", 
+        "texto_side": "#ffffff", 
+        "header": "#000000",
+        "metric_bg": "#1e1e1e",
+        "metric_label": "#00ffcc"
+    },
+    "Gris Minimalista": {
+        "bg": "#ffffff", 
+        "sidebar": "#f0f2f6", 
+        "texto_side": "#1a5276", 
+        "header": "#e5e7eb",
+        "metric_bg": "#f8f9fa",
+        "metric_label": "#333333"
+    }
+}
+
+# 2. Selector en la barra lateral
+with st.sidebar:
+    st.subheader("🎨 Personalización")
+    tema_elegido = st.selectbox(
+        "Seleccione el tema de la interfaz:",
+        list(temas.keys())
+    )
+
+c = temas[tema_elegido] # Variable que contiene los colores activos
 st.markdown("""
+    # 3. Aplicación del estilo dinámico
+st.markdown(f"""
     <style>
-    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR DE ENGRANAJE ⚙️ */
-    html, body, [data-testid="stAppViewContainer"] {
-        background-color: #f4f7f9 !important; 
+    /* CONFIGURACIÓN GLOBAL */
+    html, body, [data-testid="stAppViewContainer"] {{
+        background-color: {c['bg']} !important; 
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto !important;
-    }
+    }}
 
-    button, a, [data-testid="stHeaderActionElements"], .stSlider {
-        cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text><text x='10' y='28' style='font-size: 14px;'>👆</text></svg>") 16 16, pointer !important;
-    }
+    /* BARRAS DE INTERFAZ */
+    header[data-testid="stHeader"] {{
+        background-color: {c['header']} !important;
+    }}
 
-    /* 2. BARRAS DE INTERFAZ (AZUL UCV) */
-    header[data-testid="stHeader"] {
-        background-color: #1a5276 !important;
-        color: white !important;
-    }
-
-    [data-testid="stSidebar"] {
-        background-color: #1a5276 !important;
+    [data-testid="stSidebar"] {{
+        background-color: {c['sidebar']} !important;
         border-right: 4px solid #154360 !important;
-    }
+    }}
 
     [data-testid="stSidebar"] .stMarkdown, 
     [data-testid="stSidebar"] label, 
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: white !important;
-        font-weight: 500;
-    }
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {{
+        color: {c['texto_side']} !important;
+    }}
 
-    /* 3. RECUADROS Y NÚMEROS DE MÉTRICAS  */
-    div[data-testid="stMetric"] {
-        background-color: #ffffff !important;
-        border: 2px solid #1a5276 !important;
+    /* MÉTRICAS DINÁMICAS */
+    div[data-testid="stMetric"] {{
+        background-color: {c['metric_bg']} !important;
+        border: 2px solid {c['header']} !important;
         border-radius: 15px !important;
         padding: 15px !important;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
-        text-align: center !important;
-    }
-    div[data-testid="stMetric"] label {
-        color: #1a5276 !important;
+    }}
+
+    div[data-testid="stMetric"] label {{
+        color: {c['metric_label']} !important;
         font-weight: bold !important;
-        text-transform: uppercase !important;
-    }
-    /* Color de los números: Azul oscuro para legibilidad */
-    div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-        color: #154360 !important; 
-        font-size: 2rem !important;
-        font-weight: 800 !important;
-    }
+    }}
 
-    /* 4. BARRA DE PROGRESO "PROCESANDO" (AHORA AZUL) */
-    .stProgress > div > div > div > div {
-        background-color: #2980b9 !important;
-        animation: pulso_azul 2s ease-in-out infinite;
-        box-shadow: 0 0 12px rgba(41, 128, 185, 0.6);
-    }
-    
-    @keyframes pulso_azul {
-        0% { opacity: 0.6; }
-        50% { opacity: 1; }
-        100% { opacity: 0.6; }
-    }
-//* 1. COLOR DE LA BARRA ACTIVA  */
-    div[data-baseweb="slider"] > div > div > div {
-        background-color: #FFA500 !important;
-    }
-
-    /* 2. COLOR DEL BOTÓN CIRCULAR */
-    div[role="slider"] {
-        background-color: #FFA500 !important;
-        border: 2px solid white !important;
-    }
-
-    /* 3. COLOR DEL NÚMERO QUE FLOTA (EL VALOR ACTUAL) */
-    /* Este selector apunta específicamente al valor dinámico */
-    div[data-baseweb="slider"] div[data-testid="stTickBar"] + div,
-    div[data-baseweb="slider"] ~ div span {
-        color: #FFA500 !important;
-        font-weight: bold !important;
-    }
-    
-    /* 4. COLOR DE LOS NÚMEROS DE LOS EXTREMOS (MIN Y MAX) */
-    div[data-testid="stTickBar"] div {
-        color: #FFA500 !important;
-        font-size: 0.8rem !important;
-    }
-
-    /* 5. RESTABLECER EL COLOR DE LAS ETIQUETAS (PARA QUE NO SEAN NARANJAS) */
-    /* Esto asegura que "Simular Falla/Fuga" y "Consigna de Nivel" vuelvan a ser blancos o negros */
-    div[data-testid="stWidgetLabel"] p {
-        color: white !important; /* O el color que prefieras para tus títulos */
-        font-weight: normal !important;
-    }
-    }
-
-    /* 6. INPUTS Y BOTONES */
-    [data-testid="stSidebar"] .stNumberInput input {
-        background-color: #ffffff !important;
-        color: #1a5276 !important;
-        border: 2px solid #2980b9 !important;
-        border-radius: 8px !important;
-    }
-
-    [data-testid="stSidebar"] .stDownloadButton button {
-        background-color: #27ae60 !important;
-        color: white !important;
-        border-radius: 12px !important;
-    }
-
-    .stButton>button {
+    /* BOTONES (Se mantienen con lógica de color UCV o personalizada) */
+    .stButton>button {{
         background-color: #1a5276 !important; 
         color: white !important; 
         border: 2px solid white !important;
         border-radius: 12px !important;
-    }
-    
-    .stButton>button:hover {
-        border: 2px solid #2980b9 !important;
-        box-shadow: 0 0 20px rgba(41, 128, 185, 0.5) !important;
-    }
-    /* --- CORRECCIÓN PARA EL BOTÓN EN LA BARRA LATERAL --- */
-    
-    /* Evita que el botón cambie a blanco al hacer clic o al estar seleccionado */
-    .stButton>button:active, .stButton>button:focus {
-        background-color: #1a5276 !important; /* Mantiene el azul UCV */
-        color: white !important;
-        border: 2px solid #f1c40f !important; /* Mantiene el borde amarillo si quieres */
-        outline: none !important;
-    }
-
-    /* Si es el botón de RESET (el rojo) */
-    div.stButton > button:first-child[kind="secondary"]:active,
-    div.stButton > button:first-child[kind="secondary"]:focus {
-        background-color: #943126 !important; /* Mantiene el rojo oscuro */
-        color: white !important;
-        outline: none !important;
-    }
-
-    /* Específico para botones dentro de la barra lateral */
-    [data-testid="stSidebar"] .stButton>button:active {
-        background-color: #154360 !important; /* Un azul un poco más oscuro al presionar */
-        color: white !important;
-    }
-
-    /* 7. BANNER DE ENCABEZADO */
-    .header-container {
-        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
-        background-size: 400% 400%;
-        animation: gradient 15s ease infinite;
-        padding: 25px; border-radius: 15px; border-bottom: 6px solid #1a5276;
-        color: white; text-align: center;
-    }
-
-    /* 8. BOTONES DE CONTROL (INICIAR/RESET) CON BRILLO */
-    .stButton>button {
-        background-color: #1a5276 !important; 
-        color: white !important; 
-        border: 2px solid white !important;
-        border-radius: 12px !important;
-        font-weight: bold !important;
         transition: all 0.3s ease !important;
-    }
-    .stButton>button:hover {
+    }}
+    
+    .stButton>button:active, .stButton>button:focus {{
+        background-color: #1a5276 !important;
+        color: white !important;
         border: 2px solid #f1c40f !important;
-        box-shadow: 0 0 25px #f1c40f !important;
-        transform: translateY(-2px);
-    }
+        outline: none !important;
+    }}
 
-    div.stButton > button:first-child[kind="secondary"] {
-        background-color: #943126 !important;
-    }
-    div.stButton > button:first-child[kind="secondary"]:hover {
-        box-shadow: 0 0 25px #cb4335 !important;
-    }
-
-    /* 9. BANNER DE ENCABEZADO UCV */
-    .header-container {
-        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
+    /* BANNER ANIMADO */
+    .header-container {{
+        background: linear-gradient(-45deg, #154360, {c['header']}, #21618c, #1a5276);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
         padding: 25px; border-radius: 15px; border-bottom: 6px solid #f1c40f;
-        color: white; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    }
-    @keyframes gradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
+        color: white; text-align: center;
+    }}
+
+    @keyframes gradient {{
+        0% {{ background-position: 0% 50%; }}
+        50% {{ background-position: 100% 50%; }}
+        100% {{ background-position: 0% 50%; }}
+    }}
     </style>
     """, unsafe_allow_html=True)
-
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL CON FONDO 
 # =============================================================================
@@ -304,7 +221,13 @@ with col_teoria3:
 # 3. BARRA LATERAL: PARÁMETROS TÉCNICOS
 # =============================================================================
 st.sidebar.header("⚙️ Configuración del Sistema")
-
+# Colócalo al principio de la barra lateral
+with st.sidebar:
+    st.subheader("🎨 Personalización")
+    tema_elegido = st.selectbox(
+        "Seleccione el tema de la interfaz:",
+        ["Azul UCV (Oficial)", "Modo Oscuro Profundo", "Gris Minimalista"]
+    )
 with st.sidebar.container(border=True):
     op_tipo = st.sidebar.selectbox(" Operación Principal", ["Llenado", "Vaciado"])
     geom_tanque = st.sidebar.selectbox(" Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
