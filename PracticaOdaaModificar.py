@@ -18,9 +18,7 @@ st.set_page_config(
 if 'ejecutando' not in st.session_state:
     st.session_state.ejecutando = False
 
-# =============================================================================
-# INTERFAZ TESIS 
-# =============================================================================
+
 # =============================================================================
 # INTERFAZ TESIS 
 # =============================================================================
@@ -59,13 +57,12 @@ c = temas[tema_elegido]
 # 3. Aplicación del estilo dinámico con CURSOR y ANIMACIONES
 css_style = f"""
     <style>
-    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR DE ENGRANAJE ⚙️ */
+    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR */
     html, body, [data-testid="stAppViewContainer"] {{
         background-color: {c['bg']} !important; 
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto !important;
     }}
 
-    /* Cursor de manito con engranaje para botones y sliders */
     button, a, [data-testid="stHeaderActionElements"], .stSlider {{
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text><text x='10' y='28' style='font-size: 14px;'>👆</text></svg>") 16 16, pointer !important;
     }}
@@ -80,6 +77,16 @@ css_style = f"""
         border-right: 4px solid #154360 !important;
     }}
 
+    /* --- CAMBIO DE COLOR DE TÍTULOS EN BARRA LATERAL --- */
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] .stSubheader p {{
+        color: #FFA500 !important; /* Aquí puse naranja, puedes cambiarlo por #FFFFFF si los quieres blancos */
+        font-weight: bold !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }}
+
     [data-testid="stSidebar"] .stMarkdown, 
     [data-testid="stSidebar"] label, 
     [data-testid="stSidebar"] p, 
@@ -87,31 +94,30 @@ css_style = f"""
         color: {c['texto_side']} !important;
     }}
 
-    /* 3. BOTONES CON ANIMACIÓN HOVER */
+    /* 3. BOTONES Y EVITAR EFECTO BLANCO AL POSICIONARSE/CLIC */
     .stButton>button {{
         background-color: #1a5276 !important; 
         color: white !important; 
         border: 2px solid white !important;
         border-radius: 12px !important;
-        font-weight: bold !important;
-        transition: all 0.3s ease-in-out !important; /* Animación suave */
+        transition: all 0.3s ease-in-out !important;
     }}
 
-    /* Efecto al poner el ratón encima (Hover) */
-    .stButton>button:hover {{
-        border: 2px solid #f1c40f !important; /* Borde amarillo UCV */
-        box-shadow: 0 0 20px rgba(241, 196, 15, 0.6) !important; /* Brillo */
-        transform: translateY(-3px) !important; /* Se eleva un poquito */
-    }}
-
-    /* Evita el fondo blanco al presionar */
-    .stButton>button:active, .stButton>button:focus {{
-        background-color: #1a5276 !important;
+    /* Bloqueo del blanco en Hover y Active */
+    .stButton>button:hover, .stButton>button:active, .stButton>button:focus {{
+        background-color: #1a5276 !important; /* Mantiene el azul original */
         color: white !important;
+        border: 2px solid #f1c40f !important;
+        box-shadow: 0 0 15px rgba(241, 196, 15, 0.4) !important;
         outline: none !important;
     }}
 
-    /* 4. BANNER ANIMADO */
+    /* 4. SLIDERS SIN FONDO BLANCO */
+    div[data-baseweb="slider"] > div:first-child {{
+        background-color: transparent !important;
+    }}
+
+    /* 5. BANNER ANIMADO */
     .header-container {{
         background: linear-gradient(-45deg, #154360, {c['header']}, #21618c, #1a5276);
         background-size: 400% 400%;
