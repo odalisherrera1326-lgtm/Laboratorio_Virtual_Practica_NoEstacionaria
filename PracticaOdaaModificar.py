@@ -480,7 +480,7 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
         u_graficar = q_entrada
     else:
         q_entrada = q_p_val  
-        q_salida = np.clip(-u_control, 0, 0.6) 
+        q_salida = np.clip(-u_control, 0, 2) 
         dh_dt = (q_entrada - q_salida) / area_h
         u_graficar = q_salida
     
@@ -611,7 +611,11 @@ else:
     dt = 1.0 
     vector_t = np.arange(0, tiempo_ensayo, dt)
     h_log, u_log, sp_log, e_log = [], [], [], []
-    h_corrida = h_total if op_tipo == "Vaciado" else 0.05
+   
+if op_tipo == "Llenado":
+    h_corrida = 0.0  # El proceso de llenado empieza desde el fondo
+else:
+    h_corrida = h_total  # El proceso de vaciado empieza desde el tope
     err_int, err_pasado = 0, 0
     iae_acumulado = 0
     itae_acumulado = 0
