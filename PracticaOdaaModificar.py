@@ -21,6 +21,9 @@ if 'ejecutando' not in st.session_state:
 # =============================================================================
 # INTERFAZ TESIS 
 # =============================================================================
+# =============================================================================
+# INTERFAZ TESIS 
+# =============================================================================
 # 1. Definición de los Temas
 temas = {
     "Azul UCV (Oficial)": {
@@ -49,21 +52,15 @@ temas = {
     }
 }
 
-# 2. Selector en la barra lateral
-with st.sidebar:
-    st.subheader("🎨 Personalización")
-    tema_elegido = st.selectbox(
-        "Seleccione el tema de la interfaz:",
-        list(temas.keys())
-    )
-
+# 2. Selector de tema (Asegúrate de que 'tema_elegido' se use después)
+tema_elegido = st.sidebar.selectbox("🎨 Seleccione el tema:", list(temas.keys()))
 c = temas[tema_elegido]
 
-# 3. CONSTRUCCIÓN DEL CSS (SOLUCIÓN DEFINITIVA SIN ERRORES DE LLAVES)
-css_style = f"""
+# 3. Aplicación del estilo dinámico
+st.markdown(f"""
     <style>
     html, body, [data-testid="stAppViewContainer"] {{
-        background-color: {c['bg']} !important;
+        background-color: {c['bg']} !important; 
     }}
 
     header[data-testid="stHeader"] {{
@@ -91,6 +88,7 @@ css_style = f"""
 
     div[data-testid="stMetric"] label {{
         color: {c['metric_label']} !important;
+        font-weight: bold !important;
     }}
 
     .stButton>button {{
@@ -114,9 +112,7 @@ css_style = f"""
         100% {{ background-position: 0% 50%; }}
     }}
     </style>
-"""
-
-st.markdown(css_style, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL CON FONDO 
 # =============================================================================
