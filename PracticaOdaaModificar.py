@@ -59,7 +59,7 @@ with st.sidebar:
 
 c = temas[tema_elegido] # Variable que contiene los colores activos
 st.markdown("""
-    # 3. Aplicación del estilo dinámico
+   # 3. Aplicación del estilo dinámico (CORREGIDO PARA EVITAR EL ERROR DE F-STRING)
 st.markdown(f"""
     <style>
     /* CONFIGURACIÓN GLOBAL */
@@ -73,16 +73,17 @@ st.markdown(f"""
         background-color: {c['header']} !important;
     }}
 
-    [data-testid="stSidebar"] {{
+    /* Nota: Usamos doble corchete [[ ]] para que Python no se confunda */
+    div[data-testid="stSidebar"] {{
         background-color: {c['sidebar']} !important;
         border-right: 4px solid #154360 !important;
     }}
 
-    [data-testid="stSidebar"] .stMarkdown, 
-    [data-testid="stSidebar"] label, 
-    [data-testid="stSidebar"] p, 
-    [data-testid="stSidebar"] span,
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {{
+    div[data-testid="stSidebar"] .stMarkdown, 
+    div[data-testid="stSidebar"] label, 
+    div[data-testid="stSidebar"] p, 
+    div[data-testid="stSidebar"] span,
+    div[data-testid="stSidebar"] h1, div[data-testid="stSidebar"] h2, div[data-testid="stSidebar"] h3 {{
         color: {c['texto_side']} !important;
     }}
 
@@ -100,13 +101,12 @@ st.markdown(f"""
         font-weight: bold !important;
     }}
 
-    /* BOTONES (Se mantienen con lógica de color UCV o personalizada) */
+    /* BOTONES */
     .stButton>button {{
         background-color: #1a5276 !important; 
         color: white !important; 
         border: 2px solid white !important;
         border-radius: 12px !important;
-        transition: all 0.3s ease !important;
     }}
     
     .stButton>button:active, .stButton>button:focus {{
