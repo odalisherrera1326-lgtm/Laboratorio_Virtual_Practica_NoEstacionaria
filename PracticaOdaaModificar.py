@@ -21,7 +21,7 @@ if 'ejecutando' not in st.session_state:
 # =============================================================================
 # INTERFAZ TESIS 
 # =============================================================================
-# 1. Definición de colores según el tema
+# 1. Definición de los Temas
 temas = {
     "Azul UCV (Oficial)": {
         "bg": "#f4f7f9", 
@@ -57,15 +57,13 @@ with st.sidebar:
         list(temas.keys())
     )
 
-c = temas[tema_elegido] # Variable que contiene los colores activos
-st.markdown("""
- # 3. Aplicación del estilo dinámico (CORRECCIÓN FINAL DE LLAVES)
-st.markdown(f"""
+c = temas[tema_elegido]
+
+# 3. CONSTRUCCIÓN DEL CSS (SOLUCIÓN DEFINITIVA SIN ERRORES DE LLAVES)
+css_style = f"""
     <style>
-    /* CONFIGURACIÓN GLOBAL */
     html, body, [data-testid="stAppViewContainer"] {{
-        background-color: {c['bg']} !important; 
-        cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto !important;
+        background-color: {c['bg']} !important;
     }}
 
     header[data-testid="stHeader"] {{
@@ -84,7 +82,6 @@ st.markdown(f"""
         color: {c['texto_side']} !important;
     }}
 
-    /* MÉTRICAS */
     div[data-testid="stMetric"] {{
         background-color: {c['metric_bg']} !important;
         border: 2px solid {c['header']} !important;
@@ -94,12 +91,32 @@ st.markdown(f"""
 
     div[data-testid="stMetric"] label {{
         color: {c['metric_label']} !important;
-        font-weight: bold !important;
     }}
 
-    /* BOTONES */
     .stButton>button {{
-        background-color: #1a5276 !important;
+        background-color: #1a5276 !important; 
+        color: white !important; 
+        border: 2px solid white !important;
+        border-radius: 12px !important;
+    }}
+
+    .header-container {{
+        background: linear-gradient(-45deg, #154360, {c['header']}, #21618c, #1a5276);
+        background-size: 400% 400%;
+        animation: gradient_anim 15s ease infinite;
+        padding: 25px; border-radius: 15px; border-bottom: 6px solid #f1c40f;
+        color: white; text-align: center;
+    }}
+
+    @keyframes gradient_anim {{
+        0% {{ background-position: 0% 50%; }}
+        50% {{ background-position: 100% 50%; }}
+        100% {{ background-position: 0% 50%; }}
+    }}
+    </style>
+"""
+
+st.markdown(css_style, unsafe_allow_html=True)
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL CON FONDO 
 # =============================================================================
