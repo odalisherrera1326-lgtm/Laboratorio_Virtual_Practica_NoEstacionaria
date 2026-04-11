@@ -473,7 +473,7 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
     a_o = np.pi * ((d_pulgadas * 0.0254) / 2)**2 
 
     if modo_op == "Llenado":
-        q_entrada = np.clip(u_control, 0, 0.6)
+        q_entrada = np.clip(u_control, 0, 2)
         # USAMOS EL CD CALCULADO (cd_val)
         q_salida = cd_val * a_o * np.sqrt(2 * 9.81 * h_prev) if h_prev > 0.005 else 0
         dh_dt = (q_entrada + q_p_val - q_salida) / area_h
