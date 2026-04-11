@@ -144,6 +144,29 @@ st.markdown("""
         border: 2px solid #2980b9 !important;
         box-shadow: 0 0 20px rgba(41, 128, 185, 0.5) !important;
     }
+    /* --- CORRECCIÓN PARA EL BOTÓN EN LA BARRA LATERAL --- */
+    
+    /* Evita que el botón cambie a blanco al hacer clic o al estar seleccionado */
+    .stButton>button:active, .stButton>button:focus {
+        background-color: #1a5276 !important; /* Mantiene el azul UCV */
+        color: white !important;
+        border: 2px solid #f1c40f !important; /* Mantiene el borde amarillo si quieres */
+        outline: none !important;
+    }
+
+    /* Si es el botón de RESET (el rojo) */
+    div.stButton > button:first-child[kind="secondary"]:active,
+    div.stButton > button:first-child[kind="secondary"]:focus {
+        background-color: #943126 !important; /* Mantiene el rojo oscuro */
+        color: white !important;
+        outline: none !important;
+    }
+
+    /* Específico para botones dentro de la barra lateral */
+    [data-testid="stSidebar"] .stButton>button:active {
+        background-color: #154360 !important; /* Un azul un poco más oscuro al presionar */
+        color: white !important;
+    }
 
     /* 7. BANNER DE ENCABEZADO */
     .header-container {
