@@ -477,6 +477,32 @@ if iniciar_sim:
 
 # Esta línea va fuera de los bloques 'if' y corregida (sin el paréntesis extra del error 616)
 estado_expander = not st.session_state.get('ejecutando', False)
+# 2. AQUÍ ES DONDE DEBES PEGAR EL CÓDIGO DE LAS GRÁFICAS
+# --- SECCIÓN DE GRÁFICAS ---
+st.subheader("📊 Monitoreo de Variables")
+
+if 'vector_t' in locals() or 'vector_t' in globals():
+    # 1. Aplicar el estilo de gráfica según el tema elegido
+    plt.style.use(c['plot_style'])
+    color_linea = "#00ffcc" if tema_elegido == "Modo Oscuro Profundo" else "#1a5276"
+
+    # 2. Crear la figura
+    fig_h, ax_h = plt.subplots(figsize=(10, 4))
+    ax_h.plot(vector_t, h_log, color=color_linea, linewidth=2, label="Nivel h(t)")
+    
+    # 3. Personalización estética
+    ax_h.set_title("Dinámica de Nivel", color=c['texto_side'])
+    ax_h.set_xlabel("Tiempo [s]", color=c['texto_side'])
+    ax_h.set_ylabel("Altura [m]", color=c['texto_side'])
+    ax_h.tick_params(colors=c['texto_side']) 
+    
+    st.pyplot(fig_h)
+else:
+    st.info("💡 Configure los parámetros y presione 'Iniciar Simulación' para visualizar los resultados.")
+
+# 3. LUEGO SIGUE TU SECCIÓN DE RESULTADOS FINALES
+# --- RESULTADOS FINALES Y DESCARGA ---
+st.markdown("---")
 
 
 
@@ -568,7 +594,7 @@ else:
     barra_p = st.progress(0)
    
 
-    # 3. Bucle de Simulación
+    
     # 3. Bucle de Simulación
     cd_para_simular = st.session_state.get('cd_final', 0.61)
     for i, t_act in enumerate(vector_t):
@@ -682,8 +708,7 @@ else:
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
             # --- C. Tendencia de Nivel (SOLO SIMULACIÓN) --- 
-            plt.style.use(c['plot_style']
-            color_linea = "#00ffcc" if tema_elegido == "Modo Oscuro Profundo" else "#1a5276"              
+                       
             fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
             
             # Graficamos solo el nivel simulado
@@ -709,10 +734,7 @@ else:
             plt.close(fig_tr)
             
             # D. Acción de Control
-            plt.style.use(c['plot_style'])
-
-           # Determinar color de línea según el tema para que resalte
-            color_linea = "#00ffcc" if tema_elegido == "Modo Oscuro Profundo" else "#1a5276"
+            
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
             ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
             ax_u.set_xlim(0, tiempo_ensayo)
@@ -727,10 +749,7 @@ else:
             fig_v, ax_v = plt.subplots(figsize=(8, 3))
             
             # Dibujamos la apertura (u_log) en color verde
-            plt.style.use(c['plot_style'])
-
-            # Determinar color de línea según el tema para que resalte
-            color_linea = "#00ffcc" if tema_elegido == "Modo Oscuro Profundo" else "#1a5276"
+           
             ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5, label='Apertura Real')
             ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
             
