@@ -77,14 +77,14 @@ css_style = f"""
         border-right: 4px solid #154360 !important;
     }}
 
-    /* --- CAMBIO DE COLOR DE TÍTULOS EN BARRA LATERAL --- */
+    /* --- TÍTULOS EN BLANCO --- */
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] h2, 
     [data-testid="stSidebar"] h3,
-    [data-testid="stSidebar"] .stSubheader p {{
-        color: #FFA500 !important; /* Aquí puse naranja, puedes cambiarlo por #FFFFFF si los quieres blancos */
+    [data-testid="stSidebar"] .stSubheader p,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {{
+        color: #FFFFFF !important; 
         font-weight: bold !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }}
 
     [data-testid="stSidebar"] .stMarkdown, 
@@ -94,7 +94,8 @@ css_style = f"""
         color: {c['texto_side']} !important;
     }}
 
-    /* 3. BOTONES Y EVITAR EFECTO BLANCO AL POSICIONARSE/CLIC */
+    /* 3. BOTONES: BLOQUEO TOTAL DE FONDO BLANCO */
+    /* Esta regla aplica a todos los botones, incluyendo los de la barra lateral */
     .stButton>button {{
         background-color: #1a5276 !important; 
         color: white !important; 
@@ -103,18 +104,28 @@ css_style = f"""
         transition: all 0.3s ease-in-out !important;
     }}
 
-    /* Bloqueo del blanco en Hover y Active */
-    .stButton>button:hover, .stButton>button:active, .stButton>button:focus {{
-        background-color: #1a5276 !important; /* Mantiene el azul original */
+    /* Forzamos que en HOVER, ACTIVE y FOCUS siempre mantenga el azul */
+    .stButton>button:hover, 
+    .stButton>button:active, 
+    .stButton>button:focus,
+    .stButton>button:hover:active {{
+        background-color: #1a5276 !important; 
         color: white !important;
         border: 2px solid #f1c40f !important;
         box-shadow: 0 0 15px rgba(241, 196, 15, 0.4) !important;
-        outline: none !important;
     }}
 
-    /* 4. SLIDERS SIN FONDO BLANCO */
-    div[data-baseweb="slider"] > div:first-child {{
-        background-color: transparent !important;
+    /* 4. ELIMINAR RECUADROS BLANCOS EN ELEMENTOS DE LA BARRA LATERAL */
+    /* Esto evita que selectores o sliders se pongan blancos al interactuar */
+    [data-testid="stSidebar"] [data-baseweb="select"] > div,
+    [data-testid="stSidebar"] [data-baseweb="base-input"] {{
+        background-color: #ffffff !important;
+    }}
+
+    /* Bloqueo específico para cuando pasas el ratón sobre widgets en el sidebar */
+    [data-testid="stSidebar"] button:hover {{
+        background-color: #154360 !important; /* Un azul ligeramente más oscuro en lugar de blanco */
+        color: white !important;
     }}
 
     /* 5. BANNER ANIMADO */
