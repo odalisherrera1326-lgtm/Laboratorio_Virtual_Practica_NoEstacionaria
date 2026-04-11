@@ -22,7 +22,6 @@ if 'ejecutando' not in st.session_state:
 # =============================================================================
 # INTERFAZ TESIS 
 # =============================================================================
-# 1. Definición de los Temas
 temas = {
     "Azul UCV (Oficial)": {
         "bg": "#f4f7f9", 
@@ -30,15 +29,17 @@ temas = {
         "texto_side": "#ffffff", 
         "header": "#1a5276",
         "metric_bg": "#ffffff",
-        "metric_label": "#1a5276"
+        "metric_label": "#1a5276",
+        "plot_style": "default"
     },
     "Modo Oscuro Profundo": {
-        "bg": "#0e1117", 
-        "sidebar": "#262730", 
-        "texto_side": "#ffffff", 
+        "bg": "#121212", # Gris oscuro profundo, mejor que negro puro
+        "sidebar": "#1e1e1e", 
+        "texto_side": "#e0e0e0", 
         "header": "#000000",
-        "metric_bg": "#1e1e1e",
-        "metric_label": "#00ffcc"
+        "metric_bg": "#1f1f1f",
+        "metric_label": "#00ffcc",
+        "plot_style": "dark_background" # Esto arregla las gráficas automáticamente
     },
     "Gris Minimalista": {
         "bg": "#ffffff", 
@@ -46,7 +47,8 @@ temas = {
         "texto_side": "#1a5276", 
         "header": "#e5e7eb",
         "metric_bg": "#f8f9fa",
-        "metric_label": "#333333"
+        "metric_label": "#333333",
+        "plot_style": "ggplot"
     }
 }
 
@@ -141,6 +143,20 @@ css_style = f"""
         0% {{ background-position: 0% 50%; }}
         50% {{ background-position: 100% 50%; }}
         100% {{ background-position: 0% 50%; }}
+    }}
+    /* Asegurar que todos los textos generales sean visibles */
+    [data-testid="stMarkdownContainer"] p, 
+    [data-testid="stWidgetLabel"] p,
+    .stSelectbox label, 
+    .stNumberInput label {{
+        color: {c['texto_side']} !important;
+    }}
+
+    /* Estilo para los títulos de la barra lateral (siempre blancos) */
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3 {{
+        color: #ffffff !important;
     }}
     </style>
 """
@@ -666,6 +682,8 @@ else:
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
             # --- C. Tendencia de Nivel (SOLO SIMULACIÓN) --- 
+            plt.style.use(c['plot_style']
+            color_linea = "#00ffcc" if tema_elegido == "Modo Oscuro Profundo" else "#1a5276"              
             fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
             
             # Graficamos solo el nivel simulado
@@ -691,6 +709,10 @@ else:
             plt.close(fig_tr)
             
             # D. Acción de Control
+            plt.style.use(c['plot_style'])
+
+           # Determinar color de línea según el tema para que resalte
+            color_linea = "#00ffcc" if tema_elegido == "Modo Oscuro Profundo" else "#1a5276"
             fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
             ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
             ax_u.set_xlim(0, tiempo_ensayo)
@@ -705,6 +727,10 @@ else:
             fig_v, ax_v = plt.subplots(figsize=(8, 3))
             
             # Dibujamos la apertura (u_log) en color verde
+            plt.style.use(c['plot_style'])
+
+            # Determinar color de línea según el tema para que resalte
+            color_linea = "#00ffcc" if tema_elegido == "Modo Oscuro Profundo" else "#1a5276"
             ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5, label='Apertura Real')
             ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
             
