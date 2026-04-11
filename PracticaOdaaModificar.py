@@ -59,7 +59,7 @@ with st.sidebar:
 
 c = temas[tema_elegido] # Variable que contiene los colores activos
 st.markdown("""
-   # 3. Aplicación del estilo dinámico (CORREGIDO PARA EVITAR EL ERROR DE F-STRING)
+  # 3. Aplicación del estilo dinámico corregido
 st.markdown(f"""
     <style>
     /* CONFIGURACIÓN GLOBAL */
@@ -68,32 +68,28 @@ st.markdown(f"""
         cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto !important;
     }}
 
-    /* BARRAS DE INTERFAZ */
     header[data-testid="stHeader"] {{
         background-color: {c['header']} !important;
     }}
 
-    /* Nota: Usamos doble corchete [[ ]] para que Python no se confunda */
-    div[data-testid="stSidebar"] {{
+    [data-testid="stSidebar"] {{
         background-color: {c['sidebar']} !important;
         border-right: 4px solid #154360 !important;
     }}
 
-    div[data-testid="stSidebar"] .stMarkdown, 
-    div[data-testid="stSidebar"] label, 
-    div[data-testid="stSidebar"] p, 
-    div[data-testid="stSidebar"] span,
-    div[data-testid="stSidebar"] h1, div[data-testid="stSidebar"] h2, div[data-testid="stSidebar"] h3 {{
+    [data-testid="stSidebar"] .stMarkdown, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] span {{
         color: {c['texto_side']} !important;
     }}
 
-    /* MÉTRICAS DINÁMICAS */
+    /* MÉTRICAS */
     div[data-testid="stMetric"] {{
         background-color: {c['metric_bg']} !important;
         border: 2px solid {c['header']} !important;
         border-radius: 15px !important;
         padding: 15px !important;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
     }}
 
     div[data-testid="stMetric"] label {{
@@ -116,16 +112,16 @@ st.markdown(f"""
         outline: none !important;
     }}
 
-    /* BANNER ANIMADO */
+    /* BANNER Y ANIMACIONES */
     .header-container {{
         background: linear-gradient(-45deg, #154360, {c['header']}, #21618c, #1a5276);
         background-size: 400% 400%;
-        animation: gradient 15s ease infinite;
+        animation: gradient_anim 15s ease infinite;
         padding: 25px; border-radius: 15px; border-bottom: 6px solid #f1c40f;
         color: white; text-align: center;
     }}
 
-    @keyframes gradient {{
+    @keyframes gradient_anim {{
         0% {{ background-position: 0% 50%; }}
         50% {{ background-position: 100% 50%; }}
         100% {{ background-position: 0% 50%; }}
