@@ -56,13 +56,21 @@ temas = {
 tema_elegido = st.sidebar.selectbox("🎨 Seleccione el tema:", list(temas.keys()))
 c = temas[tema_elegido]
 
-# 3. Aplicación del estilo dinámico
-st.markdown(f"""
+# 3. Aplicación del estilo dinámico con CURSOR y ANIMACIONES
+css_style = f"""
     <style>
+    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR DE ENGRANAJE ⚙️ */
     html, body, [data-testid="stAppViewContainer"] {{
         background-color: {c['bg']} !important; 
+        cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto !important;
     }}
 
+    /* Cursor de manito con engranaje para botones y sliders */
+    button, a, [data-testid="stHeaderActionElements"], .stSlider {{
+        cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text><text x='10' y='28' style='font-size: 14px;'>👆</text></svg>") 16 16, pointer !important;
+    }}
+
+    /* 2. BARRAS DE INTERFAZ */
     header[data-testid="stHeader"] {{
         background-color: {c['header']} !important;
     }}
@@ -79,25 +87,31 @@ st.markdown(f"""
         color: {c['texto_side']} !important;
     }}
 
-    div[data-testid="stMetric"] {{
-        background-color: {c['metric_bg']} !important;
-        border: 2px solid {c['header']} !important;
-        border-radius: 15px !important;
-        padding: 15px !important;
-    }}
-
-    div[data-testid="stMetric"] label {{
-        color: {c['metric_label']} !important;
-        font-weight: bold !important;
-    }}
-
+    /* 3. BOTONES CON ANIMACIÓN HOVER */
     .stButton>button {{
         background-color: #1a5276 !important; 
         color: white !important; 
         border: 2px solid white !important;
         border-radius: 12px !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease-in-out !important; /* Animación suave */
     }}
 
+    /* Efecto al poner el ratón encima (Hover) */
+    .stButton>button:hover {{
+        border: 2px solid #f1c40f !important; /* Borde amarillo UCV */
+        box-shadow: 0 0 20px rgba(241, 196, 15, 0.6) !important; /* Brillo */
+        transform: translateY(-3px) !important; /* Se eleva un poquito */
+    }}
+
+    /* Evita el fondo blanco al presionar */
+    .stButton>button:active, .stButton>button:focus {{
+        background-color: #1a5276 !important;
+        color: white !important;
+        outline: none !important;
+    }}
+
+    /* 4. BANNER ANIMADO */
     .header-container {{
         background: linear-gradient(-45deg, #154360, {c['header']}, #21618c, #1a5276);
         background-size: 400% 400%;
@@ -112,7 +126,9 @@ st.markdown(f"""
         100% {{ background-position: 0% 50%; }}
     }}
     </style>
-    """, unsafe_allow_html=True)
+"""
+
+st.markdown(css_style, unsafe_allow_html=True)
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL CON FONDO 
 # =============================================================================
