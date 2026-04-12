@@ -685,10 +685,11 @@ else:
             offset_t = 0.4 if geom_tanque == "Cilíndrico" else 0
             ax_t.text(vs_x + offset_t, vs_y - 0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
 
-            # --- 4. INDICADORES DINÁMICOS Y SETPOINT ---
+           # --- 4. INDICADORES DINÁMICOS Y SETPOINT ---
             ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3)
             ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
 
+            # ESTA ES LA LÍNEA QUE DEBES CORREGIR (Ponle el # al principio):
             # Etiqueta de Nivel PV (Burbuja blanca sobre el tanque)
             ax_t.text(0, h_total * 1.2, f"PV: {valor_presente:.3f} m", 
                      ha='center', va='center', fontsize=11, fontweight='bold',
@@ -768,7 +769,8 @@ else:
         fig_amp, ax_amp = plt.subplots(figsize=(10, 5))
         # Usamos los datos recolectados en la simulación
         ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta del Sistema (PV)')
-        ax_amp.step(vector_t, sp_log, color='#d62728', linestyle='--', lw=2, label='Referencia (SP)')
+        # Dibujar la referencia del Setpoint como una línea horizontal fija
+        ax_amp.axhline(y=sp_nivel, color='#d62728', linestyle='--', lw=2, label='Referencia (SP)')
         
         ax_amp.set_title("Respuesta Transitoria del Lazo de Control (MatLab Style)", fontsize=12)
         ax_amp.set_xlabel("Tiempo (s)")
