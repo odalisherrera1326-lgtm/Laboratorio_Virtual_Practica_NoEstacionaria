@@ -596,29 +596,25 @@ else:
         st.markdown("---")
         area_descarga = st.empty()
         
-        
-        
-   
    
     status_placeholder = st.empty()
     dt = 1.0 
     vector_t = np.arange(0, tiempo_ensayo, dt)
     h_log, u_log, sp_log, e_log = [], [], [], []
     
-    # Inicialización limpia de variables de estado
+    # Inicialización de seguridad para evitar NameError (Línea 658)
     h_corrida = 0.0 if op_tipo == "Llenado" else h_total
-    err_int = 0.0
-    err_pasado = 0.0
-    iae_acumulado = 0.0
-    itae_acumulado = 0.0
+    err_int, err_pasado = 0.0, 0.0
+    iae_acumulado, itae_acumulado = 0.0, 0.0
    
     barra_p = st.progress(0)
 
-    # Recuperar constantes de sintonía
+    # Garantizamos que estas variables existan antes del bucle
     cd_para_simular = st.session_state.get('cd_final', 0.61)
     k_p = st.session_state.get('kp_ejecucion', kp_val)
     k_i = st.session_state.get('ki_ejecucion', ki_val)
     k_d = st.session_state.get('kd_ejecucion', kd_val)
+
   
     # =============================================================================
     # 6. MOTOR DE SIMULACIÓN UNIFICADO (VERSIÓN FINAL DE TESIS)
@@ -629,12 +625,12 @@ else:
         # A. Cálculos del Sistema (Modelo Matemático)
         q_p_inst = p_magnitud if ('p_activa' in locals() and p_activa and t_act >= p_tiempo) else 0.0
     
-       # Llamada corregida: Aseguramos que todas las variables pasadas existan
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, 
             err_int, err_pasado, op_tipo, cd_para_simular,
             k_p, k_i, k_d
         )
+        
         # B. Registro Sincronizado
         h_log.append(h_corrida)
         u_log.append(u_inst)
@@ -643,6 +639,10 @@ else:
         
         iae_acumulado += abs(e_inst) * dt
         itae_acumulado += (t_act * abs(e_inst)) * dt
+        
+        # Definición explícita de variables visuales para evitar errores de nombre
+        nivel_viz = h_log[-1]
+        error_viz = e_log[-1]
         
         # Actualización de Métricas (Fuente única: h_log)
         m_h.metric("Nivel PV [m]", f"{h_log[-1]:.3f}")
