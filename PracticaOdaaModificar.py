@@ -621,33 +621,7 @@ else:
     h_exp = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
     barra_p = st.progress(0)
    
-    # =============================================================================
-    # --- PREPARACIÓN DE DATOS PARA LA SIMULACIÓN ---
-    # =============================================================================
-    status_placeholder = st.empty()
-    dt = 1.0 
-    vector_t = np.arange(0, tiempo_ensayo, dt)
-    h_log, u_log, sp_log, e_log = [], [], [], []
     
-    # 1. LÓGICA INTERACTIVA: El tanque obedece al selector de operación
-    if op_tipo == "Llenado":
-        h_corrida = 0.0  # El tanque inicia vacío
-    else:
-        h_corrida = h_total  # El tanque inicia lleno
-    
-    err_int, err_pasado = 0, 0
-    iae_acumulado = 0
-    itae_acumulado = 0
-   
-    t_exp = datos_usr["Tiempo (s)"]
-    h_exp = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
-    barra_p = st.progress(0)
-
-    cd_para_simular = st.session_state.get('cd_final', 0.61)
-    k_p = st.session_state.get('kp_ejecucion', kp_val)
-    k_i = st.session_state.get('ki_ejecucion', ki_val)
-    k_d = st.session_state.get('kd_ejecucion', kd_val)
-
   
     # =============================================================================
     # 6. MOTOR DE SIMULACIÓN UNIFICADO (VERSIÓN FINAL DE TESIS)
