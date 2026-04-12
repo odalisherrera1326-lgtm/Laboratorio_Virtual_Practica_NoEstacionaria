@@ -5,6 +5,27 @@ import matplotlib.pyplot as plt
 import os
 import time
 from sklearn.metrics import mean_squared_error
+
+# =============================================================================
+Funcion controlador inteligente 
+# =============================================================================
+# --- 1. FUNCIÓN PARA AUTO-SINTONIZACIÓN ---
+def calcular_pid_adaptativo(geom, r_max, h_total):
+    import math
+    area_max = math.pi * (r_max ** 2)
+    if geom == "Cilíndrico":
+        kp = area_max * 2.5
+        ki = kp / 20.0
+        kd = kp * 0.1
+    elif geom == "Cónico":
+        kp = (area_max / 3.0) * 1.5
+        ki = kp / 15.0
+        kd = kp * 0.05
+    else: # Esférico
+        kp = (area_max * 0.6) * 2.0
+        ki = kp / 18.0
+        kd = kp * 0.2
+    return round(kp, 2), round(ki, 3), round(kd, 3)
 # =============================================================================
 # 1. CONFIGURACIÓN E IDENTIDAD INSTITUCIONAL UCV
 # =============================================================================
@@ -302,21 +323,46 @@ with st.sidebar.expander(" Dimensiones de Salida", expanded=True):
     area_orificio = np.pi * (d_metros / 2)**2
     st.caption(f"Área calculada: {area_orificio:.6f} m²")
 
-with st.sidebar.expander(" Escenario de Perturbación ($Q_p$)"):
-    p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
-    p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.045, format="%.4f") if p_activa else 0.0
-    p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 80) if p_activa else 0
+with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)"):
+            p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
+            
+            if p_activa:
+                p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.045, format="%.4f")
+                p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 80)
+                
+                # --- NUEVO: Interruptor de Inteligencia de Perturbación ---
+                modo_estres = st.toggle("🔥 Activar Modo Estrés", 
+                                       help="La perturbación cambiará según el nivel para desafiar al PID.")
+            else:
+                p_magnitud = 0.0
+                p_tiempo = 0
+                modo_estres = False
 
 with st.sidebar.expander("Parámetros del Controlador PID"):
-    # 1. El "interruptor" para decidir el modo
-    modo_auto = st.checkbox("Sintonización Automática (Tesis)", value=True)
-    
-    st.markdown("---")
-    # 2. Los campos de entrada (siempre visibles, pero solo se usan si modo_auto es False)
-    c1, c2, c3 = st.columns(3)
-    kp_val = c1.number_input("Kp manual", value=2.6, help="Solo se usa si desactivas la sintonía automática")
-    ki_val = c2.number_input("Ki manual", value=0.5)
-    kd_val = c3.number_input("Kd manual", value=0.1)
+   # Primero calculamos los sugeridos basados en lo que el usuario puso arriba
+        kp_sug, ki_sug, kd_sug = calcular_pid_adaptativo(geom_tanque, r_max, h_total)
+
+        st.markdown("---")
+        st.subheader("🎛️ Configuración del Controlador")
+        
+        # Selector de modo
+        metodo_control = st.radio("Método de Sintonización", 
+                                ["Manual (Usuario)", "Asistida (Sugerida)"],
+                                index=0, horizontal=True)
+
+        if metodo_control == "Asistida (Sugerida)":
+            st.success("💡 Usando parámetros optimizados")
+            kp_val = st.number_input("Kp", value=kp_sug)
+            ki_val = st.number_input("Ki", value=ki_sug, format="%.3f")
+            kd_val = st.number_input("Kd", value=kd_sug, format="%.3f")
+        else:
+            st.info("✍️ Ingrese sus propios parámetros")
+            kp_val = st.number_input("Kp", value=kp_sug, step=0.1)
+            ki_val = st.number_input("Ki", value=ki_sug, step=0.001, format="%.3f")
+            kd_val = st.number_input("Kd", value=kd_sug, step=0.001, format="%.3f")
+
+        # El interruptor para el Modo Estrés
+        modo_estres = st.toggle("🔥 Activar Modo Estrés", value=False)
     
     tiempo_ensayo = st.sidebar.slider("Tiempo de simulación [s]", 60, 600, 300)
 with st.sidebar.expander("📊 Cargar Datos Experimentales"):
@@ -601,7 +647,16 @@ else:
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
         
-        q_p_inst = p_magnitud if ('p_activa' in locals() and p_activa and t_act >= p_tiempo) else 0.0
+        # --- Lógica de Perturbación Inteligente ---
+        if 'p_activa' in locals() and p_activa and t_act >= p_tiempo:
+            if modo_estres:
+                # Si el nivel < Setpoint (está subiendo), le metemos más flujo para sabotear
+                factor = 1.5 if valor_presente < sp_nivel else 0.5
+                q_p_inst = p_magnitud * factor
+            else:
+                q_p_inst = p_magnitud
+        else:
+            q_p_inst = 0.0
     
         k_p = st.session_state.get('kp_ejecucion', kp_val)
         k_i = st.session_state.get('ki_ejecucion', ki_val)
