@@ -659,107 +659,105 @@ else:
             agua_esf.set_clip_path(recorte_nivel)
             ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=4, zorder=2))
 
-            # --- 2. INFRAESTRUCTURA DE ENTRADA (V-01) ---
-            # Tubo de entrada gris
-            ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
-            # Válvula V-01 (Símbolo moño completo)
-            ax_t.add_patch(plt.Polygon([[c_in_x-1, c_in_y+0.2], [c_in_x-1, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
-            ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
-            ax_t.text(c_in_x-0.6, c_in_y+0.4, "V-01", ha='center', fontsize=9, fontweight='bold')
+        # --- 2. INFRAESTRUCTURA DE ENTRADA (V-01) ---
+        # Tubo de entrada gris
+        ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
+        # Válvula V-01 (Símbolo moño completo)
+        ax_t.add_patch(plt.Polygon([[c_in_x-1, c_in_y+0.2], [c_in_x-1, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
+        ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
+        ax_t.text(c_in_x-0.6, c_in_y+0.4, "V-01", ha='center', fontsize=9, fontweight='bold')
 
-            # --- 3. INFRAESTRUCTURA DE SALIDA (V-02 CV) ---
-            t_ancho = 0.2
-            if geom_tanque == "Cilíndrico":
-                # Salida lateral para el cilindro
-                ax_t.add_patch(plt.Rectangle((c_out_x, c_out_y - t_ancho/2), 1.5, t_ancho, color='silver', zorder=0))
-                vs_x, vs_y = c_out_x + 0.8, c_out_y
-            else:
-                # Salida inferior vertical pegada al tanque (y=0)
-                ax_t.add_patch(plt.Rectangle((c_out_x - t_ancho/2, -0.6), t_ancho, 0.6, color='silver', zorder=0))
-                vs_x, vs_y = c_out_x, -0.4
+        # --- 3. INFRAESTRUCTURA DE SALIDA (V-02 CV) ---
+        t_ancho = 0.2
+        if geom_tanque == "Cilíndrico":
+            ax_t.add_patch(plt.Rectangle((c_out_x, c_out_y - t_ancho/2), 1.5, t_ancho, color='silver', zorder=0))
+            vs_x, vs_y = c_out_x + 0.8, c_out_y
+        else:
+            ax_t.add_patch(plt.Rectangle((c_out_x - t_ancho/2, -0.6), t_ancho, 0.6, color='silver', zorder=0))
+            vs_x, vs_y = c_out_x, -0.4
 
-           # Válvula V-02 (Símbolo moño corregido)
-            ax_t.add_patch(plt.Polygon([[vs_x-0.25, vs_y+0.2], [vs_x-0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
-            ax_t.add_patch(plt.Polygon([[vs_x+0.25, vs_y+0.2], [vs_x+0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
-            
-            offset_t = 0.4 if geom_tanque == "Cilíndrico" else 0
-            ax_t.text(vs_x + offset_t, vs_y - 0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
+        # Válvula V-02
+        ax_t.add_patch(plt.Polygon([[vs_x-0.25, vs_y+0.2], [vs_x-0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
+        ax_t.add_patch(plt.Polygon([[vs_x+0.25, vs_y+0.2], [vs_x+0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
+        offset_t = 0.4 if geom_tanque == "Cilíndrico" else 0
+        ax_t.text(vs_x + offset_t, vs_y - 0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
 
-           # --- 4. INDICADORES DINÁMICOS Y SETPOINT ---
-            ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3)
-            ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
+        # --- 4. INDICADORES DINÁMICOS Y SETPOINT ---
+        ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3)
+        ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
 
-            # ESTA ES LA LÍNEA QUE DEBES CORREGIR (Ponle el # al principio):
-            # Etiqueta de Nivel PV (Burbuja blanca sobre el tanque)
-            ax_t.text(0, h_total * 1.2, f"PV: {valor_presente:.3f} m", 
-                     ha='center', va='center', fontsize=11, fontweight='bold',
-                     bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
+        # Burbuja de PV
+        ax_t.text(0, h_total * 1.2, f"PV: {valor_presente:.3f} m", 
+                 ha='center', va='center', fontsize=11, fontweight='bold',
+                 bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
 
-            # Renderizado del tanque
-            placeholder_tanque.pyplot(fig_t)
-            plt.close(fig_t)
+        # Renderizados dentro del bucle para animación en vivo
+        placeholder_tanque.pyplot(fig_t)
+        plt.close(fig_t)
 
-            # --- C. TENDENCIA DE NIVEL --- 
-            fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-            ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel (h)')
-            ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
-            ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
-            ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-            ax_tr.legend(loc='upper right', fontsize='x-small')
-            ax_tr.set_xlim(0, tiempo_ensayo)
-            ax_tr.set_ylim(0, h_total * 1.1)
-            ax_tr.grid(True, alpha=0.2)
-            placeholder_grafico.pyplot(fig_tr)
-            plt.close(fig_tr)
+        # --- C. TENDENCIA DE NIVEL --- 
+        fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
+        ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel (h)')
+        ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
+        ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
+        ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
+        ax_tr.legend(loc='upper right', fontsize='x-small')
+        ax_tr.set_xlim(0, tiempo_ensayo)
+        ax_tr.set_ylim(0, h_total * 1.1)
+        ax_tr.grid(True, alpha=0.2)
+        placeholder_grafico.pyplot(fig_tr)
+        plt.close(fig_tr)
 
-            # --- D. ACCIÓN DE CONTROL ---
-            fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
-            ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
-            ax_u.set_xlim(0, tiempo_ensayo)
-            techo_dinamico = max(max(u_log), 0.1) * 1.2 if u_log else 0.7
-            ax_u.set_ylim(0, techo_dinamico)
-            ax_u.grid(True, alpha=0.2)
-            ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
-            ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
-            placeholder_u.pyplot(fig_u)
-            plt.close(fig_u)
+        # --- D. ACCIÓN DE CONTROL ---
+        fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
+        ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
+        ax_u.set_xlim(0, tiempo_ensayo)
+        techo_dinamico = max(max(u_log), 0.1) * 1.2 if u_log else 0.7
+        ax_u.set_ylim(0, techo_dinamico)
+        ax_u.grid(True, alpha=0.2)
+        ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
+        ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
+        placeholder_u.pyplot(fig_u)
+        plt.close(fig_u)
 
-            # --- E. LÓGICA DE LA VÁLVULA ---
-            fig_v, ax_v = plt.subplots(figsize=(8, 3))
-            ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5)
-            ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
-            ax_v.set_ylim(-0.1, 1.1) 
-            ax_v.set_yticks([0, 0.5, 1])
-            ax_v.set_yticklabels(['CERRADA', '50%', 'ABIERTA'])
-            ax_v.set_title("Apertura de Válvula de Control", fontsize=10, fontweight='bold')
-            placeholder_valvula.pyplot(fig_v)
-            plt.close(fig_v)
+        # --- E. LÓGICA DE LA VÁLVULA ---
+        fig_v, ax_v = plt.subplots(figsize=(8, 3))
+        ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5)
+        ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
+        ax_v.set_ylim(-0.1, 1.1) 
+        ax_v.set_yticks([0, 0.5, 1])
+        ax_v.set_yticklabels(['CERRADA', '50%', 'ABIERTA'])
+        ax_v.set_title("Apertura de Válvula de Control", fontsize=10, fontweight='bold')
+        placeholder_valvula.pyplot(fig_v)
+        plt.close(fig_v)
 
-            # --- F. GRÁFICA COMPARATIVA ---
-            fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
-            ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación')
-            if mostrar_ref:
-                ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos UCV')
-                ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
-            ax_comp.set_title("Validación de Resultados", fontsize=10, fontweight='bold')
-            ax_comp.set_xlabel("Tiempo [s]")
-            ax_comp.set_ylabel("Nivel [m]")
-            ax_comp.set_ylim(0, h_total * 1.1)
-            ax_comp.grid(True, alpha=0.3)
-            ax_comp.legend(loc='lower right')
-            placeholder_comparativa.pyplot(fig_comp)
-            plt.close(fig_comp)
+        # --- F. GRÁFICA COMPARATIVA ---
+        fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
+        ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación')
+        if mostrar_ref:
+            ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos UCV')
+            ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
+        ax_comp.set_title("Validación de Resultados", fontsize=10, fontweight='bold')
+        ax_comp.set_xlabel("Tiempo [s]")
+        ax_comp.set_ylabel("Nivel [m]")
+        ax_comp.set_ylim(0, h_total * 1.1)
+        ax_comp.grid(True, alpha=0.3)
+        ax_comp.legend(loc='lower right')
+        placeholder_comparativa.pyplot(fig_comp)
+        plt.close(fig_comp)
 
-        # Finalización del paso del bucle
+        # Control de velocidad y progreso
         time.sleep(0.01) 
         barra_p.progress((i+1)/len(vector_t))
 
+    # =============================================================================
+    # FIN DEL BUCLE FOR - INICIO DE RESULTADOS FINALES
+    # =============================================================================
     status_placeholder.empty()
     st.success(f"✅ Simulación del Tanque {geom_tanque} completada exitosamente.")
     st.balloons()
-  # =============================================================================
-    # 7. ANÁLISIS DE RESPUESTA TRANSITORIA (AMPLITUD VS TIEMPO)
-    # =============================================================================
+
+    # --- 7. ANÁLISIS DE RESPUESTA TRANSITORIA (AMPLITUD VS TIEMPO) ---
     st.markdown("---")
     st.subheader("📈 Análisis de Respuesta al Escalón (Amplitud vs. Tiempo)")
 
@@ -767,9 +765,9 @@ else:
 
     with col_an1:
         fig_amp, ax_amp = plt.subplots(figsize=(10, 5))
-        # Usamos los datos recolectados en la simulación
         ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta del Sistema (PV)')
-        # Dibujar la referencia del Setpoint como una línea horizontal fija
+        
+        # Corregido: Línea horizontal para evitar el error de sp_log
         ax_amp.axhline(y=sp_nivel, color='#d62728', linestyle='--', lw=2, label='Referencia (SP)')
         
         ax_amp.set_title("Respuesta Transitoria del Lazo de Control (MatLab Style)", fontsize=12)
@@ -778,10 +776,11 @@ else:
         ax_amp.grid(True, which='both', linestyle='--', alpha=0.5)
         ax_amp.legend(loc='lower right')
         
-        # Banda de estabilidad técnica (±5%)
-        error_f_val = abs(h_log[-1] - sp_nivel)
-        if error_f_val < 0.05:
-            ax_amp.axhspan(sp_nivel-0.05, sp_nivel+0.05, color='green', alpha=0.1, label='Banda de Estabilidad')
+        # Banda de estabilidad técnica
+        if len(h_log) > 0:
+            error_f_val = abs(h_log[-1] - sp_nivel)
+            if error_f_val < 0.05:
+                ax_amp.axhspan(sp_nivel-0.05, sp_nivel+0.05, color='green', alpha=0.1, label='Banda de Estabilidad')
         
         st.pyplot(fig_amp)
         plt.close(fig_amp)
@@ -794,11 +793,6 @@ else:
         st.metric("ITAE Final", f"{itae_acumulado:.2f}")
 
     # --- RESULTADOS FINALES Y DESCARGA ---
-    st.markdown("---")
-    st.success(f"✅ Simulación del Tanque {geom_tanque} completada exitosamente.")
-    st.balloons()
-    
-    # 1. Crear el DataFrame único con las constantes usadas
     df_final = pd.DataFrame({
         "Tiempo [s]": vector_t, 
         "Nivel [m]": h_log, 
@@ -808,8 +802,6 @@ else:
         "Ki_Sintonizado": [st.session_state.get('ki_ejecucion')] * len(vector_t)
     })
     
-    
-    # 2. Mostrar la tabla y métricas de cierre
     st.subheader("📋 Resumen de Datos y Estabilidad")
     
     col_tab, col_res = st.columns([2, 1])
@@ -818,7 +810,7 @@ else:
         st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=True)
     
     with col_res:
-        err_f = abs(sp_nivel - h_log[-1])
+        err_f = abs(sp_nivel - h_log[-1]) if len(h_log) > 0 else 0
         st.metric("Error Residual Final", f"{err_f:.4f} m")
         
         st.download_button(
@@ -829,7 +821,6 @@ else:
             use_container_width=True
         )
 
-    # Validación final de estado estacionario
     if err_f < 0.05:
         st.success(f"✅ El sistema alcanzó el estado estacionario en {h_log[-1]:.3f} m.")
     else:
