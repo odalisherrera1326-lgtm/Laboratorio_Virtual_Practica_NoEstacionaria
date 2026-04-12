@@ -540,7 +540,7 @@ else:
         placeholder_valvula = st.empty()
         # --- NUEVO: Gráfica Independiente de Validación ---
         st.markdown("---")
-        st.subheader("📊 Comparativa: Modelo Teórico vs Planta Real")
+        st.subheader("📊 Comparativa: Modelo Teórico vs Datos Experimentales")
         placeholder_comparativa = st.empty()
        
 
@@ -574,14 +574,7 @@ else:
         st.markdown("---")
         area_descarga = st.empty()
         
-        # 3. Monitoreo instantáneo
-        m_h = st.empty()
-        m_e = st.empty()
-        m_h.metric("Nivel PV [m]", "0.000")
-        m_e.metric("Error [m]", "0.000")
         
-        st.markdown("---")
-        area_descarga = st.empty()
         
     # 2. Preparación de datos
     status_placeholder = st.empty()
@@ -597,8 +590,6 @@ else:
     h_exp = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
     barra_p = st.progress(0)
    
-
-    # 3. Bucle de Simulación
     # 3. Bucle de Simulación
     cd_para_simular = st.session_state.get('cd_final', 0.61)
     for i, t_act in enumerate(vector_t):
