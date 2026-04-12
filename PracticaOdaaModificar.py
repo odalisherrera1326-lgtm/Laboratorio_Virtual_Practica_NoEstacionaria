@@ -628,15 +628,6 @@ else:
     h_exp = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
     barra_p = st.progress(0)
    
-
-   
-    Entiendo perfectamente. En un proyecto de esta magnitud para la universidad, borrar código siempre da nervios. 
-
-Aquí tienes **todo el bloque de simulación completo**, desde la preparación de los datos hasta que termina el bucle. He integrado tus lógicas de dibujo exactas (tanques, válvulas V-01 y V-02, y gráficas comparativas) con las correcciones de interactividad y fluidez.
-
-**Borra desde la línea 631** (donde empieza la preparación de datos original) **hasta justo antes de donde imprimes los resultados finales (`st.markdown("---") \n st.subheader("📈 Análisis...")`) y pega esto exactamente en ese lugar:**
-
-```python
     # =============================================================================
     # --- PREPARACIÓN DE DATOS PARA LA SIMULACIÓN ---
     # =============================================================================
