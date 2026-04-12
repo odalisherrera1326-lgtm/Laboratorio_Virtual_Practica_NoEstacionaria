@@ -583,13 +583,13 @@ else:
     h_log, u_log, e_log = [], [], []
 
 # Esta es la parte de tu foto, colocada aquí:
-if op_tipo == "Llenado":
+    if op_tipo == "Llenado":
     h_corrida = 0.0
-else:
+    else:
     h_corrida = h_total
 
-err_int, err_pasado = 0.0, 0.0
-iae_acumulado, itae_acumulado = 0.0, 0.0
+    err_int, err_pasado = 0.0, 0.0
+    iae_acumulado, itae_acumulado = 0.0, 0.0
    
     t_exp = datos_usr["Tiempo (s)"]
     h_exp = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
