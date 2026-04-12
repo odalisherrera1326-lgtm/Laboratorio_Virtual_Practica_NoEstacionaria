@@ -450,8 +450,8 @@ def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
     # Limitar el resultado a valores físicamente lógicos (0.4 a 1.0)
     return float(np.clip(cd_result, 0.4, 1.0))
 
-def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val,kp,ki,kd):
-    # 1. Cálculo de área según geometría
+def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val, kp, ki, kd):
+    # 1. Área transversal según geometría
     if geom == "Cilíndrico":
         area_h = np.pi * (r**2)
     elif geom == "Cónico":
@@ -461,26 +461,25 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
     
     area_h = max(area_h, 0.01) 
 
-   # 2. Algoritmo PID (Ahora usa las variables kp, ki, kd pasadas por argumento)
+    # 2. Algoritmo PID
     err = sp - h_prev
     e_sum += err * dt
     e_der = (err - e_prev) / dt
     u_control = (kp * err) + (ki * e_sum) + (kd * e_der)
     
-    # 3. Lógica de Operación y Balance de Masa
-    # Usamos el área del orificio calculada en el sidebar (0.0254 es ejemplo, usa la real)
-    # Para ser exactos, pasamos el área_orificio global o la calculamos aquí
+    # Área del orificio de salida
     a_o = np.pi * ((d_pulgadas * 0.0254) / 2)**2 
 
     if modo_op == "Llenado":
-        q_entrada = np.clip(u_control, 0, 2)
-        # USAMOS EL CD CALCULADO (cd_val)
+        q_entrada = np.clip(u_control, 0, 2.0) # Aumentado a 2.0 para interactividad
         q_salida = cd_val * a_o * np.sqrt(2 * 9.81 * h_prev) if h_prev > 0.005 else 0
         dh_dt = (q_entrada + q_p_val - q_salida) / area_h
         u_graficar = q_entrada
     else:
+        # Modo Vaciado: La bomba de entrada es solo la perturbación
         q_entrada = q_p_val  
-        q_salida = np.clip(-u_control, 0, 2) 
+        # La válvula de salida (u_control negativa) ahora extrae agua con fuerza
+        q_salida = np.clip(-u_control, 0, 2.0) 
         dh_dt = (q_entrada - q_salida) / area_h
         u_graficar = q_salida
     
@@ -606,16 +605,21 @@ else:
         st.markdown("---")
         area_descarga = st.empty()
         
-    # 2. Preparación de datos
-    status_placeholder = st.empty()
-    dt = 1.0 
-    vector_t = np.arange(0, tiempo_ensayo, dt)
-    h_log, u_log, sp_log, e_log = [], [], [], []
-   
-if op_tipo == "Llenado":
-    h_corrida = 0.0  # El proceso de llenado empieza desde el fondo
-else:
-    h_corrida = h_total  # El proceso de vaciado empieza desde el tope
+    # --- BUSCA ESTA SECCIÓN EN TU CÓDIGO (Preparación de datos) ---
+    t_exp = datos_usr["Tiempo (s)"]
+    h_exp = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
+    barra_p = st.progress(0)
+
+    # MODIFICA ESTA PARTE EXACTAMENTE ASÍ:
+    if op_tipo == "Llenado":
+        h_corrida = 0.0  # Empieza vacío si el usuario elige Llenado
+    else:
+        h_corrida = h_total  # Empieza lleno si elige Vaciado
+    
+    # El resto sigue igual...
+    err_int, err_pasado = 0, 0
+    iae_acumulado = 0
+    itae_acumulado = 0
     err_int, err_pasado = 0, 0
     iae_acumulado = 0
     itae_acumulado = 0
