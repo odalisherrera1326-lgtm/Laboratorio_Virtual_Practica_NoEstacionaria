@@ -584,9 +584,9 @@ else:
 
 # Esta es la parte de tu foto, colocada aquí:
     if op_tipo == "Llenado":
-    h_corrida = 0.0
+        h_corrida = 0.0
     else:
-    h_corrida = h_total
+        h_corrida = h_total
 
     err_int, err_pasado = 0.0, 0.0
     iae_acumulado, itae_acumulado = 0.0, 0.0
