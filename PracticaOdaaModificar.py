@@ -605,21 +605,21 @@ else:
         st.markdown("---")
         area_descarga = st.empty()
         
-    # --- BUSCA ESTA SECCIÓN EN TU CÓDIGO (Preparación de datos) ---
-    t_exp = datos_usr["Tiempo (s)"]
-    h_exp = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
-    barra_p = st.progress(0)
-
-    # MODIFICA ESTA PARTE EXACTAMENTE ASÍ:
-    if op_tipo == "Llenado":
-        h_corrida = 0.0  # Empieza vacío si el usuario elige Llenado
-    else:
-        h_corrida = h_total  # Empieza lleno si elige Vaciado
+   # --- PREPARACIÓN DE DATOS PARA LA SIMULACIÓN ---
+    status_placeholder = st.empty()
+    dt = 1.0 
     
-    # El resto sigue igual...
-    err_int, err_pasado = 0, 0
-    iae_acumulado = 0
-    itae_acumulado = 0
+    # IMPORTANTE: Definimos el vector de tiempo aquí para que el bucle lo reconozca
+    vector_t = np.arange(0, tiempo_ensayo, dt)
+    
+    h_log, u_log, sp_log, e_log = [], [], [], []
+    
+    # Lógica interactiva de inicio: responde a lo que el usuario elija
+    if op_tipo == "Llenado":
+        h_corrida = 0.0  # El tanque inicia vacío para la práctica de llenado
+    else:
+        h_corrida = h_total  # El tanque inicia lleno para la práctica de vaciado
+    
     err_int, err_pasado = 0, 0
     iae_acumulado = 0
     itae_acumulado = 0
@@ -629,7 +629,7 @@ else:
     barra_p = st.progress(0)
    
 
-    # 3. Bucle de Simulación
+   
     # 3. Bucle de Simulación
     cd_para_simular = st.session_state.get('cd_final', 0.61)
     for i, t_act in enumerate(vector_t):
