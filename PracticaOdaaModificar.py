@@ -40,15 +40,8 @@ if 'ejecutando' not in st.session_state:
     st.session_state.ejecutando = False
 
 # =============================================================================
-# 1. CONFIGURACIÓN E IDENTIDAD INSTITUCIONAL UCV
+# INTERFAZ TESIS 
 # =============================================================================
-st.set_page_config(
-    page_title="Tesis UCV - Simulación Dinámica",
-    page_icon="🛠️",
-    layout="wide"
-)
-
-# --- PEGA EL BLOQUE DE COLORES AQUÍ ---
 st.markdown("""
     <style>
     /* 1. CONFIGURACIÓN GLOBAL Y CURSOR DE ENGRANAJE ⚙️ */
@@ -95,23 +88,59 @@ st.markdown("""
         font-weight: bold !important;
         text-transform: uppercase !important;
     }
-    div[data-testid="stMetric"] div[data-testid Baseweb] {
+    /* Color de los números: Azul oscuro para legibilidad */
+    div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
         color: #154360 !important; 
+        font-size: 2rem !important;
+        font-weight: 800 !important;
     }
 
-    /* 4. PERSONALIZACIÓN DE SLIDERS (NARANJA PARA CONTRASTE) */
+    /* 4. BARRA DE PROGRESO "PROCESANDO" (AHORA AZUL) */
+    .stProgress > div > div > div > div {
+        background-color: #2980b9 !important;
+        animation: pulso_azul 2s ease-in-out infinite;
+        box-shadow: 0 0 12px rgba(41, 128, 185, 0.6);
+    }
+    
+    @keyframes pulso_azul {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
+//* 1. COLOR DE LA BARRA ACTIVA  */
     div[data-baseweb="slider"] > div > div > div {
         background-color: #FFA500 !important;
     }
+
+    /* 2. COLOR DEL BOTÓN CIRCULAR */
     div[role="slider"] {
         background-color: #FFA500 !important;
         border: 2px solid white !important;
     }
+
+    /* 3. COLOR DEL NÚMERO QUE FLOTA (EL VALOR ACTUAL) */
+    /* Este selector apunta específicamente al valor dinámico */
+    div[data-baseweb="slider"] div[data-testid="stTickBar"] + div,
+    div[data-baseweb="slider"] ~ div span {
+        color: #FFA500 !important;
+        font-weight: bold !important;
+    }
+    
+    /* 4. COLOR DE LOS NÚMEROS DE LOS EXTREMOS (MIN Y MAX) */
     div[data-testid="stTickBar"] div {
-        color: white !important; /* Cambiado a blanco para que se vea en el azul */
+        color: #FFA500 !important;
+        font-size: 0.8rem !important;
     }
 
-    /* 5. INPUTS Y BOTONES */
+    /* 5. RESTABLECER EL COLOR DE LAS ETIQUETAS (PARA QUE NO SEAN NARANJAS) */
+    /* Esto asegura que "Simular Falla/Fuga" y "Consigna de Nivel" vuelvan a ser blancos o negros */
+    div[data-testid="stWidgetLabel"] p {
+        color: white !important; /* O el color que prefieras para tus títulos */
+        font-weight: normal !important;
+    }
+    }
+
+    /* 6. INPUTS Y BOTONES */
     [data-testid="stSidebar"] .stNumberInput input {
         background-color: #ffffff !important;
         color: #1a5276 !important;
@@ -119,20 +148,56 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
+    [data-testid="stSidebar"] .stDownloadButton button {
+        background-color: #27ae60 !important;
+        color: white !important;
+        border-radius: 12px !important;
+    }
+
+    .stButton>button {
+        background-color: #1a5276 !important; 
+        color: white !important; 
+        border: 2px solid white !important;
+        border-radius: 12px !important;
+    }
+    
+    .stButton>button:hover {
+        border: 2px solid #2980b9 !important;
+        box-shadow: 0 0 20px rgba(41, 128, 185, 0.5) !important;
+    }
+
+    /* 7. BANNER DE ENCABEZADO */
+    .header-container {
+        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
+        padding: 25px; border-radius: 15px; border-bottom: 6px solid #1a5276;
+        color: white; text-align: center;
+    }
+
+    /* 8. BOTONES DE CONTROL (INICIAR/RESET) CON BRILLO */
     .stButton>button {
         background-color: #1a5276 !important; 
         color: white !important; 
         border: 2px solid white !important;
         border-radius: 12px !important;
         font-weight: bold !important;
+        transition: all 0.3s ease !important;
     }
-    
     .stButton>button:hover {
         border: 2px solid #f1c40f !important;
         box-shadow: 0 0 25px #f1c40f !important;
+        transform: translateY(-2px);
     }
 
-    /* 6. BANNER DE ENCABEZADO UCV */
+    div.stButton > button:first-child[kind="secondary"] {
+        background-color: #943126 !important;
+    }
+    div.stButton > button:first-child[kind="secondary"]:hover {
+        box-shadow: 0 0 25px #cb4335 !important;
+    }
+
+    /* 9. BANNER DE ENCABEZADO UCV */
     .header-container {
         background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
         background-size: 400% 400%;
@@ -146,7 +211,7 @@ st.markdown("""
         100% { background-position: 0% 50%; }
     }
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL CON FONDO 
