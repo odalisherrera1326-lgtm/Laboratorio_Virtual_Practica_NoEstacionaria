@@ -450,14 +450,14 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
     a_o = np.pi * ((d_pulgadas * 0.0254) / 2)**2 
 
     if modo_op == "Llenado":
-        q_entrada = np.clip(u_control, 0, 0.6)
+        q_entrada = np.clip(u_control, 0, 2)
         # USAMOS EL CD CALCULADO (cd_val)
         q_salida = cd_val * a_o * np.sqrt(2 * 9.81 * h_prev) if h_prev > 0.005 else 0
         dh_dt = (q_entrada + q_p_val - q_salida) / area_h
         u_graficar = q_entrada
     else:
         q_entrada = q_p_val  
-        q_salida = np.clip(-u_control, 0, 0.6) 
+        q_salida = np.clip(-u_control, 0, 2) 
         dh_dt = (q_entrada - q_salida) / area_h
         u_graficar = q_salida
     
@@ -580,11 +580,16 @@ else:
     status_placeholder = st.empty()
     dt = 1.0 
     vector_t = np.arange(0, tiempo_ensayo, dt)
-    h_log, u_log, sp_log, e_log = [], [], [], []
-    h_corrida = h_total if op_tipo == "Vaciado" else 0.05
-    err_int, err_pasado = 0, 0
-    iae_acumulado = 0
-    itae_acumulado = 0
+    h_log, u_log, e_log = [], [], []
+
+# Esta es la parte de tu foto, colocada aquí:
+if op_tipo == "Llenado":
+    h_corrida = 0.0
+else:
+    h_corrida = h_total
+
+err_int, err_pasado = 0.0, 0.0
+iae_acumulado, itae_acumulado = 0.0, 0.0
    
     t_exp = datos_usr["Tiempo (s)"]
     h_exp = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
@@ -612,12 +617,16 @@ else:
         
         h_log.append(h_corrida)
         u_log.append(u_inst)
-        sp_log.append(sp_nivel) 
         e_log.append(e_inst)
+
+    
+        valor_presente = h_log[-1] 
+        error_presente = e_log[-1] 
+        
         
         if i % 2 == 0:
-            m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
-            m_e.metric("Error [m]", f"{e_inst:.4f}")
+            m_h.metric("Nivel PV [m]", f"{valor_presente:.3f}")
+            m_e.metric("Error [m]", f"{error_presente:.4f}")
             placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
             placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
             
@@ -634,7 +643,7 @@ else:
                 c_in_x, c_in_y = -r_max, h_total*0.8
                 c_out_x, c_out_y = r_max, 0.1
                 # Dibujo del agua y cuerpo
-                ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, color=color_agua, alpha=0.6, zorder=1))
+                ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, color=color_agua, alpha=0.6, zorder=1))
                 ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=4, zorder=2)
 
             elif geom_tanque == "Cónico":
@@ -643,8 +652,8 @@ else:
                 # Cuerpo del tanque
                 ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=4, zorder=2)
                 # Dibujo del agua (Triángulo invertido dinámico)
-                r_act_cono = (r_max / h_total) * h_corrida
-                ax_t.add_patch(plt.Polygon([[-r_act_cono, h_corrida], [r_act_cono, h_corrida], [0, 0]], color=color_agua, alpha=0.6, zorder=1))
+                r_act_cono = (r_max / h_total) * valor_presente
+                ax_t.add_patch(plt.Polygon([[-r_act_cono, valor_presente], [r_act_cono, valor_presente], [0, 0]], color=color_agua, alpha=0.6, zorder=1))
 
             else: # Esférico
                 import math
@@ -657,7 +666,7 @@ else:
                 ax_t.add_patch(agua_esf)
                 
                 # Recorte dinámico según el nivel h_corrida
-                recorte_nivel = plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, transform=ax_t.transData)
+                recorte_nivel = plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, transform=ax_t.transData)
                 agua_esf.set_clip_path(recorte_nivel)
                 
                 # Borde del tanque esférico
@@ -695,7 +704,7 @@ else:
             ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
 
             # Burbuja de Nivel Actual superior
-            ax_t.text(0, h_total * 1.2, f"NIVEL ACTUAL: {h_corrida:.3f} m", 
+            ax_t.text(0, h_total * 1.2, f"NIVEL ACTUAL: {valor_presente:.3f} m", 
                      ha='center', va='center', fontsize=11, fontweight='bold',
                      bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
 
