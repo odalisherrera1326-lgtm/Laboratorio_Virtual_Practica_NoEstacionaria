@@ -648,13 +648,14 @@ else:
     k_i = st.session_state.get('ki_ejecucion', ki_val)
     k_d = st.session_state.get('kd_ejecucion', kd_val)
 
+  
     # =============================================================================
-    # --- BUCLE DE SIMULACIÓN MAESTRO ---
+    # 6. MOTOR DE SIMULACIÓN UNIFICADO (VERSIÓN FINAL DE TESIS)
     # =============================================================================
     for i, t_act in enumerate(vector_t):
-        status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
+        status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO SIMULACIÓN...</div>", unsafe_allow_html=True)
         
-        # A. Cálculos del Sistema
+        # A. Cálculos del Sistema (Modelo Matemático)
         q_p_inst = p_magnitud if ('p_activa' in locals() and p_activa and t_act >= p_tiempo) else 0.0
     
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
@@ -663,61 +664,62 @@ else:
             k_p, k_i, k_d
         )
         
-        # B. Acumulación de métricas
-        iae_acumulado += abs(e_inst) * dt
-        itae_acumulado += (t_act * abs(e_inst)) * dt
-        
+        # B. Registro de Datos
         h_log.append(h_corrida)
         u_log.append(u_inst)
         sp_log.append(sp_nivel) 
         e_log.append(e_inst)
         
-        # C. ACTUALIZACIÓN VISUAL EN TIEMPO REAL (Sin saltos de i % 2)
-        m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
-        m_e.metric("Error [m]", f"{e_inst:.4f}")
+        iae_acumulado += abs(e_inst) * dt
+        itae_acumulado += (t_act * abs(e_inst)) * dt
+        
+        # C. FUENTE ÚNICA DE VERDAD (Sincronización Métrica-Dibujo)
+        # Usamos el último valor del log para que todo sea idéntico
+        nivel_visual = h_log[-1]
+        error_visual = e_log[-1]
+
+        m_h.metric("Nivel PV [m]", f"{nivel_visual:.3f}")
+        m_e.metric("Error [m]", f"{error_visual:.4f}")
         placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
         placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
             
-        # --- 1. DIBUJO DEL TANQUE ---
+        # --- 1. DIBUJO DINÁMICO DEL TANQUE ---
         fig_t, ax_t = plt.subplots(figsize=(7, 5))
         ax_t.set_axis_off() 
         ax_t.set_xlim(-r_max*3, r_max*3) 
         ax_t.set_ylim(-0.8, h_total*1.3)
-        color_agua = '#3498db' if abs(e_inst) < 0.1 else '#e74c3c'
+        color_agua = '#3498db' if abs(error_visual) < 0.1 else '#e74c3c'
         
-        # Lógica de Geometría
         if geom_tanque == "Cilíndrico":
             c_in_x, c_in_y = -r_max, h_total*0.8
             c_out_x, c_out_y = r_max, 0.1
-            ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, color=color_agua, alpha=0.6, zorder=1))
+            ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, nivel_visual, color=color_agua, alpha=0.6, zorder=1))
             ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=4, zorder=2)
 
         elif geom_tanque == "Cónico":
             c_in_x, c_in_y = -(r_max/h_total)*(h_total*0.8), h_total*0.8
             c_out_x, c_out_y = 0, 0  
             ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=4, zorder=2)
-            r_act_cono = (r_max / h_total) * h_corrida
-            ax_t.add_patch(plt.Polygon([[-r_act_cono, h_corrida], [r_act_cono, h_corrida], [0, 0]], color=color_agua, alpha=0.6, zorder=1))
+            r_act_cono = (r_max / h_total) * nivel_visual
+            ax_t.add_patch(plt.Polygon([[-r_act_cono, nivel_visual], [r_act_cono, nivel_visual], [0, 0]], color=color_agua, alpha=0.6, zorder=1))
 
         else: # Esférico
             import math
             c_in_y = h_total * 0.7
             c_in_x = -math.sqrt(abs(r_max**2 - (c_in_y - r_max)**2))
             c_out_x, c_out_y = 0, 0 
-            
             agua_esf = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.6, zorder=1)
             ax_t.add_patch(agua_esf)
-            recorte_nivel = plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, transform=ax_t.transData)
+            recorte_nivel = plt.Rectangle((-r_max, 0), 2*r_max, nivel_visual, transform=ax_t.transData)
             agua_esf.set_clip_path(recorte_nivel)
             ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=4, zorder=2))
 
-        # Infraestructura de Entrada (V-01)
+        # Infraestructura: V-01 y V-02 (CV)
         ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
         ax_t.add_patch(plt.Polygon([[c_in_x-1, c_in_y+0.2], [c_in_x-1, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
         ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
         ax_t.text(c_in_x-0.6, c_in_y+0.4, "V-01", ha='center', fontsize=9, fontweight='bold')
 
-        # Infraestructura de Salida (V-02 CV)
         t_ancho = 0.2
         if geom_tanque == "Cilíndrico":
             ax_t.add_patch(plt.Rectangle((c_out_x, c_out_y - t_ancho/2), 1.5, t_ancho, color='silver', zorder=0))
@@ -728,68 +730,49 @@ else:
 
         ax_t.add_patch(plt.Polygon([[vs_x-0.25, vs_y+0.2], [vs_x-0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
         ax_t.add_patch(plt.Polygon([[vs_x+0.25, vs_y+0.2], [vs_x+0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
-        offset_t = 0.4 if geom_tanque == "Cilíndrico" else 0
-        ax_t.text(vs_x + offset_t, vs_y - 0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
+        ax_t.text(vs_x + (0.4 if geom_tanque == "Cilíndrico" else 0), vs_y - 0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
 
-        # Indicadores Dinámicos y Setpoint
+        # Indicadores y Etiquetas
         ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3)
         ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
-        ax_t.text(0, h_total * 1.2, f"NIVEL ACTUAL: {h_corrida:.3f} m", 
+        ax_t.text(0, h_total * 1.2, f"NIVEL ACTUAL: {nivel_visual:.3f} m", 
                  ha='center', va='center', fontsize=11, fontweight='bold',
                  bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
 
         placeholder_tanque.pyplot(fig_t)
-        plt.close(fig_t)
+        plt.close(fig_t) # <--- Evita que se colgué la memoria
 
-        # --- 2. GRÁFICA TENDENCIA DE NIVEL --- 
+        # --- 2. GRÁFICAS DE TENDENCIA (Actualización Sincronizada) ---
+        # Actualizamos las gráficas en cada paso para total fluidez
         fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-        ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel del Tanque (h)')
-        ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Consigna (Setpoint)')
-        ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
-        ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-        ax_tr.legend(loc='upper right', frameon=True, fontsize='x-small')
+        ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2)
+        ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5)
         ax_tr.set_xlim(0, tiempo_ensayo)
         ax_tr.set_ylim(0, h_total * 1.1)
         ax_tr.grid(True, alpha=0.2)
         placeholder_grafico.pyplot(fig_tr)
         plt.close(fig_tr)
         
-        # --- 3. GRÁFICA ACCIÓN DE CONTROL ---
         fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
         ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
         ax_u.set_xlim(0, tiempo_ensayo)
-        techo_dinamico = max(max(u_log or [0.1]), 0.1) * 1.2
-        ax_u.set_ylim(0, techo_dinamico)
-        ax_u.grid(True, alpha=0.2)
-        ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
-        ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
+        ax_u.set_ylim(0, max(max(u_log or [0.1]), 0.1) * 1.2)
         placeholder_u.pyplot(fig_u)
         plt.close(fig_u)
 
-        # --- 4. GRÁFICA DE LA VÁLVULA ---
         fig_v, ax_v = plt.subplots(figsize=(8, 3))
-        ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5, label='Apertura Real')
-        ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
+        ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5)
         ax_v.set_ylim(-0.1, 1.1) 
         ax_v.set_yticks([0, 0.5, 1])
-        ax_v.set_yticklabels(['CERRADA (0%)', '50%', 'ABIERTA (100%)'])
-        ax_v.set_title("Comportamiento Dinámico de la Válvula de Control", fontsize=10, fontweight='bold')
-        ax_v.grid(True, axis='y', ls='--', alpha=0.5)
-        ax_v.set_xlabel("Tiempo de simulación [s]")
+        ax_v.set_yticklabels(['CERRADA', '50%', 'ABIERTA'])
         placeholder_valvula.pyplot(fig_v)
         plt.close(fig_v)
 
-        # --- 5. GRÁFICA COMPARATIVA ---
         fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
         ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación')
         if mostrar_ref:
             ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos UCV')
-            ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
-        ax_comp.set_title("Validación de Resultados", fontsize=10, fontweight='bold')
-        ax_comp.set_xlabel("Tiempo [s]")
-        ax_comp.set_ylabel("Nivel [m]")
         ax_comp.set_ylim(0, h_total * 1.1)
-        ax_comp.grid(True, alpha=0.3)
         ax_comp.legend(loc='lower right')
         placeholder_comparativa.pyplot(fig_comp)
         plt.close(fig_comp)
