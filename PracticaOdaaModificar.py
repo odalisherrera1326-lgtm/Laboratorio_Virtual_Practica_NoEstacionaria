@@ -5,11 +5,9 @@ import matplotlib.pyplot as plt
 import os
 import time
 from sklearn.metrics import mean_squared_error
-
-# =============================================================================
-Funcion controlador inteligente 
 # =============================================================================
 # --- 1. FUNCIÓN PARA AUTO-SINTONIZACIÓN ---
+# =============================================================================
 def calcular_pid_adaptativo(geom, r_max, h_total):
     import math
     area_max = math.pi * (r_max ** 2)
@@ -26,6 +24,8 @@ def calcular_pid_adaptativo(geom, r_max, h_total):
         ki = kp / 18.0
         kd = kp * 0.2
     return round(kp, 2), round(ki, 3), round(kd, 3)
+
+
 # =============================================================================
 # 1. CONFIGURACIÓN E IDENTIDAD INSTITUCIONAL UCV
 # =============================================================================
@@ -339,30 +339,27 @@ with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)"):
                 modo_estres = False
 
 with st.sidebar.expander("Parámetros del Controlador PID"):
-   # Primero calculamos los sugeridos basados en lo que el usuario puso arriba
-        kp_sug, ki_sug, kd_sug = calcular_pid_adaptativo(geom_tanque, r_max, h_total)
+    # Primero calculamos los sugeridos
+    kp_sug, ki_sug, kd_sug = calcular_pid_adaptativo(geom_tanque, r_max, h_total)
 
-        st.markdown("---")
-        st.subheader("🎛️ Configuración del Controlador")
-        
-        # Selector de modo
-        metodo_control = st.radio("Método de Sintonización", 
-                                ["Manual (Usuario)", "Asistida (Sugerida)"],
-                                index=0, horizontal=True)
+    st.markdown("---")
+    st.subheader("🎛️ Configuración")
+    
+    # Selector de modo
+    metodo_control = st.radio("Método de Sintonización", 
+                            ["Manual (Usuario)", "Asistida (Sugerida)"],
+                            index=0, horizontal=True)
 
-        if metodo_control == "Asistida (Sugerida)":
-            st.success("💡 Usando parámetros optimizados")
-            kp_val = st.number_input("Kp", value=kp_sug)
-            ki_val = st.number_input("Ki", value=ki_sug, format="%.3f")
-            kd_val = st.number_input("Kd", value=kd_sug, format="%.3f")
-        else:
-            st.info("✍️ Ingrese sus propios parámetros")
-            kp_val = st.number_input("Kp", value=kp_sug, step=0.1)
-            ki_val = st.number_input("Ki", value=ki_sug, step=0.001, format="%.3f")
-            kd_val = st.number_input("Kd", value=kd_sug, step=0.001, format="%.3f")
-
-        # El interruptor para el Modo Estrés
-        modo_estres = st.toggle("🔥 Activar Modo Estrés", value=False)
+    if metodo_control == "Asistida (Sugerida)":
+        st.success("💡 Usando parámetros optimizados")
+        kp_val = st.number_input("Kp", value=kp_sug, key="kp_asist")
+        ki_val = st.number_input("Ki", value=ki_sug, format="%.3f", key="ki_asist")
+        kd_val = st.number_input("Kd", value=kd_sug, format="%.3f", key="kd_asist")
+    else:
+        st.info("✍️ Ingrese sus propios parámetros")
+        kp_val = st.number_input("Kp", value=kp_sug, step=0.1, key="kp_man")
+        ki_val = st.number_input("Ki", value=ki_sug, step=0.001, format="%.3f", key="ki_man")
+        kd_val = st.number_input("Kd", value=kd_sug, step=0.001, format="%.3f", key="kd_man")
     
     tiempo_ensayo = st.sidebar.slider("Tiempo de simulación [s]", 60, 600, 300)
 with st.sidebar.expander("📊 Cargar Datos Experimentales"):
@@ -622,23 +619,27 @@ else:
         
         
         
-   # 2. Preparación de datos
+   # --- 2. Preparación de datos (Corregido para Vaciado) ---
     status_placeholder = st.empty()
     dt = 1.0 
     vector_t = np.arange(0, tiempo_ensayo, dt)
     h_log, u_log, e_log = [], [], []
 
+    # Ajuste de condición inicial según la operación
     if op_tipo == "Llenado":
         h_corrida = 0.0
     else:
-        h_corrida = h_total
+        # Para vaciado, empezamos con el tanque al 90% de su capacidad
+        h_corrida = h_total * 0.9
     
+    # Sincronización inicial de variables
     valor_presente = h_corrida  
     error_presente = 0.0        
     err_int, err_pasado = 0.0, 0.0
     iae_acumulado, itae_acumulado = 0.0, 0.0
    
     t_exp = datos_usr["Tiempo (s)"]
+    # Asegúrate de que la división /100 sea necesaria (si tus datos están en cm)
     h_exp = [val / 100 for val in datos_usr["Nivel Medido (m)"]]
     barra_p = st.progress(0)
    
