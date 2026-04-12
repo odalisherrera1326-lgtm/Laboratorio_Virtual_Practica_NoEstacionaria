@@ -587,7 +587,9 @@ else:
         h_corrida = 0.0
     else:
         h_corrida = h_total
-
+    
+    valor_presente = h_corrida  
+    error_presente = 0.0        
     err_int, err_pasado = 0.0, 0.0
     iae_acumulado, itae_acumulado = 0.0, 0.0
    
@@ -611,7 +613,9 @@ else:
             err_int, err_pasado, op_tipo, cd_para_simular,
             k_p, k_i, k_d
         )
-        
+       
+        valor_presente = h_corrida 
+        error_presente = e_inst
         iae_acumulado += abs(e_inst) * dt
         itae_acumulado += (t_act * abs(e_inst)) * dt
         
@@ -624,11 +628,11 @@ else:
         error_presente = e_log[-1] 
         
         
-        if i % 2 == 0:
-            m_h.metric("Nivel PV [m]", f"{valor_presente:.3f}")
-            m_e.metric("Error [m]", f"{error_presente:.4f}")
-            placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
-            placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
+        
+        m_h.metric("Nivel PV [m]", f"{valor_presente:.3f}")
+        m_e.metric("Error [m]", f"{error_presente:.4f}")
+        placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
+        placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
             
            # --- B. MONITOR DEL PROCESO (DINÁMICO) ---
          
@@ -704,9 +708,18 @@ else:
             ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
 
             # Burbuja de Nivel Actual superior
-            ax_t.text(0, h_total * 1.2, f"NIVEL ACTUAL: {valor_presente:.3f} m", 
-                     ha='center', va='center', fontsize=11, fontweight='bold',
-                     bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
+           INDICADOR DE NIVEL SOBRE EL TANQUE (COPIAR DESDE AQUÍ) ---
+            ax_t.text(0, h_total * 1.2, f"PV: {valor_presente:.3f} m", 
+                     ha='center', 
+                     va='center', 
+                     fontsize=11, 
+                     fontweight='bold',
+                     bbox=dict(facecolor='white', 
+                               alpha=0.9, 
+                               edgecolor='#1a5276', 
+                               boxstyle='round,pad=0.5', 
+                               lw=2))
+      --
 
             # Renderizado final
             placeholder_tanque.pyplot(fig_t)
