@@ -624,11 +624,11 @@ else:
         e_log.append(e_inst)
         valor_presente = h_log[-1] 
         error_presente = e_log[-1] 
-       # --- A. ACTUALIZACIÓN DE MÉTRICAS ---
-        m_h.metric("Nivel PV [m]", f"{valor_presente:.3f}")
-        m_e.metric("Error [m]", f"{error_presente:.4f}")
-        placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
-        placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
+        
+         m_h.metric("Nivel PV [m]", f"{valor_presente:.3f}")
+         m_e.metric("Error [m]", f"{error_presente:.4f}")
+         placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
+         placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
         
                 
        # --- B. MONITOR DEL PROCESO (DINÁMICO) ---
