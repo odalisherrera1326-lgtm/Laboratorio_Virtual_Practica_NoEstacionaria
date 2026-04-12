@@ -622,8 +622,6 @@ else:
         h_log.append(h_corrida)
         u_log.append(u_inst)
         e_log.append(e_inst)
-
-    
         valor_presente = h_log[-1] 
         error_presente = e_log[-1] 
        # --- A. ACTUALIZACIÓN DE MÉTRICAS ---
@@ -707,18 +705,11 @@ else:
             ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
 
             # Burbuja de Nivel Actual superior
-           INDICADOR DE NIVEL SOBRE EL TANQUE (COPIAR DESDE AQUÍ) ---
+             Etiqueta de Nivel PV (Burbuja blanca sobre el tanque)
             ax_t.text(0, h_total * 1.2, f"PV: {valor_presente:.3f} m", 
-                     ha='center', 
-                     va='center', 
-                     fontsize=11, 
-                     fontweight='bold',
-                     bbox=dict(facecolor='white', 
-                               alpha=0.9, 
-                               edgecolor='#1a5276', 
-                               boxstyle='round,pad=0.5', 
-                               lw=2))
-      --
+                 ha='center', va='center', fontsize=11, fontweight='bold',
+                 bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
+      
 
             # Renderizado final
             placeholder_tanque.pyplot(fig_t)
