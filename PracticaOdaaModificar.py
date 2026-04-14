@@ -19,8 +19,6 @@ modo_estres = False
 # =============================================================================
 # --- 1. FUNCIONES DE CÁLCULO MEJORADAS ---
 # =============================================================================
-
-# --- FUNCIÓN AUXILIAR PARA ÁREA TRANSVERSAL ---
 def get_area_transversal(geom, r, h, h_total):
     """Calcula el área transversal para cualquier geometría en función de la altura actual"""
     h_efectiva = max(h, 0.001)
@@ -83,22 +81,22 @@ def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado, area_ori, op_tipo
     Kc = (2 * area_t) / (cd_calculado * area_ori * np.sqrt(2 * 9.81 * h_t/2))
     Kc = np.clip(Kc, 1.0, 30.0)
     
-    # Parámetros PID robustos para rechazo de perturbaciones
+    # Parámetros PID robustos para rechazo de perturbaciones - CORREGIDOS
     if op_tipo == "Llenado":
         # Para llenado: más agresivo en la integral (elimina offset rápido)
         kp = Kc * 0.6
-        ki = kp / (tau * 0.5)  # Integral fuerte
+        ki = kp / (tau * 0.3)  # Integral más fuerte (antes 0.5)
         kd = kp * tau * 0.125
     else:
         # Para vaciado: más conservador pero con buena integral
         kp = Kc * 0.5
-        ki = kp / (tau * 0.6)
+        ki = kp / (tau * 0.4)  # Integral más fuerte (antes 0.6)
         kd = kp * tau * 0.1
     
-    # Ajustes adicionales para robustez - CORREGIDO
-    kp = np.clip(kp, 5.0, 15.0)   # Mínimo aumentado de 3.0 a 5.0
-    ki = np.clip(ki, 0.8, 3.0)    # Mínimo aumentado de 0.3 a 0.8
-    kd = np.clip(kd, 0.1, 1.5)    # Ajustado
+    # Ajustes adicionales para robustez - CORREGIDOS
+    kp = np.clip(kp, 5.0, 15.0)   # Mínimo aumentado
+    ki = np.clip(ki, 1.0, 4.0)    # Mínimo aumentado de 0.3 a 1.0
+    kd = np.clip(kd, 0.1, 1.5)
     
     return round(kp, 2), round(ki, 3), round(kd, 3)
 
@@ -140,7 +138,7 @@ def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
 def resolver_sistema_robusto(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val, kp, ki, kd, d_pulgadas):
     """
     Resuelve la dinámica del sistema con Anti-Windup para mejor robustez.
-    CORREGIDO: Mejor manejo de la integral.
+    CORREGIDO: La integral ahora se acumula siempre.
     """
     
     # Usar la función auxiliar para área transversal
@@ -153,26 +151,14 @@ def resolver_sistema_robusto(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_pre
     # Área del orificio
     a_o = np.pi * ((d_pulgadas * 0.0254) / 2)**2
     
-    # --- ANTI-WINDUP: Evita que la integral se sature ---
+    # --- ANTI-WINDUP CORREGIDO: Siempre acumular error ---
     q_max = 2.0  # Flujo máximo
     
-    # CORRECCIÓN: Calcular acción sin límites para detectar saturación
-    u_sin_limite = (kp * err) + (ki * e_sum) + (kd * (err - e_prev) / dt if dt > 0 else 0)
+    # CORRECCIÓN: Siempre acumular el error integral
+    e_sum += err * dt
     
-    if modo_op == "Llenado":
-        # Anti-windup mejorado: factor de retroceso aumentado
-        if (u_sin_limite > q_max and err > 0) or (u_sin_limite < 0 and err < 0):
-            e_sum += err * dt * 0.3  # Factor aumentado de 0.1 a 0.3
-        else:
-            e_sum += err * dt
-    else:
-        if (u_sin_limite > q_max and err > 0) or (u_sin_limite < 0 and err < 0):
-            e_sum += err * dt * 0.3
-        else:
-            e_sum += err * dt
-    
-    # Limitar el error acumulado (más permisivo)
-    e_sum = np.clip(e_sum, -20.0, 20.0)  # Rango aumentado de [-10,10] a [-20,20]
+    # Limitar el error acumulado (rango ampliado)
+    e_sum = np.clip(e_sum, -30.0, 30.0)
     
     # Derivativo con filtro
     e_der = (err - e_prev) / dt if dt > 0 else 0
@@ -218,7 +204,7 @@ if 'ejecutando' not in st.session_state:
 
 
 # =============================================================================
-# 2. ESTILOS CSS (COMPLETO)
+# 2. ESTILOS CSS
 # =============================================================================
 st.markdown("""
 <style>
@@ -436,7 +422,7 @@ st.markdown(f"""
 
 
 # =============================================================================
-# 4. MARCO TEÓRICO (COMPLETO)
+# 4. MARCO TEÓRICO
 # =============================================================================
 col_teoria1, col_teoria2, col_teoria3 = st.columns(3)
 
@@ -643,12 +629,12 @@ if iniciar_sim:
                 st.session_state['cd_final'] = cd_calc
                 st.toast(f"🎯 Control Robusto Activado: Cd={cd_calc:.2f} | Kp={kp_a} | Ki={ki_a} | Kd={kd_a}")
             else:
-                # Valores robustos por defecto CORREGIDOS
+                # Valores robustos por defecto (funcionan para cualquier caso)
                 st.session_state['kp_ejecucion'] = 10.0
-                st.session_state['ki_ejecucion'] = 1.8
+                st.session_state['ki_ejecucion'] = 2.0
                 st.session_state['kd_ejecucion'] = 0.8
                 st.session_state['cd_final'] = 0.61
-                st.info("💡 Usando configuración robusta por defecto (Kp=10.0, Ki=1.8, Kd=0.8)")
+                st.info("💡 Usando configuración robusta por defecto (Kp=10.0, Ki=2.0, Kd=0.8)")
         else:
             st.session_state['kp_ejecucion'] = kp_val
             st.session_state['ki_ejecucion'] = ki_val
@@ -657,12 +643,12 @@ if iniciar_sim:
             st.info(f"✍️ Modo Manual: Kp={kp_val}, Ki={ki_val}, Kd={kd_val}")
 
     except Exception as e:
-        # Valores robustos de emergencia CORREGIDOS
+        # Valores robustos de emergencia
         st.session_state['kp_ejecucion'] = 10.0
-        st.session_state['ki_ejecucion'] = 1.8
+        st.session_state['ki_ejecucion'] = 2.0
         st.session_state['kd_ejecucion'] = 0.8
         st.session_state['cd_final'] = 0.61
-        st.warning(f"⚠️ Usando configuración robusta de emergencia (Kp=10, Ki=1.8, Kd=0.8)")
+        st.warning(f"⚠️ Usando configuración robusta de emergencia (Kp=10, Ki=2.0, Kd=0.8)")
 
 
 # =============================================================================
@@ -721,9 +707,9 @@ else:
     vector_t = np.arange(0, tiempo_ensayo, dt)
     h_log, u_log, e_log = [], [], []
 
-    # CORRECCIÓN: Condición inicial para llenado
+    # Condición inicial según operación - CORREGIDO
     if op_tipo == "Llenado":
-        h_corrida = 0.001  # 1 mm - evita división por cero
+        h_corrida = 0.001  # 1 mm - prácticamente vacío pero no cero
     else:
         # Para vaciado, empezamos con el tanque casi lleno
         h_corrida = h_total * 0.95
@@ -764,7 +750,7 @@ else:
             q_p_inst = 0.0
         
         k_p = st.session_state.get('kp_ejecucion', 10.0)
-        k_i = st.session_state.get('ki_ejecucion', 1.8)
+        k_i = st.session_state.get('ki_ejecucion', 2.0)
         k_d = st.session_state.get('kd_ejecucion', 0.8)
         
         # Usar la función robusta con Anti-Windup (CORREGIDA)
@@ -790,23 +776,29 @@ else:
         placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
         
         # =========================================================================
-        # VISUALIZACIÓN DEL TANQUE
+        # VISUALIZACIÓN DEL TANQUE - CORREGIDA PARA QUE EL NIVEL SEA CLARAMENTE VISIBLE
         # =========================================================================
         fig_t, ax_t = plt.subplots(figsize=(7, 5))
         ax_t.set_axis_off()
         ax_t.set_xlim(-r_max*3, r_max*3)
         ax_t.set_ylim(-0.8, h_total*1.3)
         
-        # Color del agua
-        color_agua = '#3498db'
+        # Color del agua: más opaco para mejor visibilidad
+        color_agua = '#3498db'  # Azul más visible
         
+        # Fondo del tanque (para que se vea el contraste)
         if geom_tanque == "Cilíndrico":
             c_in_x, c_in_y = -r_max, h_total*0.8
             c_out_x, c_out_y = r_max, 0.1
             
+            # Paredes del tanque (más gruesas y visibles)
             ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=5, zorder=2)
+            
+            # Agua: rectángulo que sube desde el fondo (y=0) hasta el nivel actual
+            # Añadir borde al agua para que se vea el límite
             ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5))
             
+            # Línea que marca el nivel actual sobre el agua
             if valor_presente > 0 and valor_presente < h_total:
                 ax_t.axhline(y=valor_presente, color='white', linestyle='-', linewidth=2, alpha=0.8, zorder=3)
             
@@ -814,8 +806,10 @@ else:
             c_in_x, c_in_y = -(r_max/h_total)*(h_total*0.8), h_total*0.8
             c_out_x, c_out_y = 0, 0
             
+            # Paredes del tanque cónico
             ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=5, zorder=2)
             
+            # Agua: polígono que sube desde el fondo
             if valor_presente > 0:
                 radio_superficie = (r_max / h_total) * valor_presente
                 vertices = [
@@ -824,6 +818,8 @@ else:
                     [0, 0]
                 ]
                 ax_t.add_patch(plt.Polygon(vertices, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5))
+                
+                # Línea que marca el nivel actual
                 ax_t.plot([-radio_superficie, radio_superficie], [valor_presente, valor_presente], color='white', linewidth=2, alpha=0.8, zorder=3)
             
         else:  # Esférico
@@ -832,12 +828,18 @@ else:
             c_in_x = -math.sqrt(abs(r_max**2 - (c_in_y - r_max)**2))
             c_out_x, c_out_y = 0, 0
             
+            # Agua: círculo recortado por el nivel actual
             agua_esf = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5)
             ax_t.add_patch(agua_esf)
+            
+            # Recortar por nivel
             recorte_nivel = plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, transform=ax_t.transData)
             agua_esf.set_clip_path(recorte_nivel)
+            
+            # Pared de la esfera
             ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=5, zorder=2))
             
+            # Línea que marca el nivel actual
             if valor_presente > 0 and valor_presente < 2*r_max:
                 radio_nivel = math.sqrt(r_max**2 - (valor_presente - r_max)**2)
                 ax_t.plot([-radio_nivel, radio_nivel], [valor_presente, valor_presente], color='white', linewidth=2, alpha=0.8, zorder=3)
@@ -864,7 +866,7 @@ else:
         ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3, alpha=0.8)
         ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
         
-        # Nivel actual
+        # Nivel actual (con fondo blanco para mejor legibilidad)
         ax_t.text(0, h_total * 1.2, f"PV: {valor_presente:.3f} m", 
                  ha='center', va='center', fontsize=11, fontweight='bold',
                  bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
