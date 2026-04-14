@@ -20,7 +20,7 @@ modo_estres = False
 # --- 1. FUNCIONES DE CÁLCULO MEJORADAS ---
 # =============================================================================
 
-# --- NUEVA FUNCIÓN AUXILIAR PARA ÁREA TRANSVERSAL (CORREGIDA) ---
+# --- FUNCIÓN AUXILIAR PARA ÁREA TRANSVERSAL (CORREGIDA) ---
 def get_area_transversal(geom, r, h, h_total):
     """Calcula el área transversal para cualquier geometría en función de la altura actual"""
     h_efectiva = max(h, 0.001)
@@ -31,7 +31,6 @@ def get_area_transversal(geom, r, h, h_total):
         radio_actual = (r / h_total) * h_efectiva
         return np.pi * (radio_actual ** 2)
     else:  # Esférico
-        # Para esfera: centro en (0, r), radio r
         if h_efectiva <= 2 * r:
             radio_corte = np.sqrt(r**2 - (h_efectiva - r)**2)
             return np.pi * (radio_corte ** 2)
@@ -68,9 +67,8 @@ def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado, area_ori, op_tipo
     """
     Sintonización robusta del PID para rechazo de perturbaciones.
     Basada en métodos Ziegler-Nichols adaptados para tanques.
-    AHORA ADAPTADA PARA CADA GEOMETRÍA CORRECTAMENTE
     """
-    # Calcular área transversal característica según geometría
+    # Calcular área transversal característica
     if geom == "Cilíndrico":
         area_t = np.pi * (r**2)
         tau = area_t / (cd_calculado * area_ori)  # Constante de tiempo
@@ -142,12 +140,12 @@ def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
 def resolver_sistema_robusto(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val, kp, ki, kd, d_pulgadas):
     """
     Resuelve la dinámica del sistema con Anti-Windup para mejor robustez.
-    CORREGIDO: Usa la función get_area_transversal() para todas las geometrías
+    El controlador mantiene el nivel en el setpoint ante perturbaciones.
     """
     
-    # --- CORRECCIÓN: Usar la función auxiliar para área transversal ---
+    # CORRECCIÓN: Usar la función auxiliar para área transversal
     area_h = get_area_transversal(geom, r, h_prev, h_t)
-    area_h = max(area_h, 0.0001)  # Evitar división por cero
+    area_h = max(area_h, 0.0001)
 
     # Cálculo del error
     err = sp - h_prev
@@ -220,7 +218,7 @@ if 'ejecutando' not in st.session_state:
 
 
 # =============================================================================
-# 2. ESTILOS CSS (COMPLETO, SIN CAMBIOS)
+# 2. ESTILOS CSS (COMPLETO)
 # =============================================================================
 st.markdown("""
 <style>
@@ -414,7 +412,7 @@ div[data-testid="stWarning"] {
 
 
 # =============================================================================
-# 3. ENCABEZADO INSTITUCIONAL (SIN CAMBIOS)
+# 3. ENCABEZADO INSTITUCIONAL
 # =============================================================================
 logo_ucv_64 = get_base64("logo_ucv.png")
 logo_eiq_64 = get_base64("logoquimicaborde.png")
@@ -438,7 +436,7 @@ st.markdown(f"""
 
 
 # =============================================================================
-# 4. MARCO TEÓRICO (COMPLETO, SIN CAMBIOS)
+# 4. MARCO TEÓRICO (COMPLETO)
 # =============================================================================
 col_teoria1, col_teoria2, col_teoria3 = st.columns(3)
 
@@ -498,7 +496,7 @@ with col_teoria3:
 
 
 # =============================================================================
-# 5. BARRA LATERAL - PARÁMETROS (SIN CAMBIOS)
+# 5. BARRA LATERAL - PARÁMETROS
 # =============================================================================
 st.sidebar.header("⚙️ Configuración del Sistema")
 
@@ -570,7 +568,7 @@ with st.sidebar.expander("📊 Cargar Datos Experimentales"):
 
 
 # =============================================================================
-# 6. BIBLIOTECA Y BOTONES (SIN CAMBIOS)
+# 6. BIBLIOTECA Y BOTONES
 # =============================================================================
 st.sidebar.markdown("---")
 st.sidebar.subheader("📚 Biblioteca Técnica")
@@ -602,7 +600,7 @@ if btn_reset:
 
 
 # =============================================================================
-# 7. DIAGRAMA DEL PROCESO (SIN CAMBIOS)
+# 7. DIAGRAMA DEL PROCESO
 # =============================================================================
 estado_expander = not st.session_state.get('ejecutando', False)
 
@@ -723,10 +721,12 @@ else:
     vector_t = np.arange(0, tiempo_ensayo, dt)
     h_log, u_log, e_log = [], [], []
 
+    # CORRECCIÓN: Condición inicial según operación
     if op_tipo == "Llenado":
         h_corrida = 0.0
     else:
-        h_corrida = h_total * 0.9
+        # Para vaciado, empezamos con el tanque casi lleno
+        h_corrida = h_total * 0.95
     
     valor_presente = h_corrida
     error_presente = 0.0
@@ -767,7 +767,7 @@ else:
         k_i = st.session_state.get('ki_ejecucion', 1.5)
         k_d = st.session_state.get('kd_ejecucion', 0.5)
         
-        # Usar la función robusta con Anti-Windup (AHORA CORREGIDA)
+        # Usar la función robusta con Anti-Windup (CORREGIDA)
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema_robusto(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst,
             err_int, err_pasado, op_tipo, cd_para_simular,
@@ -812,11 +812,17 @@ else:
             c_out_x, c_out_y = 0, 0
             # Paredes del tanque cónico
             ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=4, zorder=2)
-            # Agua: polígono que mantiene la forma cónica según el nivel actual
+            # CORRECCIÓN PARA CÓNICO: Agua como polígono que sube desde el fondo
             if valor_presente > 0:
-                radio_actual_cono = (r_max / h_total) * valor_presente
-                ax_t.add_patch(plt.Polygon([[-radio_actual_cono, valor_presente], [radio_actual_cono, valor_presente], [0, 0]], 
-                                           color=color_agua, alpha=0.6, zorder=1))
+                # El radio en la superficie del agua depende de la altura actual
+                radio_superficie = (r_max / h_total) * valor_presente
+                # El agua llena desde el fondo (punta del cono) hasta la altura actual
+                vertices = [
+                    [-radio_superficie, valor_presente],  # esquina superior izquierda
+                    [radio_superficie, valor_presente],   # esquina superior derecha
+                    [0, 0]                                # vértice inferior (punta del cono)
+                ]
+                ax_t.add_patch(plt.Polygon(vertices, color=color_agua, alpha=0.6, zorder=1))
             
         else:  # Esférico
             import math
@@ -832,7 +838,7 @@ else:
             # Pared de la esfera
             ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=4, zorder=2))
         
-        # VÁLVULAS Y ACCESORIOS (COMPLETOS, SIN CAMBIOS)
+        # VÁLVULAS Y ACCESORIOS (COMPLETOS)
         ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
         ax_t.add_patch(plt.Polygon([[c_in_x-1, c_in_y+0.2], [c_in_x-1, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
         ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
@@ -859,10 +865,11 @@ else:
         placeholder_tanque.pyplot(fig_t)
         plt.close(fig_t)
         
-        # Gráfico de tendencia (SIN CAMBIOS)
+        # Gráfico de tendencia
         fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
         ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel (h) - Control Robusto')
         ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
+        # Marcar zona de perturbación si está activa
         if p_activa and p_tiempo > 0 and t_act >= p_tiempo:
             ax_tr.axvspan(p_tiempo, tiempo_ensayo, alpha=0.1, color='orange', label='Zona con Perturbación')
         ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
@@ -874,7 +881,7 @@ else:
         placeholder_grafico.pyplot(fig_tr)
         plt.close(fig_tr)
         
-        # Gráfico de acción de control (SIN CAMBIOS)
+        # Gráfico de acción de control
         fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
         ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post', label='Flujo de Control')
         if p_activa and p_tiempo > 0:
@@ -889,7 +896,7 @@ else:
         placeholder_u.pyplot(fig_u)
         plt.close(fig_u)
         
-        # Gráfico de válvula (SIN CAMBIOS)
+        # Gráfico de válvula
         fig_v, ax_v = plt.subplots(figsize=(8, 3))
         ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5)
         ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
@@ -900,7 +907,7 @@ else:
         placeholder_valvula.pyplot(fig_v)
         plt.close(fig_v)
         
-        # Gráfico comparativo (SIN CAMBIOS)
+        # Gráfico comparativo
         fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
         ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación Robusta')
         if mostrar_ref and tiene_datos_exp and len(t_exp) > 0:
@@ -923,7 +930,7 @@ else:
     st.success(f"✅ Simulación Robusta completada - El controlador mantuvo el nivel ante las perturbaciones")
     st.balloons()
     
-    # Análisis de respuesta (SIN CAMBIOS)
+    # Análisis de respuesta
     st.markdown("---")
     st.subheader("📈 Análisis de Respuesta - Control Robusto Anti-Perturbaciones")
     
@@ -959,6 +966,7 @@ else:
         
         # Evaluación del rechazo a perturbaciones
         if p_activa and p_tiempo > 0:
+            # Buscar el error máximo después de la perturbación
             idx_pert = int(p_tiempo / dt) if p_tiempo < len(h_log) else 0
             if idx_pert < len(h_log) - 10:
                 error_post_pert = max([abs(h_log[j] - sp_nivel) for j in range(idx_pert, min(idx_pert+50, len(h_log)))])
@@ -970,7 +978,7 @@ else:
                 else:
                     st.warning("⚠️ El rechazo puede mejorar ajustando Ki")
     
-    # Exportación (SIN CAMBIOS)
+    # Exportación
     df_final = pd.DataFrame({
         "Tiempo [s]": vector_t,
         "Nivel [m]": h_log,
@@ -1014,7 +1022,7 @@ else:
 
 
 # =============================================================================
-# 10. FOOTER INSTITUCIONAL (SIN CAMBIOS)
+# 10. FOOTER INSTITUCIONAL
 # =============================================================================
 st.markdown("""
 <hr style="margin: 2rem 0 1rem 0; border-color: #1a5276;">
