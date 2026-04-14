@@ -30,8 +30,8 @@ def calcular_pid_adaptativo(geom, r_max, h_total):
 # 1. CONFIGURACIÓN E IDENTIDAD INSTITUCIONAL UCV
 # =============================================================================
 st.set_page_config(
-    page_title="Tesis UCV - Simulación Dinámica",
-    page_icon="🛠️",
+    page_title="Lab Virtual - Simulación Dinámica",
+    page_icon="🧪",
     layout="wide"
 )
 
@@ -43,179 +43,175 @@ if 'ejecutando' not in st.session_state:
 # INTERFAZ TESIS 
 # =============================================================================
 st.markdown("""
-<style>
-#=============================================================================
-# 1. CONFIGURACIÓN GLOBAL Y CURSORES DINÁMICOS MEJORADOS
-#============================================================================= 
-html, body, [data-testid="stAppViewContainer"] {
-    background-color: #f4f7f9 !important;
-    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='1.5'><circle cx='12' cy='12' r='3'/><path d='M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12'/></svg>") 12 12, auto !important;
-}
-
-button, a, [data-testid="stHeaderActionElements"], .stSlider {
-    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='1.5'><circle cx='12' cy='12' r='3'/><path d='M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12'/></svg>") 12 12, pointer !important;
-}
-
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #1a5276 0%, #154360 100%) !important;
-    border-right: 4px solid #f1c40f !important;
-}
-
-[data-testid="stSidebar"] .stMarkdown, 
-[data-testid="stSidebar"] label, 
-[data-testid="stSidebar"] p, 
-[data-testid="stSidebar"] span {
-    color: #f0f4f8 !important;
-    font-weight: 400 !important;
-    line-height: 1.4 !important;
-}
-
-[data-testid="stSidebar"] h1, 
-[data-testid="stSidebar"] h2, 
-[data-testid="stSidebar"] h3 {
-    color: #f1c40f !important;
-    border-bottom: 1px solid #f1c40f80;
-    padding-bottom: 5px;
-    margin-top: 10px;
-}
-
-.streamlit-expanderHeader {
-    background-color: #e8f0f7 !important;
-    border-radius: 10px !important;
-    font-weight: 600 !important;
-    color: #1a5276 !important;
-    border-left: 4px solid #f1c40f !important;
-    transition: all 0.2s ease !important;
-}
-
-.streamlit-expanderHeader:hover {
-    background-color: #d4e6f1 !important;
-    transform: translateX(3px);
-}
-
-.streamlit-expanderContent {
-    background-color: #ffffff !important;
-    border-radius: 0 0 10px 10px !important;
-    border: 1px solid #e0e8f0 !important;
-    border-top: none !important;
-    padding: 15px !important;
-}
-
-div[data-testid="stMetric"] {
-    background: linear-gradient(135deg, #ffffff 0%, #f5f9fc 100%) !important;
-    border: none !important;
-    border-left: 5px solid #1a5276 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-    padding: 15px !important;
-}
-
-div[data-testid="stMetric"]:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.12) !important;
-}
-
-div[data-testid="stMetric"] label {
-    color: #1a5276 !important;
-    font-size: 0.85rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.5px;
-    text-transform: uppercase !important;
-}
-
-div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-    color: #154360 !important;
-    font-size: 2.2rem !important;
-    font-weight: 800 !important;
-}
-
-.stButton > button[kind="primary"], 
-.stButton > button:first-child:not([kind="secondary"]) {
-    background: linear-gradient(90deg, #1a5276, #2471a3) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 25px !important;
-    padding: 0.5rem 1.5rem !important;
-    font-weight: bold !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
-}
-
-.stButton > button[kind="primary"]:hover,
-.stButton > button:first-child:not([kind="secondary"]):hover {
-    background: linear-gradient(90deg, #2471a3, #2e86c1) !important;
-    transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(26,82,118,0.4) !important;
-}
-
-.stButton > button[kind="secondary"] {
-    background: linear-gradient(90deg, #7b241c, #943126) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 25px !important;
-    transition: all 0.3s ease !important;
-}
-
-.stButton > button[kind="secondary"]:hover {
-    background: linear-gradient(90deg, #943126, #a93226) !important;
-    transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(148,49,38,0.4) !important;
-}
-
-.stProgress > div > div > div > div {
-    background: linear-gradient(90deg, #1a5276, #3498db, #1a5276) !important;
-    background-size: 200% 100% !important;
-    animation: gradientMove 1.5s ease infinite, pulso_azul 2s ease-in-out infinite !important;
-    border-radius: 10px !important;
-}
-
-@keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 200% 50%; }
-}
-
-@keyframes pulso_azul {
-    0% { opacity: 0.7; }
-    50% { opacity: 1; }
-    100% { opacity: 0.7; }
-}
-
-div[data-baseweb="slider"] > div > div > div {
-    background-color: #f39c12 !important;
-}
-
-div[role="slider"] {
-    background-color: #f39c12 !important;
-    border: 2px solid white !important;
-}
-
-.header-container {
-    background: linear-gradient(135deg, #0d3251 0%, #1a5276 50%, #1f618d 100%);
-    background-size: 200% 200%;
-    animation: gradientBG 8s ease infinite;
-    border-radius: 20px;
-    padding: 20px 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-}
-
-@keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
-
-@media (max-width: 768px) {
-    .header-container h1 {
-        font-size: 1.2rem !important;
+    <style>
+    /* 1. CONFIGURACIÓN GLOBAL Y CURSOR DE ENGRANAJE ⚙️ */
+    html, body, [data-testid="stAppViewContainer"] {
+        background-color: #f4f7f9 !important; 
+        cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text></svg>") 16 16, auto !important;
     }
+
+    button, a, [data-testid="stHeaderActionElements"], .stSlider {
+        cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' style='font-size: 24px;'><text y='20'>⚙️</text><text x='10' y='28' style='font-size: 14px;'>👆</text></svg>") 16 16, pointer !important;
+    }
+
+    /* 2. BARRAS DE INTERFAZ (AZUL UCV) */
+    header[data-testid="stHeader"] {
+        background-color: #1a5276 !important;
+        color: white !important;
+    }
+
+    [data-testid="stSidebar"] {
+        background-color: #1a5276 !important;
+        border-right: 4px solid #154360 !important;
+    }
+
+    [data-testid="stSidebar"] .stMarkdown, 
+    [data-testid="stSidebar"] label, 
+    [data-testid="stSidebar"] p, 
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+        color: white !important;
+        font-weight: 500;
+    }
+
+    /* 3. RECUADROS Y NÚMEROS DE MÉTRICAS  */
+    div[data-testid="stMetric"] {
+        background-color: #ffffff !important;
+        border: 2px solid #1a5276 !important;
+        border-radius: 15px !important;
+        padding: 15px !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+        text-align: center !important;
+    }
+    div[data-testid="stMetric"] label {
+        color: #1a5276 !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+    }
+    /* Color de los números: Azul oscuro para legibilidad */
     div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-        font-size: 1.5rem !important;
+        color: #154360 !important; 
+        font-size: 2rem !important;
+        font-weight: 800 !important;
     }
-}
-</style>
-""", unsafe_allow_html=True)
+
+    /* 4. BARRA DE PROGRESO "PROCESANDO" (AHORA AZUL) */
+    .stProgress > div > div > div > div {
+        background-color: #2980b9 !important;
+        animation: pulso_azul 2s ease-in-out infinite;
+        box-shadow: 0 0 12px rgba(41, 128, 185, 0.6);
+    }
+    
+    @keyframes pulso_azul {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
+//* 1. COLOR DE LA BARRA ACTIVA  */
+    div[data-baseweb="slider"] > div > div > div {
+        background-color: #FFA500 !important;
+    }
+
+    /* 2. COLOR DEL BOTÓN CIRCULAR */
+    div[role="slider"] {
+        background-color: #FFA500 !important;
+        border: 2px solid white !important;
+    }
+
+    /* 3. COLOR DEL NÚMERO QUE FLOTA (EL VALOR ACTUAL) */
+    /* Este selector apunta específicamente al valor dinámico */
+    div[data-baseweb="slider"] div[data-testid="stTickBar"] + div,
+    div[data-baseweb="slider"] ~ div span {
+        color: #FFA500 !important;
+        font-weight: bold !important;
+    }
+    
+    /* 4. COLOR DE LOS NÚMEROS DE LOS EXTREMOS (MIN Y MAX) */
+    div[data-testid="stTickBar"] div {
+        color: #FFA500 !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* 5. RESTABLECER EL COLOR DE LAS ETIQUETAS (PARA QUE NO SEAN NARANJAS) */
+    /* Esto asegura que "Simular Falla/Fuga" y "Consigna de Nivel" vuelvan a ser blancos o negros */
+    div[data-testid="stWidgetLabel"] p {
+        color: white !important; /* O el color que prefieras para tus títulos */
+        font-weight: normal !important;
+    }
+    }
+
+    /* 6. INPUTS Y BOTONES */
+    [data-testid="stSidebar"] .stNumberInput input {
+        background-color: #ffffff !important;
+        color: #1a5276 !important;
+        border: 2px solid #2980b9 !important;
+        border-radius: 8px !important;
+    }
+
+    [data-testid="stSidebar"] .stDownloadButton button {
+        background-color: #27ae60 !important;
+        color: white !important;
+        border-radius: 12px !important;
+    }
+
+    .stButton>button {
+        background-color: #1a5276 !important; 
+        color: white !important; 
+        border: 2px solid white !important;
+        border-radius: 12px !important;
+    }
+    
+    .stButton>button:hover {
+        border: 2px solid #2980b9 !important;
+        box-shadow: 0 0 20px rgba(41, 128, 185, 0.5) !important;
+    }
+
+    /* 7. BANNER DE ENCABEZADO */
+    .header-container {
+        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
+        padding: 25px; border-radius: 15px; border-bottom: 6px solid #1a5276;
+        color: white; text-align: center;
+    }
+
+    /* 8. BOTONES DE CONTROL (INICIAR/RESET) CON BRILLO */
+    .stButton>button {
+        background-color: #1a5276 !important; 
+        color: white !important; 
+        border: 2px solid white !important;
+        border-radius: 12px !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+    }
+    .stButton>button:hover {
+        border: 2px solid #f1c40f !important;
+        box-shadow: 0 0 25px #f1c40f !important;
+        transform: translateY(-2px);
+    }
+
+    div.stButton > button:first-child[kind="secondary"] {
+        background-color: #943126 !important;
+    }
+    div.stButton > button:first-child[kind="secondary"]:hover {
+        box-shadow: 0 0 25px #cb4335 !important;
+    }
+
+    /* 9. BANNER DE ENCABEZADO UCV */
+    .header-container {
+        background: linear-gradient(-45deg, #154360, #1a5276, #21618c, #1a5276);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
+        padding: 25px; border-radius: 15px; border-bottom: 6px solid #f1c40f;
+        color: white; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    @keyframes gradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL CON FONDO 
