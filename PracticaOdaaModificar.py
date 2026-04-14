@@ -477,15 +477,20 @@ with st.sidebar.expander("Parámetros del Controlador PID"):
     
     tiempo_ensayo = st.slider("Tiempo de simulación [s]", 60, 600, 300)
 
+# =============================================================================
+# DATOS EXPERIMENTALES (VERSIÓN CORREGIDA)
+# =============================================================================
 with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     st.write("Ingresa los datos medidos en el laboratorio:")
     st.caption("⚠️ Nota: El nivel debe ingresarse en **centímetros (cm)**")
     
-    datos_usr = st.data_editor({
+    # DataFrame por defecto
+    df_exp_default = pd.DataFrame({
         "Tiempo (s)": [0, 60, 120, 180, 240, 300],
         "Nivel Medido (cm)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    }, num_rows="dynamic")
+    })
     
+    datos_usr = st.data_editor(df_exp_default, num_rows="dynamic")
     mostrar_ref = st.checkbox("Mostrar referencia en gráfica", value=True)
 
 
@@ -545,12 +550,16 @@ if iniciar_sim:
     st.session_state['ultimo_error'] = 0.0
     
     try:
-        df_calibracion = pd.DataFrame(datos_usr)
+        # Asegurar que datos_usr sea DataFrame
+        if not isinstance(datos_usr, pd.DataFrame):
+            datos_usr = pd.DataFrame(datos_usr)
         
         if modo_auto:
-            if "Nivel Medido (cm)" in df_calibracion.columns and not df_calibracion["Nivel Medido (cm)"].isnull().all():
-                df_calibracion["Nivel Medido (m)"] = df_calibracion["Nivel Medido (cm)"] / 100
-                cd_calc = calcular_cd_inteligente(df_calibracion[["Tiempo (s)", "Nivel Medido (m)"]], 
+            if "Nivel Medido (cm)" in datos_usr.columns and not datos_usr["Nivel Medido (cm)"].isnull().all():
+                # Crear copia con nivel en metros para el cálculo
+                df_calib = datos_usr.copy()
+                df_calib["Nivel Medido (m)"] = df_calib["Nivel Medido (cm)"] / 100
+                cd_calc = calcular_cd_inteligente(df_calib[["Tiempo (s)", "Nivel Medido (m)"]], 
                                                    r_max, h_total, geom_tanque, area_orificio)
                 kp_a, ki_a, kd_a = sintonizar_controlador_dinamico(geom_tanque, r_max, h_total, cd_calc, area_orificio)
                 
@@ -643,12 +652,18 @@ else:
     err_int, err_pasado = 0.0, 0.0
     iae_acumulado, itae_acumulado = 0.0, 0.0
     
-    if "Nivel Medido (cm)" in datos_usr.columns:
+    # Procesar datos experimentales de forma segura
+    if not isinstance(datos_usr, pd.DataFrame):
+        datos_usr = pd.DataFrame(datos_usr)
+    
+    if "Nivel Medido (cm)" in datos_usr.columns and len(datos_usr) > 0:
         t_exp = datos_usr["Tiempo (s)"].values
         h_exp = [val / 100 for val in datos_usr["Nivel Medido (cm)"].values]
+        tiene_datos_exp = True
     else:
         t_exp = []
         h_exp = []
+        tiene_datos_exp = False
     
     barra_p = st.progress(0)
     cd_para_simular = st.session_state.get('cd_final', 0.61)
@@ -785,7 +800,7 @@ else:
         # Gráfico comparativo
         fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
         ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación')
-        if mostrar_ref and len(t_exp) > 0:
+        if mostrar_ref and tiene_datos_exp and len(t_exp) > 0:
             ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos UCV')
             ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
         ax_comp.set_title("Validación de Resultados", fontsize=10, fontweight='bold')
