@@ -20,7 +20,7 @@ modo_estres = False
 # --- 1. FUNCIONES DE CÁLCULO MEJORADAS ---
 # =============================================================================
 
-# --- FUNCIÓN AUXILIAR PARA ÁREA TRANSVERSAL (CORREGIDA) ---
+# --- FUNCIÓN AUXILIAR PARA ÁREA TRANSVERSAL ---
 def get_area_transversal(geom, r, h, h_total):
     """Calcula el área transversal para cualquier geometría en función de la altura actual"""
     h_efectiva = max(h, 0.001)
@@ -143,7 +143,7 @@ def resolver_sistema_robusto(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_pre
     El controlador mantiene el nivel en el setpoint ante perturbaciones.
     """
     
-    # CORRECCIÓN: Usar la función auxiliar para área transversal
+    # Usar la función auxiliar para área transversal
     area_h = get_area_transversal(geom, r, h_prev, h_t)
     area_h = max(area_h, 0.0001)
 
@@ -721,7 +721,7 @@ else:
     vector_t = np.arange(0, tiempo_ensayo, dt)
     h_log, u_log, e_log = [], [], []
 
-    # CORRECCIÓN: Condición inicial según operación
+    # Condición inicial según operación
     if op_tipo == "Llenado":
         h_corrida = 0.0
     else:
@@ -767,7 +767,7 @@ else:
         k_i = st.session_state.get('ki_ejecucion', 1.5)
         k_d = st.session_state.get('kd_ejecucion', 0.5)
         
-        # Usar la función robusta con Anti-Windup (CORREGIDA)
+        # Usar la función robusta con Anti-Windup
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema_robusto(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst,
             err_int, err_pasado, op_tipo, cd_para_simular,
@@ -790,53 +790,73 @@ else:
         placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
         
         # =========================================================================
-        # VISUALIZACIÓN DEL TANQUE - CORREGIDA PARA TODAS LAS GEOMETRÍAS
+        # VISUALIZACIÓN DEL TANQUE - CORREGIDA PARA QUE EL NIVEL SEA CLARAMENTE VISIBLE
         # =========================================================================
         fig_t, ax_t = plt.subplots(figsize=(7, 5))
         ax_t.set_axis_off()
         ax_t.set_xlim(-r_max*3, r_max*3)
         ax_t.set_ylim(-0.8, h_total*1.3)
-        # Color: verde si está cerca del setpoint, rojo si hay error grande
-        color_agua = '#27ae60' if abs(e_inst) < 0.05 else ('#e67e22' if abs(e_inst) < 0.1 else '#e74c3c')
         
+        # Color del agua: más opaco para mejor visibilidad
+        color_agua = '#3498db'  # Azul más visible
+        
+        # Fondo del tanque (para que se vea el contraste)
         if geom_tanque == "Cilíndrico":
             c_in_x, c_in_y = -r_max, h_total*0.8
             c_out_x, c_out_y = r_max, 0.1
+            
+            # Paredes del tanque (más gruesas y visibles)
+            ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=5, zorder=2)
+            
             # Agua: rectángulo que sube desde el fondo (y=0) hasta el nivel actual
-            ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, color=color_agua, alpha=0.6, zorder=1))
-            # Paredes del tanque
-            ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=4, zorder=2)
+            # Añadir borde al agua para que se vea el límite
+            ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5))
+            
+            # Línea que marca el nivel actual sobre el agua
+            if valor_presente > 0 and valor_presente < h_total:
+                ax_t.axhline(y=valor_presente, color='white', linestyle='-', linewidth=2, alpha=0.8, zorder=3)
             
         elif geom_tanque == "Cónico":
             c_in_x, c_in_y = -(r_max/h_total)*(h_total*0.8), h_total*0.8
             c_out_x, c_out_y = 0, 0
+            
             # Paredes del tanque cónico
-            ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=4, zorder=2)
-            # CORRECCIÓN PARA CÓNICO: Agua como polígono que sube desde el fondo
+            ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=5, zorder=2)
+            
+            # Agua: polígono que sube desde el fondo
             if valor_presente > 0:
-                # El radio en la superficie del agua depende de la altura actual
                 radio_superficie = (r_max / h_total) * valor_presente
-                # El agua llena desde el fondo (punta del cono) hasta la altura actual
                 vertices = [
-                    [-radio_superficie, valor_presente],  # esquina superior izquierda
-                    [radio_superficie, valor_presente],   # esquina superior derecha
-                    [0, 0]                                # vértice inferior (punta del cono)
+                    [-radio_superficie, valor_presente],
+                    [radio_superficie, valor_presente],
+                    [0, 0]
                 ]
-                ax_t.add_patch(plt.Polygon(vertices, color=color_agua, alpha=0.6, zorder=1))
+                ax_t.add_patch(plt.Polygon(vertices, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5))
+                
+                # Línea que marca el nivel actual
+                ax_t.plot([-radio_superficie, radio_superficie], [valor_presente, valor_presente], color='white', linewidth=2, alpha=0.8, zorder=3)
             
         else:  # Esférico
             import math
             c_in_y = h_total * 0.7
             c_in_x = -math.sqrt(abs(r_max**2 - (c_in_y - r_max)**2))
             c_out_x, c_out_y = 0, 0
+            
             # Agua: círculo recortado por el nivel actual
-            agua_esf = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.6, zorder=1)
+            agua_esf = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5)
             ax_t.add_patch(agua_esf)
-            # Recortar por nivel (el agua sube desde el fondo hasta valor_presente)
+            
+            # Recortar por nivel
             recorte_nivel = plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, transform=ax_t.transData)
             agua_esf.set_clip_path(recorte_nivel)
+            
             # Pared de la esfera
-            ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=4, zorder=2))
+            ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=5, zorder=2))
+            
+            # Línea que marca el nivel actual
+            if valor_presente > 0 and valor_presente < 2*r_max:
+                radio_nivel = math.sqrt(r_max**2 - (valor_presente - r_max)**2)
+                ax_t.plot([-radio_nivel, radio_nivel], [valor_presente, valor_presente], color='white', linewidth=2, alpha=0.8, zorder=3)
         
         # VÁLVULAS Y ACCESORIOS (COMPLETOS)
         ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
@@ -856,8 +876,11 @@ else:
         offset_t = 0.4 if geom_tanque == "Cilíndrico" else 0
         ax_t.text(vs_x + offset_t, vs_y - 0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
         
-        ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3)
+        # Setpoint
+        ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3, alpha=0.8)
         ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
+        
+        # Nivel actual (con fondo blanco para mejor legibilidad)
         ax_t.text(0, h_total * 1.2, f"PV: {valor_presente:.3f} m", 
                  ha='center', va='center', fontsize=11, fontweight='bold',
                  bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
@@ -869,7 +892,6 @@ else:
         fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
         ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel (h) - Control Robusto')
         ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
-        # Marcar zona de perturbación si está activa
         if p_activa and p_tiempo > 0 and t_act >= p_tiempo:
             ax_tr.axvspan(p_tiempo, tiempo_ensayo, alpha=0.1, color='orange', label='Zona con Perturbación')
         ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
@@ -966,7 +988,6 @@ else:
         
         # Evaluación del rechazo a perturbaciones
         if p_activa and p_tiempo > 0:
-            # Buscar el error máximo después de la perturbación
             idx_pert = int(p_tiempo / dt) if p_tiempo < len(h_log) else 0
             if idx_pert < len(h_log) - 10:
                 error_post_pert = max([abs(h_log[j] - sp_nivel) for j in range(idx_pert, min(idx_pert+50, len(h_log)))])
