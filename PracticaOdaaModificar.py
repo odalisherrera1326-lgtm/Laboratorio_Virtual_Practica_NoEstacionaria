@@ -196,8 +196,8 @@ def get_base64(path):
 # 1. CONFIGURACIÓN DE LA PÁGINA
 # =============================================================================
 st.set_page_config(
-    page_title="Tesis UCV - Simulación Dinámica - Control Robusto",
-    page_icon="🛠️",
+    page_title="Lab Virtual - Simulación Dinámica -",
+    page_icon="🧪",
     layout="wide"
 )
 
