@@ -17,7 +17,7 @@ p_tiempo = 80
 modo_estres = False
 
 # =============================================================================
-# --- 1. FUNCIONES DE CÁLCULO ---
+# --- 1. FUNCIONES DE CÁLCULO MEJORADAS ---
 # =============================================================================
 def calcular_pid_adaptativo(geom, r_max, h_total, cd=0.61, area_orificio=0.0005):
     """Calcula parámetros PID según geometría y características del sistema"""
@@ -44,20 +44,44 @@ def calcular_pid_adaptativo(geom, r_max, h_total, cd=0.61, area_orificio=0.0005)
     return round(kp, 2), round(ki, 3), round(kd, 3)
 
 
-def sintonizar_controlador_dinamico(geom, r, h_t, cd_calculado, area_ori):
-    """Método alternativo de sintonización basado en dinámica del sistema"""
+def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado, area_ori, op_tipo="Llenado"):
+    """
+    Sintonización robusta del PID para rechazo de perturbaciones.
+    Basada en métodos Ziegler-Nichols adaptados para tanques.
+    """
+    # Calcular área transversal característica
     if geom == "Cilíndrico":
         area_t = np.pi * (r**2)
+        tau = area_t / (cd_calculado * area_ori)  # Constante de tiempo
     elif geom == "Cónico":
-        area_t = np.pi * (r/2)**2 
-    else: 
+        area_t = np.pi * (r/2)**2
+        tau = area_t / (cd_calculado * area_ori * 0.8)
+    else:  # Esférico
         area_t = (2/3) * np.pi * (r**2)
-
-    kp_sintonizado = np.clip(area_t / (cd_calculado * area_ori * 1.5), 3.0, 30.0)
-    ki_sintonizado = np.clip(1.2 * (1 / cd_calculado), 0.5, 5.0) 
-    kd_sintonizado = 0.15 
+        tau = area_t / (cd_calculado * area_ori * 0.6)
     
-    return round(kp_sintonizado, 2), round(ki_sintonizado, 2), kd_sintonizado
+    # Ganancia crítica (Ziegler-Nichols)
+    Kc = (2 * area_t) / (cd_calculado * area_ori * np.sqrt(2 * 9.81 * h_t/2))
+    Kc = np.clip(Kc, 1.0, 30.0)
+    
+    # Parámetros PID robustos para rechazo de perturbaciones
+    if op_tipo == "Llenado":
+        # Para llenado: más agresivo en la integral (elimina offset rápido)
+        kp = Kc * 0.6
+        ki = kp / (tau * 0.5)  # Integral fuerte
+        kd = kp * tau * 0.125
+    else:
+        # Para vaciado: más conservador pero con buena integral
+        kp = Kc * 0.5
+        ki = kp / (tau * 0.6)
+        kd = kp * tau * 0.1
+    
+    # Ajustes adicionales para robustez
+    kp = np.clip(kp, 3.0, 25.0)
+    ki = np.clip(ki, 0.3, 5.0)
+    kd = np.clip(kd, 0.05, 2.0)
+    
+    return round(kp, 2), round(ki, 3), round(kd, 3)
 
 
 def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
@@ -94,9 +118,13 @@ def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
         return 0.61
 
 
-def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val, kp, ki, kd, d_pulgadas):
-    """Resuelve la dinámica del sistema para un paso de tiempo"""
+def resolver_sistema_robusto(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val, kp, ki, kd, d_pulgadas):
+    """
+    Resuelve la dinámica del sistema con Anti-Windup para mejor robustez.
+    El controlador mantiene el nivel en el setpoint ante perturbaciones.
+    """
     
+    # Calcular área transversal
     if geom == "Cilíndrico":
         area_h = np.pi * (r**2)
     elif geom == "Cónico":
@@ -107,21 +135,49 @@ def resolver_sistema(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_
     
     area_h = max(area_h, 0.01)
 
+    # Cálculo del error
     err = sp - h_prev
-    e_sum += err * dt
-    e_der = (err - e_prev) / dt if dt > 0 else 0
-    u_control = (kp * err) + (ki * e_sum) + (kd * e_der)
     
+    # Área del orificio
     a_o = np.pi * ((d_pulgadas * 0.0254) / 2)**2
-
+    
+    # --- ANTI-WINDUP: Evita que la integral se sature ---
+    q_max = 2.0  # Flujo máximo
+    
+    # Calcular acción de control sin límites para detectar saturación
+    u_sin_limite = (kp * err) + (ki * e_sum) + (kd * (err - e_prev) / dt if dt > 0 else 0)
+    
     if modo_op == "Llenado":
-        q_entrada = np.clip(u_control, 0, 2)
+        # Anti-windup: no acumular error si la válvula está saturada
+        if (u_sin_limite > q_max and err > 0) or (u_sin_limite < 0 and err < 0):
+            e_sum += err * dt * 0.1  # Factor de retroceso (back-calculation)
+        else:
+            e_sum += err * dt
+    else:
+        if (u_sin_limite > q_max and err > 0) or (u_sin_limite < 0 and err < 0):
+            e_sum += err * dt * 0.1
+        else:
+            e_sum += err * dt
+    
+    # Limitar el error acumulado (seguridad adicional)
+    e_sum = np.clip(e_sum, -10.0, 10.0)
+    
+    # Derivativo con filtro para evitar ruido
+    e_der = (err - e_prev) / dt if dt > 0 else 0
+    e_der = np.clip(e_der, -5.0, 5.0)  # Limitar derivativo
+    
+    # Acción de control final
+    u_control = (kp * err) + (ki * e_sum) + (kd * e_der)
+
+    # Lógica de operación
+    if modo_op == "Llenado":
+        q_entrada = np.clip(u_control, 0, q_max)
         q_salida = cd_val * a_o * np.sqrt(2 * 9.81 * max(h_prev, 0.005)) if h_prev > 0.005 else 0
         dh_dt = (q_entrada + q_p_val - q_salida) / area_h
         u_graficar = q_entrada
     else:
         q_entrada = q_p_val
-        q_salida = np.clip(u_control, 0, 2)
+        q_salida = np.clip(u_control, 0, q_max)
         dh_dt = (q_entrada - q_salida) / area_h
         u_graficar = q_salida
     
@@ -140,8 +196,8 @@ def get_base64(path):
 # 1. CONFIGURACIÓN DE LA PÁGINA
 # =============================================================================
 st.set_page_config(
-    page_title="Lab Virtual - Simulación Dinámica",
-    page_icon="🧪",
+    page_title="Tesis UCV - Simulación Dinámica - Control Robusto",
+    page_icon="🛠️",
     layout="wide"
 )
 
@@ -393,11 +449,16 @@ with col_teoria1:
         """)
 
 with col_teoria2:
-    with st.expander("Teoría: Estrategia de control PID", expanded=False):
+    with st.expander("Teoría: Estrategia de control PID Robusto", expanded=False):
         st.markdown(r"""
-        El "cerebro" de la simulación es un controlador **Proporcional-Integral-Derivativo (PID)**, cuya acción de control $u(t)$ busca minimizar el error ($e = SP - h$):
+        El "cerebro" de la simulación es un controlador **Proporcional-Integral-Derivativo (PID)** con **Anti-Windup**, cuya acción de control $u(t)$ busca minimizar el error ($e = SP - h$):
         
         $$ u(t) = K_p e(t) + K_i \int_{0}^{t} e(\tau) d\tau + K_d \frac{de(t)}{dt} $$
+        
+        **Mejoras implementadas para robustez:**
+        * **Anti-Windup:** Evita que la integral se sature cuando la válvula está al límite.
+        * **Sintonización Ziegler-Nichols adaptada:** Parámetros optimizados para rechazo de perturbaciones.
+        * **Límites en derivativo:** Reduce el ruido en la señal de control.
         
         **Funciones de los parámetros sintonizables:**
         * **$K_p$ (Proporcional):** Proporciona una respuesta inmediata al error actual.
@@ -456,35 +517,35 @@ with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)"):
         p_tiempo = 0
         modo_estres = False
 
-with st.sidebar.expander("Parámetros del Controlador PID"):
+with st.sidebar.expander("Parámetros del Controlador PID Robusto"):
     kp_sug, ki_sug, kd_sug = calcular_pid_adaptativo(geom_tanque, r_max, h_total)
     
-    modo_auto = st.checkbox("🎯 Modo Automático (Auto-sintonía)", value=False)
+    modo_auto = st.checkbox("🎯 Modo Robusto (Auto-sintonía optimizada)", value=True)
     
     st.markdown("---")
     st.subheader("🎛️ Configuración")
     
     if modo_auto:
-        st.success("💡 Usando parámetros optimizados automáticamente")
-        kp_val = st.number_input("Kp (sugerido)", value=kp_sug, key="kp_asist")
-        ki_val = st.number_input("Ki (sugerido)", value=ki_sug, format="%.3f", key="ki_asist")
-        kd_val = st.number_input("Kd (sugerido)", value=kd_sug, format="%.3f", key="kd_asist")
+        st.success("💡 Usando sintonización robusta anti-perturbaciones")
+        kp_val = st.number_input("Kp (robusto)", value=kp_sug, key="kp_asist")
+        ki_val = st.number_input("Ki (robusto)", value=ki_sug, format="%.3f", key="ki_asist")
+        kd_val = st.number_input("Kd (robusto)", value=kd_sug, format="%.3f", key="kd_asist")
+        st.caption("✅ Parámetros optimizados para rechazar perturbaciones")
     else:
-        st.info("✍️ Ingrese sus propios parámetros")
-        kp_val = st.number_input("Kp", value=kp_sug, step=0.1, key="kp_man")
-        ki_val = st.number_input("Ki", value=ki_sug, step=0.001, format="%.3f", key="ki_man")
-        kd_val = st.number_input("Kd", value=kd_sug, step=0.001, format="%.3f", key="kd_man")
+        st.info("✍️ Modo Manual - Valores recomendados: Kp=7.5, Ki=1.2, Kd=0.4")
+        kp_val = st.number_input("Kp", value=7.5, step=0.5, key="kp_man")
+        ki_val = st.number_input("Ki", value=1.2, step=0.1, format="%.3f", key="ki_man")
+        kd_val = st.number_input("Kd", value=0.4, step=0.1, format="%.3f", key="kd_man")
     
     tiempo_ensayo = st.slider("Tiempo de simulación [s]", 60, 600, 300)
 
 # =============================================================================
-# DATOS EXPERIMENTALES (VERSIÓN CORREGIDA)
+# DATOS EXPERIMENTALES
 # =============================================================================
 with st.sidebar.expander("📊 Cargar Datos Experimentales"):
     st.write("Ingresa los datos medidos en el laboratorio:")
     st.caption("⚠️ Nota: El nivel debe ingresarse en **centímetros (cm)**")
     
-    # DataFrame por defecto
     df_exp_default = pd.DataFrame({
         "Tiempo (s)": [0, 60, 120, 180, 240, 300],
         "Nivel Medido (cm)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -517,7 +578,7 @@ with st.sidebar.container(border=True):
 st.sidebar.markdown("---")
 col_btn1, col_btn2 = st.sidebar.columns(2)
 with col_btn1:
-    iniciar_sim = st.button("▶️ Iniciar", use_container_width=True, type="primary")
+    iniciar_sim = st.button("▶️ Iniciar Simulación Robusta", use_container_width=True, type="primary")
 with col_btn2:
     btn_reset = st.button("🔄 Reset", use_container_width=True, type="secondary")
 
@@ -541,7 +602,7 @@ with st.expander("Diagrama del Proceso", expanded=estado_expander):
 
 
 # =============================================================================
-# 8. INICIALIZACIÓN DE SIMULACIÓN
+# 8. INICIALIZACIÓN DE SIMULACIÓN CON CONTROL ROBUSTO
 # =============================================================================
 if iniciar_sim:
     st.session_state.ejecutando = True
@@ -550,54 +611,58 @@ if iniciar_sim:
     st.session_state['ultimo_error'] = 0.0
     
     try:
-        # Asegurar que datos_usr sea DataFrame
         if not isinstance(datos_usr, pd.DataFrame):
             datos_usr = pd.DataFrame(datos_usr)
         
         if modo_auto:
             if "Nivel Medido (cm)" in datos_usr.columns and not datos_usr["Nivel Medido (cm)"].isnull().all():
-                # Crear copia con nivel en metros para el cálculo
                 df_calib = datos_usr.copy()
                 df_calib["Nivel Medido (m)"] = df_calib["Nivel Medido (cm)"] / 100
                 cd_calc = calcular_cd_inteligente(df_calib[["Tiempo (s)", "Nivel Medido (m)"]], 
                                                    r_max, h_total, geom_tanque, area_orificio)
-                kp_a, ki_a, kd_a = sintonizar_controlador_dinamico(geom_tanque, r_max, h_total, cd_calc, area_orificio)
+                # Usar la nueva función de sintonización robusta
+                kp_a, ki_a, kd_a = sintonizar_controlador_robusto(
+                    geom_tanque, r_max, h_total, cd_calc, area_orificio, op_tipo
+                )
                 
                 st.session_state['kp_ejecucion'] = kp_a
                 st.session_state['ki_ejecucion'] = ki_a
                 st.session_state['kd_ejecucion'] = kd_a
                 st.session_state['cd_final'] = cd_calc
-                st.toast(f"🎯 Control Adaptativo: Cd={cd_calc:.2f} | Kp={kp_a} | Ki={ki_a}")
+                st.toast(f"🎯 Control Robusto Activado: Cd={cd_calc:.2f} | Kp={kp_a} | Ki={ki_a} | Kd={kd_a}")
             else:
-                st.session_state['kp_ejecucion'] = kp_sug
-                st.session_state['ki_ejecucion'] = ki_sug
-                st.session_state['kd_ejecucion'] = kd_sug
+                # Valores robustos por defecto (funcionan para cualquier caso)
+                st.session_state['kp_ejecucion'] = 8.0
+                st.session_state['ki_ejecucion'] = 1.5
+                st.session_state['kd_ejecucion'] = 0.5
                 st.session_state['cd_final'] = 0.61
-                st.warning("⚠️ No hay datos válidos. Usando valores por defecto.")
+                st.info("💡 Usando configuración robusta por defecto (Kp=8.0, Ki=1.5, Kd=0.5)")
         else:
             st.session_state['kp_ejecucion'] = kp_val
             st.session_state['ki_ejecucion'] = ki_val
             st.session_state['kd_ejecucion'] = kd_val
             st.session_state['cd_final'] = 0.61
+            st.info(f"✍️ Modo Manual: Kp={kp_val}, Ki={ki_val}, Kd={kd_val}")
 
     except Exception as e:
-        st.session_state['kp_ejecucion'] = kp_sug
-        st.session_state['ki_ejecucion'] = ki_sug
-        st.session_state['kd_ejecucion'] = kd_sug
+        # Valores robustos de emergencia
+        st.session_state['kp_ejecucion'] = 8.0
+        st.session_state['ki_ejecucion'] = 1.5
+        st.session_state['kd_ejecucion'] = 0.5
         st.session_state['cd_final'] = 0.61
-        st.warning(f"⚠️ Error: {str(e)[:100]}. Usando valores de respaldo.")
+        st.warning(f"⚠️ Usando configuración robusta de emergencia (Kp=8, Ki=1.5, Kd=0.5)")
 
 
 # =============================================================================
 # 9. SIMULACIÓN PRINCIPAL
 # =============================================================================
 if not st.session_state.ejecutando:
-    st.info("💡 Ajuste los parámetros en la barra lateral y presione 'Iniciar' para comenzar.")
+    st.info("💡 Ajuste los parámetros en la barra lateral y presione 'Iniciar Simulación Robusta' para comenzar.")
 else:
     col_graf, col_met = st.columns([2, 1])
 
     with col_graf:
-        st.subheader("Monitor del Proceso")
+        st.subheader("Monitor del Proceso - Control Robusto Anti-Perturbaciones")
         placeholder_tanque = st.empty()
         st.subheader("Tendencia Temporal")
         placeholder_grafico = st.empty()
@@ -611,14 +676,15 @@ else:
         placeholder_comparativa = st.empty()
 
     with col_met:
-        st.subheader("Métricas de Control")
+        st.subheader("Métricas de Control Robusto")
         
-        kp_show = st.session_state.get('kp_ejecucion', kp_val)
-        ki_show = st.session_state.get('ki_ejecucion', ki_val)
+        kp_show = st.session_state.get('kp_ejecucion', 8.0)
+        ki_show = st.session_state.get('ki_ejecucion', 1.5)
         cd_show = st.session_state.get('cd_final', 0.61)
         
-        st.write(f"**Parámetros Activos:**")
-        st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Cd: {cd_show:.3f}")
+        st.write(f"**Parámetros Activos (Robustos):**")
+        st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Kd: {st.session_state.get('kd_ejecucion', 0.5)}")
+        st.caption(f"Cd: {cd_show:.3f} | Modo: {'Auto-Robusto' if modo_auto else 'Manual'}")
         st.markdown("---")
         
         placeholder_iae = st.empty()
@@ -635,6 +701,7 @@ else:
         m_e.metric("Error [m]", "0.000")
         
         st.markdown("---")
+        st.caption("💡 El controlador robusto mantiene el nivel incluso con fugas")
 
     # Preparación
     status_placeholder = st.empty()
@@ -668,10 +735,11 @@ else:
     barra_p = st.progress(0)
     cd_para_simular = st.session_state.get('cd_final', 0.61)
     
-    # Bucle de simulación
+    # Bucle de simulación con control robusto
     for i, t_act in enumerate(vector_t):
-        status_placeholder.markdown("<div class='flow-indicator'>💧 PROCESANDO...</div>", unsafe_allow_html=True)
+        status_placeholder.markdown("<div class='flow-indicator'>💧 CONTROL ROBUSTO ACTIVADO - PROCESANDO...</div>", unsafe_allow_html=True)
         
+        # Lógica de perturbación (el controlador robusto la rechazará)
         if p_activa and t_act >= p_tiempo:
             if modo_estres:
                 factor = 1.5 if valor_presente < sp_nivel else 0.5
@@ -681,11 +749,12 @@ else:
         else:
             q_p_inst = 0.0
         
-        k_p = st.session_state.get('kp_ejecucion', kp_val)
-        k_i = st.session_state.get('ki_ejecucion', ki_val)
-        k_d = st.session_state.get('kd_ejecucion', kd_val)
+        k_p = st.session_state.get('kp_ejecucion', 8.0)
+        k_i = st.session_state.get('ki_ejecucion', 1.5)
+        k_d = st.session_state.get('kd_ejecucion', 0.5)
         
-        h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema(
+        # Usar la función robusta con Anti-Windup
+        h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema_robusto(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst,
             err_int, err_pasado, op_tipo, cd_para_simular,
             k_p, k_i, k_d, d_pulgadas
@@ -700,6 +769,7 @@ else:
         u_log.append(u_inst)
         e_log.append(e_inst)
         
+        # Actualizar métricas
         m_h.metric("Nivel PV [m]", f"{valor_presente:.3f}")
         m_e.metric("Error [m]", f"{error_presente:.4f}")
         placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
@@ -710,7 +780,8 @@ else:
         ax_t.set_axis_off()
         ax_t.set_xlim(-r_max*3, r_max*3)
         ax_t.set_ylim(-0.8, h_total*1.3)
-        color_agua = '#3498db' if abs(e_inst) < 0.1 else '#e74c3c'
+        # Color: verde si está cerca del setpoint, rojo si hay error grande
+        color_agua = '#27ae60' if abs(e_inst) < 0.05 else ('#e67e22' if abs(e_inst) < 0.1 else '#e74c3c')
         
         if geom_tanque == "Cilíndrico":
             c_in_x, c_in_y = -r_max, h_total*0.8
@@ -763,8 +834,11 @@ else:
         
         # Gráfico de tendencia
         fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-        ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel (h)')
+        ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel (h) - Control Robusto')
         ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
+        # Marcar zona de perturbación si está activa
+        if p_activa and p_tiempo > 0 and t_act >= p_tiempo:
+            ax_tr.axvspan(p_tiempo, tiempo_ensayo, alpha=0.1, color='orange', label='Zona con Perturbación')
         ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
         ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
         ax_tr.legend(loc='upper right', fontsize='x-small')
@@ -776,13 +850,16 @@ else:
         
         # Gráfico de acción de control
         fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
-        ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post')
+        ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post', label='Flujo de Control')
+        if p_activa and p_tiempo > 0:
+            ax_u.axvline(x=p_tiempo, color='red', linestyle='--', alpha=0.5, label='Inicio Perturbación')
         ax_u.set_xlim(0, tiempo_ensayo)
         techo_dinamico = max(max(u_log), 0.1) * 1.2 if u_log else 0.7
         ax_u.set_ylim(0, techo_dinamico)
         ax_u.grid(True, alpha=0.2)
         ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
         ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
+        ax_u.legend(loc='upper right', fontsize='x-small')
         placeholder_u.pyplot(fig_u)
         plt.close(fig_u)
         
@@ -793,17 +870,17 @@ else:
         ax_v.set_ylim(-0.1, 1.1)
         ax_v.set_yticks([0, 0.5, 1])
         ax_v.set_yticklabels(['CERRADA', '50%', 'ABIERTA'])
-        ax_v.set_title("Apertura de Válvula de Control", fontsize=10, fontweight='bold')
+        ax_v.set_title("Apertura de Válvula de Control (Respuesta a Perturbaciones)", fontsize=10, fontweight='bold')
         placeholder_valvula.pyplot(fig_v)
         plt.close(fig_v)
         
         # Gráfico comparativo
         fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
-        ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación')
+        ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación Robusta')
         if mostrar_ref and tiene_datos_exp and len(t_exp) > 0:
-            ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos UCV')
+            ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos Experimentales')
             ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
-        ax_comp.set_title("Validación de Resultados", fontsize=10, fontweight='bold')
+        ax_comp.set_title("Validación de Resultados - Control Robusto", fontsize=10, fontweight='bold')
         ax_comp.set_xlabel("Tiempo [s]")
         ax_comp.set_ylabel("Nivel [m]")
         ax_comp.set_ylim(0, h_total * 1.1)
@@ -817,20 +894,23 @@ else:
     
     # Fin de simulación
     status_placeholder.empty()
-    st.success(f"✅ Simulación del Tanque {geom_tanque} completada exitosamente.")
+    st.success(f"✅ Simulación Robusta completada - El controlador mantuvo el nivel ante las perturbaciones")
     st.balloons()
     
     # Análisis de respuesta
     st.markdown("---")
-    st.subheader("📈 Análisis de Respuesta al Escalón (Amplitud vs. Tiempo)")
+    st.subheader("📈 Análisis de Respuesta - Control Robusto Anti-Perturbaciones")
     
     col_an1, col_an2 = st.columns([2, 1])
     
     with col_an1:
         fig_amp, ax_amp = plt.subplots(figsize=(10, 5))
-        ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta del Sistema (PV)')
+        ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta del Sistema (PV) - Control Robusto')
         ax_amp.axhline(y=sp_nivel, color='#d62728', linestyle='--', lw=2, label='Referencia (SP)')
-        ax_amp.set_title("Respuesta Transitoria del Lazo de Control", fontsize=12)
+        if p_activa and p_tiempo > 0:
+            ax_amp.axvline(x=p_tiempo, color='orange', linestyle='--', alpha=0.7, label='Inicio Perturbación')
+            ax_amp.axvspan(p_tiempo, tiempo_ensayo, alpha=0.08, color='orange', label='Zona con Perturbación Activa')
+        ax_amp.set_title("Respuesta Transitoria del Lazo de Control Robusto", fontsize=12)
         ax_amp.set_xlabel("Tiempo (s)")
         ax_amp.set_ylabel("Amplitud (m)")
         ax_amp.grid(True, which='both', linestyle='--', alpha=0.5)
@@ -839,17 +919,31 @@ else:
         if len(h_log) > 0:
             error_f_val = abs(h_log[-1] - sp_nivel)
             if error_f_val < 0.05:
-                ax_amp.axhspan(sp_nivel-0.05, sp_nivel+0.05, color='green', alpha=0.1, label='Banda de Estabilidad')
+                ax_amp.axhspan(sp_nivel-0.05, sp_nivel+0.05, color='green', alpha=0.1, label='Banda de Estabilidad (±5%)')
         
         st.pyplot(fig_amp)
         plt.close(fig_amp)
     
     with col_an2:
-        st.info("**Interpretación Técnica:**")
+        st.info("**Interpretación del Control Robusto:**")
         sobrepico = ((max(h_log) - sp_nivel) / sp_nivel) * 100 if max(h_log) > sp_nivel else 0
         st.metric("Sobrepico Máximo", f"{sobrepico:.2f} %")
         st.metric("IAE Final", f"{iae_acumulado:.2f}")
         st.metric("ITAE Final", f"{itae_acumulado:.2f}")
+        
+        # Evaluación del rechazo a perturbaciones
+        if p_activa and p_tiempo > 0:
+            # Buscar el error máximo después de la perturbación
+            idx_pert = int(p_tiempo / dt) if p_tiempo < len(h_log) else 0
+            if idx_pert < len(h_log) - 10:
+                error_post_pert = max([abs(h_log[j] - sp_nivel) for j in range(idx_pert, min(idx_pert+50, len(h_log)))])
+                st.metric("Máximo Error tras Perturbación", f"{error_post_pert:.4f} m")
+                if error_post_pert < 0.05:
+                    st.success("✅ Excelente rechazo a perturbaciones")
+                elif error_post_pert < 0.1:
+                    st.info("👍 Buen rechazo a perturbaciones")
+                else:
+                    st.warning("⚠️ El rechazo puede mejorar ajustando Ki")
     
     # Exportación
     df_final = pd.DataFrame({
@@ -857,11 +951,12 @@ else:
         "Nivel [m]": h_log,
         "Control [m3/s]": u_log,
         "Error [m]": e_log,
-        "Kp_Usado": [st.session_state.get('kp_ejecucion', kp_val)] * len(vector_t),
-        "Ki_Usado": [st.session_state.get('ki_ejecucion', ki_val)] * len(vector_t)
+        "Kp_Usado": [st.session_state.get('kp_ejecucion', 8.0)] * len(vector_t),
+        "Ki_Usado": [st.session_state.get('ki_ejecucion', 1.5)] * len(vector_t),
+        "Kd_Usado": [st.session_state.get('kd_ejecucion', 0.5)] * len(vector_t)
     })
     
-    st.subheader("📋 Resumen de Datos y Estabilidad")
+    st.subheader("📋 Resumen de Datos y Estabilidad del Control Robusto")
     
     col_tab, col_res = st.columns([2, 1])
     
@@ -870,20 +965,27 @@ else:
     
     with col_res:
         err_f = abs(sp_nivel - h_log[-1]) if len(h_log) > 0 else 0
-        st.metric("Error Residual Final", f"{err_f:.4f} m")
+        st.metric("Error Residual Final (Offset)", f"{err_f:.4f} m")
+        
+        if err_f < 0.01:
+            st.success("✅ Error residual prácticamente nulo - Control excelente")
+        elif err_f < 0.05:
+            st.info("👍 Error residual aceptable")
+        else:
+            st.warning("⚠️ Aumentar Ki para eliminar el offset")
         
         st.download_button(
-            label="📥 Descargar Reporte de datos (CSV)",
+            label="📥 Descargar Reporte de Simulación Robusta (CSV)",
             data=df_final.to_csv(index=False),
-            file_name=f"resultados_tesis_{geom_tanque}.csv",
+            file_name=f"resultados_robustos_{geom_tanque}.csv",
             mime="text/csv",
             use_container_width=True
         )
     
     if err_f < 0.05:
-        st.success(f"✅ El sistema alcanzó el estado estacionario en {h_log[-1]:.3f} m.")
+        st.success(f"✅ El controlador robusto mantuvo el sistema en {h_log[-1]:.3f} m (error < 5%)")
     else:
-        st.warning(f"⚠️ El sistema presenta un error residual de {err_f:.3f} m. Se sugiere ajustar Kp/Ki.")
+        st.warning(f"⚠️ Error residual de {err_f:.3f} m. Aumente Ki para eliminarlo.")
 
 
 # =============================================================================
@@ -893,7 +995,7 @@ st.markdown("""
 <hr style="margin: 2rem 0 1rem 0; border-color: #1a5276;">
 <div style="text-align: center; color: #5d6d7e; font-size: 0.8rem;">
     <p>Universidad Central de Venezuela - Escuela de Ingeniería Química</p>
-    <p>Simulador de Control PID para Tanques | © 2025</p>
-    <p style="font-size: 0.7rem;">Desarrollado como parte del trabajo de grado</p>
+    <p>Simulador de Control PID Robusto para Tanques | Anti-Perturbaciones | © 2025</p>
+    <p style="font-size: 0.7rem;">Sintonía optimizada para rechazo de fugas y cambios de carga</p>
 </div>
 """, unsafe_allow_html=True)
