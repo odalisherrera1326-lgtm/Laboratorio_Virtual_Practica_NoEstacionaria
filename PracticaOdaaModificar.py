@@ -18,14 +18,20 @@ st.set_page_config(
 )
 
 # =============================================================================
-# --- ESTILOS CSS ---
+# --- ESTILOS CSS MEJORADOS (CON TODOS TUS ESTILOS ORIGINALES) ---
 # =============================================================================
 st.markdown("""
 <style>
 html, body, [data-testid="stAppViewContainer"] {
-    background: linear-gradient(135deg, #f0f4f8 0%, #e8edf2 100%);
+    background-color: #f4f7f9 !important;
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='1.5'><circle cx='12' cy='12' r='3'/><path d='M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12'/></svg>") 12 12, auto !important;
 }
 
+button, a, [data-testid="stHeaderActionElements"], .stSlider {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='1.5'><circle cx='12' cy='12' r='3'/><path d='M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12'/></svg>") 12 12, pointer !important;
+}
+
+/* Tabs personalizadas para LOU I y LOU II */
 .stTabs [data-baseweb="tab-list"] {
     gap: 2rem;
     background: linear-gradient(180deg, #1a5276 0%, #154360 100%);
@@ -51,6 +57,7 @@ html, body, [data-testid="stAppViewContainer"] {
     color: #1a5276 !important;
 }
 
+/* Tarjetas de prácticas */
 .practica-card {
     background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border-radius: 20px;
@@ -58,15 +65,22 @@ html, body, [data-testid="stAppViewContainer"] {
     margin: 1rem 0;
     border-left: 6px solid #f1c40f;
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .practica-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
 }
 
 .practica-card h3 {
     color: #1a5276;
+    margin-bottom: 0.5rem;
+}
+
+.practica-card p {
+    color: #5d6d7e;
+    font-size: 0.9rem;
 }
 
 .practica-card .badge {
@@ -76,21 +90,27 @@ html, body, [data-testid="stAppViewContainer"] {
     padding: 0.2rem 0.8rem;
     border-radius: 20px;
     font-size: 0.7rem;
+    margin-top: 0.5rem;
 }
 
+/* Header institucional */
 .header-container {
     background: linear-gradient(135deg, #0d3251 0%, #1a5276 50%, #1f618d 100%);
+    background-size: 200% 200%;
+    animation: gradientBG 8s ease infinite;
     border-radius: 20px;
     padding: 20px 25px;
     margin-bottom: 30px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
-.stButton > button {
-    background: linear-gradient(90deg, #1a5276, #2471a3) !important;
-    color: white !important;
-    border-radius: 25px !important;
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
+/* Sidebar */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #1a5276 0%, #154360 100%) !important;
     border-right: 4px solid #f1c40f !important;
@@ -98,8 +118,86 @@ html, body, [data-testid="stAppViewContainer"] {
 
 [data-testid="stSidebar"] .stMarkdown, 
 [data-testid="stSidebar"] label, 
-[data-testid="stSidebar"] p {
+[data-testid="stSidebar"] p, 
+[data-testid="stSidebar"] span {
     color: #f0f4f8 !important;
+    font-weight: 400 !important;
+}
+
+[data-testid="stSidebar"] h1, 
+[data-testid="stSidebar"] h2, 
+[data-testid="stSidebar"] h3 {
+    color: #f1c40f !important;
+    border-bottom: 1px solid #f1c40f80;
+    padding-bottom: 5px;
+}
+
+.streamlit-expanderHeader {
+    background-color: #e8f0f7 !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    color: #1a5276 !important;
+    border-left: 4px solid #f1c40f !important;
+}
+
+.streamlit-expanderContent {
+    background-color: #ffffff !important;
+    border-radius: 0 0 10px 10px !important;
+    padding: 15px !important;
+}
+
+div[data-testid="stMetric"] {
+    background: linear-gradient(135deg, #ffffff 0%, #f5f9fc 100%) !important;
+    border-left: 5px solid #1a5276 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    padding: 15px !important;
+}
+
+div[data-testid="stMetric"]:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12) !important;
+}
+
+div[data-testid="stMetric"] label {
+    color: #1a5276 !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+}
+
+div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
+    color: #154360 !important;
+    font-size: 2.2rem !important;
+    font-weight: 800 !important;
+}
+
+.stButton > button[kind="primary"], 
+.stButton > button:first-child:not([kind="secondary"]) {
+    background: linear-gradient(90deg, #1a5276, #2471a3) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 25px !important;
+    padding: 0.5rem 1.5rem !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton > button[kind="primary"]:hover {
+    background: linear-gradient(90deg, #2471a3, #2e86c1) !important;
+    transform: scale(1.02);
+}
+
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, #1a5276, #3498db, #1a5276) !important;
+    background-size: 200% 100% !important;
+    animation: gradientMove 1.5s ease infinite !important;
+    border-radius: 10px !important;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
 }
 
 .footer {
@@ -135,8 +233,8 @@ def mostrar_encabezado():
                 {f'<img src="data:image/png;base64,{logo_ucv_64}" width="100">' if logo_ucv_64 else "UCV"}
             </div>
             <div>
-                <h1 style="color: white !important; font-size: 1.8rem; margin: 0;">Laboratorio de Operaciones Unitarias</h1>
-                <p style="color: #d4e6f1 !important; margin: 0;">Escuela de Ingeniería Química | UCV</p>
+                <h1 style="color: white !important; font-size: 2.2rem; margin: 0;">Práctica Virtual: Balance en estado no estacionario</h1>
+                <p style="color: #d4e6f1 !important; margin: 0;">Escuela de Ingeniería Química | Facultad de Ingeniería - UCV</p>
             </div>
             <div style="width: 160px;">
                 {f'<img src="data:image/png;base64,{logo_eiq_64}" width="150">' if logo_eiq_64 else "EIQ"}
@@ -147,17 +245,19 @@ def mostrar_encabezado():
 
 
 # =============================================================================
-# --- TUS FUNCIONES ORIGINALES (copia y pega todo tu código aquí) ---
+# --- TUS FUNCIONES ORIGINALES COMPLETAS ---
 # =============================================================================
 
 def get_area_transversal(geom, r, h, h_total):
+    """Calcula el área transversal para cualquier geometría en función de la altura actual"""
     h_efectiva = max(h, 0.001)
+    
     if geom == "Cilíndrico":
         return np.pi * (r ** 2)
     elif geom == "Cónico":
         radio_actual = (r / h_total) * h_efectiva
         return np.pi * (radio_actual ** 2)
-    else:
+    else:  # Esférico
         if h_efectiva <= 2 * r:
             radio_corte = np.sqrt(r**2 - (h_efectiva - r)**2)
             return np.pi * (radio_corte ** 2)
@@ -166,8 +266,10 @@ def get_area_transversal(geom, r, h, h_total):
 
 
 def calcular_pid_adaptativo(geom, r_max, h_total, cd=0.61, area_orificio=0.0005):
+    """Calcula parámetros PID según geometría y características del sistema"""
     import math
     area_max = math.pi * (r_max ** 2)
+    
     if geom == "Cilíndrico":
         kp = area_max * 2.5
         ki = kp / 20.0
@@ -176,17 +278,20 @@ def calcular_pid_adaptativo(geom, r_max, h_total, cd=0.61, area_orificio=0.0005)
         kp = (area_max / 3.0) * 1.5
         ki = kp / 15.0
         kd = kp * 0.05
-    else:
+    else:  # Esférico
         kp = (area_max * 0.6) * 2.0
         ki = kp / 18.0
         kd = kp * 0.2
+    
     factor_ajuste = np.clip(1.0 / (cd * area_orificio * 1000), 0.5, 2.0)
     kp = kp * factor_ajuste
     ki = ki * factor_ajuste * 0.8
+    
     return round(kp, 2), round(ki, 3), round(kd, 3)
 
 
 def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado, area_ori, op_tipo="Llenado"):
+    """Sintonización robusta del PID para rechazo de perturbaciones."""
     if geom == "Cilíndrico":
         area_t = np.pi * (r**2)
     elif geom == "Cónico":
@@ -209,30 +314,38 @@ def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado, area_ori, op_tipo
     kp = np.clip(kp, 12.0, 30.0)
     ki = np.clip(ki, 2.5, 8.0)
     kd = np.clip(kd, 0.5, 2.5)
+    
     return round(kp, 2), round(ki, 3), round(kd, 2)
 
 
 def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
+    """Calcula el Coeficiente de Descarga (Cd) usando el balance de masa."""
     df = pd.DataFrame(df_usr) if isinstance(df_usr, list) else df_usr
+    
     if len(df) < 2:
         return 0.61
+    
     try:
         t1, t2 = df["Tiempo (s)"].iloc[0], df["Tiempo (s)"].iloc[1]
         h1, h2 = df["Nivel Medido (m)"].iloc[0], df["Nivel Medido (m)"].iloc[1]
         dt = abs(t2 - t1)
+        
         if dt == 0:
             return 0.61
+
         if geom == "Cilíndrico":
             v1, v2 = np.pi*(r**2)*h1, np.pi*(r**2)*h2
         elif geom == "Cónico":
             v1 = (1/3)*np.pi*((r/h_t)*h1)**2*h1
             v2 = (1/3)*np.pi*((r/h_t)*h2)**2*h2
-        else:
+        else:  # Esférico
             v1 = (np.pi*(h1**2)/3)*(3*r-h1)
             v2 = (np.pi*(h2**2)/3)*(3*r-h2)
+
         q_real = abs(v1 - v2) / dt
         h_prom = (h1 + h2) / 2
         q_teorico = area_ori * np.sqrt(2 * 9.81 * max(h_prom, 0.001))
+        
         cd_result = q_real / q_teorico if q_teorico > 0 else 0.61
         return float(np.clip(cd_result, 0.4, 1.0))
     except:
@@ -240,8 +353,11 @@ def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
 
 
 def resolver_sistema_robusto(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val, kp, ki, kd, d_pulgadas):
+    """Resuelve la dinámica del sistema con Anti-Windup."""
+    
     area_h = get_area_transversal(geom, r, h_prev, h_t)
     area_h = max(area_h, 0.0001)
+
     err = sp - h_prev
     a_o = np.pi * ((d_pulgadas * 0.0254) / 2)**2
     q_max = 2.0
@@ -270,13 +386,13 @@ def resolver_sistema_robusto(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_pre
 
 
 # =============================================================================
-# --- FUNCIÓN DEL SIMULADOR (AQUÍ VA TODO TU CÓDIGO ORIGINAL) ---
+# --- FUNCIÓN DEL SIMULADOR (TU CÓDIGO ORIGINAL COMPLETO) ---
 # =============================================================================
 def mostrar_simulador():
-    """Simulador completo - TU CÓDIGO ORIGINAL VA AQUÍ"""
+    """Simulador completo - Balance en estado no estacionario"""
     
     # =========================================================================
-    # --- TUS VARIABLES Y CONFIGURACIONES ORIGINALES ---
+    # --- VALORES POR DEFECTO ---
     # =========================================================================
     modo_auto = False
     p_activa = True
@@ -288,7 +404,7 @@ def mostrar_simulador():
         st.session_state.ejecutando = False
     
     # =========================================================================
-    # --- BARRA LATERAL (PARÁMETROS) - TU CÓDIGO ORIGINAL ---
+    # --- BARRA LATERAL - PARÁMETROS ---
     # =========================================================================
     st.sidebar.header("⚙️ Configuración del Sistema")
     
@@ -310,10 +426,12 @@ def mostrar_simulador():
     
     with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)"):
         p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
+        
         if p_activa:
             p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.045, format="%.4f")
             p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 80)
-            modo_estres = st.toggle("🔥 Activar Modo Estrés")
+            modo_estres = st.toggle("🔥 Activar Modo Estrés", 
+                                   help="La perturbación cambiará según el nivel para desafiar al PID.")
         else:
             p_magnitud = 0.0
             p_tiempo = 0
@@ -321,6 +439,7 @@ def mostrar_simulador():
     
     with st.sidebar.expander("Parámetros del Controlador PID Robusto"):
         kp_sug, ki_sug, kd_sug = calcular_pid_adaptativo(geom_tanque, r_max, h_total)
+        
         modo_auto = st.checkbox("🎯 Modo Robusto (Auto-sintonía optimizada)", value=True)
         
         st.markdown("---")
@@ -340,6 +459,9 @@ def mostrar_simulador():
         
         tiempo_ensayo = st.slider("Tiempo de simulación [s]", 60, 600, 300)
     
+    # =========================================================================
+    # --- DATOS EXPERIMENTALES ---
+    # =========================================================================
     with st.sidebar.expander("📊 Cargar Datos Experimentales"):
         st.write("Ingresa los datos medidos en el laboratorio:")
         st.caption("⚠️ Nota: El nivel debe ingresarse en **centímetros (cm)**")
@@ -352,6 +474,9 @@ def mostrar_simulador():
         datos_usr = st.data_editor(df_exp_default, num_rows="dynamic")
         mostrar_ref = st.checkbox("Mostrar referencia en gráfica", value=True)
     
+    # =========================================================================
+    # --- BOTONES ---
+    # =========================================================================
     st.sidebar.markdown("---")
     col_btn1, col_btn2 = st.sidebar.columns(2)
     with col_btn1:
@@ -362,6 +487,19 @@ def mostrar_simulador():
     if btn_reset:
         st.session_state.ejecutando = False
         st.rerun()
+    
+    # =========================================================================
+    # --- DIAGRAMA DEL PROCESO ---
+    # =========================================================================
+    estado_expander = not st.session_state.get('ejecutando', False)
+    
+    with st.expander("Diagrama del Proceso", expanded=estado_expander):
+        col_img = st.columns([1, 5, 1])[1]
+        with col_img:
+            if os.path.exists("Captura de pantalla 2026-03-29 163125.png"):
+                st.image("Captura de pantalla 2026-03-29 163125.png", use_container_width=True)
+            else:
+                st.info("📍 El diagrama del sistema se mostrará aquí.")
     
     # =========================================================================
     # --- INICIALIZACIÓN DE SIMULACIÓN ---
@@ -409,7 +547,7 @@ def mostrar_simulador():
             st.warning(f"⚠️ Usando configuración robusta de emergencia (Kp=15, Ki=3.5, Kd=1.5)")
     
     # =========================================================================
-    # --- SIMULACIÓN PRINCIPAL (TU CÓDIGO ORIGINAL COMPLETO) ---
+    # --- SIMULACIÓN PRINCIPAL ---
     # =========================================================================
     if not st.session_state.ejecutando:
         st.info("💡 Ajuste los parámetros en la barra lateral y presione 'Iniciar Simulación Robusta' para comenzar.")
@@ -451,7 +589,7 @@ def mostrar_simulador():
             st.markdown("---")
             st.caption("💡 El controlador robusto mantiene el nivel incluso con fugas")
         
-        # Preparación de la simulación
+        # Preparación
         status_placeholder = st.empty()
         dt = 1.0
         vector_t = np.arange(0, tiempo_ensayo, dt)
@@ -482,9 +620,8 @@ def mostrar_simulador():
         barra_p = st.progress(0)
         cd_para_simular = st.session_state.get('cd_final', 0.61)
         
-        # Bucle de simulación
         for i, t_act in enumerate(vector_t):
-            status_placeholder.markdown("💧 CONTROL ROBUSTO ACTIVADO - PROCESANDO...")
+            status_placeholder.markdown("<div class='flow-indicator'>💧 CONTROL ROBUSTO ACTIVADO - PROCESANDO...</div>", unsafe_allow_html=True)
             
             if p_activa and t_act >= p_tiempo:
                 if modo_estres:
@@ -519,7 +656,7 @@ def mostrar_simulador():
             placeholder_iae.metric("IAE", f"{iae_acumulado:.2f}")
             placeholder_itae.metric("ITAE", f"{itae_acumulado:.2f}")
             
-            # ========== DIBUJAR TANQUE ==========
+            # ========== VISUALIZACIÓN DEL TANQUE ==========
             fig_t, ax_t = plt.subplots(figsize=(7, 5))
             ax_t.set_axis_off()
             ax_t.set_xlim(-r_max*3, r_max*3)
@@ -545,7 +682,7 @@ def mostrar_simulador():
                     ax_t.add_patch(plt.Polygon(vertices, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5))
                     ax_t.plot([-radio_superficie, radio_superficie], [valor_presente, valor_presente], color='white', linewidth=2, alpha=0.8, zorder=3)
                 
-            else:
+            else:  # Esférico
                 import math
                 c_in_y = h_total * 0.7
                 c_in_x = -math.sqrt(abs(r_max**2 - (c_in_y - r_max)**2))
@@ -585,4 +722,263 @@ def mostrar_simulador():
             placeholder_tanque.pyplot(fig_t)
             plt.close(fig_t)
             
-           
+            # Gráfico de tendencia
+            fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
+            ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel (h) - Control Robusto')
+            ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
+            if p_activa and p_tiempo > 0 and t_act >= p_tiempo:
+                ax_tr.axvspan(p_tiempo, tiempo_ensayo, alpha=0.1, color='orange', label='Zona con Perturbación')
+            ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
+            ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
+            ax_tr.legend(loc='upper right', fontsize='x-small')
+            ax_tr.set_xlim(0, tiempo_ensayo)
+            ax_tr.set_ylim(0, h_total * 1.1)
+            ax_tr.grid(True, alpha=0.2)
+            placeholder_grafico.pyplot(fig_tr)
+            plt.close(fig_tr)
+            
+            # Gráfico de acción de control
+            fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
+            ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post', label='Flujo de Control')
+            if p_activa and p_tiempo > 0:
+                ax_u.axvline(x=p_tiempo, color='red', linestyle='--', alpha=0.5, label='Inicio Perturbación')
+            ax_u.set_xlim(0, tiempo_ensayo)
+            techo_dinamico = max(max(u_log), 0.1) * 1.2 if u_log else 0.7
+            ax_u.set_ylim(0, techo_dinamico)
+            ax_u.grid(True, alpha=0.2)
+            ax_u.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
+            ax_u.set_ylabel('Flujo [m3/s]', fontsize=10, fontweight='bold')
+            ax_u.legend(loc='upper right', fontsize='x-small')
+            placeholder_u.pyplot(fig_u)
+            plt.close(fig_u)
+            
+            # Gráfico de válvula
+            fig_v, ax_v = plt.subplots(figsize=(8, 3))
+            ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5)
+            ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
+            ax_v.set_ylim(-0.1, 1.1)
+            ax_v.set_yticks([0, 0.5, 1])
+            ax_v.set_yticklabels(['CERRADA', '50%', 'ABIERTA'])
+            ax_v.set_title("Apertura de Válvula de Control (Respuesta a Perturbaciones)", fontsize=10, fontweight='bold')
+            placeholder_valvula.pyplot(fig_v)
+            plt.close(fig_v)
+            
+            # Gráfico comparativo
+            fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
+            ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación Robusta')
+            if mostrar_ref and tiene_datos_exp and len(t_exp) > 0:
+                ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos Experimentales')
+                ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
+            ax_comp.set_title("Validación de Resultados - Control Robusto", fontsize=10, fontweight='bold')
+            ax_comp.set_xlabel("Tiempo [s]")
+            ax_comp.set_ylabel("Nivel [m]")
+            ax_comp.set_ylim(0, h_total * 1.1)
+            ax_comp.grid(True, alpha=0.3)
+            ax_comp.legend(loc='lower right')
+            placeholder_comparativa.pyplot(fig_comp)
+            plt.close(fig_comp)
+            
+            time.sleep(0.01)
+            barra_p.progress((i+1)/len(vector_t))
+        
+        status_placeholder.empty()
+        st.success(f"✅ Simulación Robusta completada - El controlador mantuvo el nivel ante las perturbaciones")
+        st.balloons()
+        
+        # Análisis de respuesta
+        st.markdown("---")
+        st.subheader("📈 Análisis de Respuesta - Control Robusto Anti-Perturbaciones")
+        
+        col_an1, col_an2 = st.columns([2, 1])
+        
+        with col_an1:
+            fig_amp, ax_amp = plt.subplots(figsize=(10, 5))
+            ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta del Sistema (PV) - Control Robusto')
+            ax_amp.axhline(y=sp_nivel, color='#d62728', linestyle='--', lw=2, label='Referencia (SP)')
+            if p_activa and p_tiempo > 0:
+                ax_amp.axvline(x=p_tiempo, color='orange', linestyle='--', alpha=0.7, label='Inicio Perturbación')
+                ax_amp.axvspan(p_tiempo, tiempo_ensayo, alpha=0.08, color='orange', label='Zona con Perturbación Activa')
+            ax_amp.set_title("Respuesta Transitoria del Lazo de Control Robusto", fontsize=12)
+            ax_amp.set_xlabel("Tiempo (s)")
+            ax_amp.set_ylabel("Amplitud (m)")
+            ax_amp.grid(True, which='both', linestyle='--', alpha=0.5)
+            ax_amp.legend(loc='lower right')
+            
+            if len(h_log) > 0:
+                error_f_val = abs(h_log[-1] - sp_nivel)
+                if error_f_val < 0.05:
+                    ax_amp.axhspan(sp_nivel-0.05, sp_nivel+0.05, color='green', alpha=0.1, label='Banda de Estabilidad (±5%)')
+            
+            st.pyplot(fig_amp)
+            plt.close(fig_amp)
+        
+        with col_an2:
+            st.info("**Interpretación del Control Robusto:**")
+            sobrepico = ((max(h_log) - sp_nivel) / sp_nivel) * 100 if max(h_log) > sp_nivel else 0
+            st.metric("Sobrepico Máximo", f"{sobrepico:.2f} %")
+            st.metric("IAE Final", f"{iae_acumulado:.2f}")
+            st.metric("ITAE Final", f"{itae_acumulado:.2f}")
+            
+            if p_activa and p_tiempo > 0:
+                idx_pert = int(p_tiempo / dt) if p_tiempo < len(h_log) else 0
+                if idx_pert < len(h_log) - 10:
+                    error_post_pert = max([abs(h_log[j] - sp_nivel) for j in range(idx_pert, min(idx_pert+50, len(h_log)))])
+                    st.metric("Máximo Error tras Perturbación", f"{error_post_pert:.4f} m")
+        
+        # Exportación
+        df_final = pd.DataFrame({
+            "Tiempo [s]": vector_t,
+            "Nivel [m]": h_log,
+            "Control [m3/s]": u_log,
+            "Error [m]": e_log,
+            "Kp_Usado": [st.session_state.get('kp_ejecucion', 15.0)] * len(vector_t),
+            "Ki_Usado": [st.session_state.get('ki_ejecucion', 3.5)] * len(vector_t),
+            "Kd_Usado": [st.session_state.get('kd_ejecucion', 1.5)] * len(vector_t)
+        })
+        
+        st.subheader("📋 Resumen de Datos y Estabilidad del Control Robusto")
+        
+        col_tab, col_res = st.columns([2, 1])
+        
+        with col_tab:
+            st.dataframe(df_final.tail(10).style.format("{:.4f}"), use_container_width=True)
+        
+        with col_res:
+            err_f = abs(sp_nivel - h_log[-1]) if len(h_log) > 0 else 0
+            st.metric("Error Residual Final (Offset)", f"{err_f:.4f} m")
+            
+            st.download_button(
+                label="📥 Descargar Reporte de Simulación Robusta (CSV)",
+                data=df_final.to_csv(index=False),
+                file_name=f"resultados_robustos_{geom_tanque}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+
+# =============================================================================
+# --- FUNCIÓN PRINCIPAL CON PESTAÑAS LOU I Y LOU II ---
+# =============================================================================
+def main():
+    """Función principal con la estructura de pestañas"""
+    
+    # Inicializar estado de página
+    if 'pagina_actual' not in st.session_state:
+        st.session_state.pagina_actual = "inicio"
+    
+    # Mostrar encabezado institucional
+    mostrar_encabezado()
+    
+    # Si estamos en el simulador, mostrar solo el simulador
+    if st.session_state.pagina_actual == "simulador":
+        # Botón para volver al inicio
+        if st.button("← Volver a Biblioteca de Prácticas", use_container_width=False):
+            st.session_state.pagina_actual = "inicio"
+            st.session_state.ejecutando = False
+            st.rerun()
+        st.markdown("---")
+        mostrar_simulador()
+        return
+    
+    # Página de inicio con pestañas LOU I y LOU II
+    st.markdown("""
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <h2 style="color: #1a5276;">📚 Biblioteca de Prácticas de Laboratorio</h2>
+        <p style="color: #5d6d7e;">Seleccione una práctica para comenzar</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    tab1, tab2 = st.tabs(["🏭 LABORATORIO DE OPERACIONES UNITARIAS I (LOU I)", 
+                          "⚗️ LABORATORIO DE OPERACIONES UNITARIAS II (LOU II)"])
+    
+    with tab1:
+        st.markdown("### 📚 Prácticas Disponibles - LOU I")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("""
+            <div class="practica-card">
+                <h3>🏭 Práctica N° 1</h3>
+                <p><strong>Balance de masa en estado no estacionario</strong></p>
+                <p>Control PID de nivel en tanques con geometrías cilíndrica, cónica y esférica. Análisis de rechazo a perturbaciones y métricas IAE/ITAE.</p>
+                <span class="badge">✅ Disponible</span>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("🚀 Iniciar Práctica 1", key="iniciar_p1", use_container_width=True, type="primary"):
+                st.session_state.pagina_actual = "simulador"
+                st.rerun()
+        
+        with col2:
+            st.markdown("""
+            <div class="practica-card">
+                <h3>⚡ Práctica N° 2</h3>
+                <p><strong>Bombas centrífugas en serie y paralelo</strong></p>
+                <p>Curvas características, punto de operación y eficiencia de bombas.</p>
+                <span class="badge">🚧 En desarrollo</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown("""
+            <div class="practica-card">
+                <h3>🌊 Práctica N° 3</h3>
+                <p><strong>Flujo en tuberías</strong></p>
+                <p>Pérdidas de carga primarias y secundarias, número de Reynolds.</p>
+                <span class="badge">🚧 En desarrollo</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        st.info("💡 **Práctica 1 disponible**: Simulación de control PID robusto para tanques con geometrías cilíndrica, cónica y esférica.")
+    
+    with tab2:
+        st.markdown("### 📚 Prácticas Disponibles - LOU II")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("""
+            <div class="practica-card">
+                <h3>🔥 Práctica N° 1</h3>
+                <p><strong>Intercambiadores de calor</strong></p>
+                <p>Coeficientes globales de transferencia, MLDT, eficiencia de intercambiadores.</p>
+                <span class="badge">🚧 Próximamente</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("""
+            <div class="practica-card">
+                <h3>💨 Práctica N° 2</h3>
+                <p><strong>Destilación batch</strong></p>
+                <p>Ecuaciones de Rayleigh, composición de destilado y residuo.</p>
+                <span class="badge">🚧 Próximamente</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown("""
+            <div class="practica-card">
+                <h3>🧪 Práctica N° 3</h3>
+                <p><strong>Absorción de gases</strong></p>
+                <p>Torres empacadas, altura de la unidad de transferencia (HTU).</p>
+                <span class="badge">🚧 Próximamente</span>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Footer
+    st.markdown("""
+    <div class="footer">
+        <p>Universidad Central de Venezuela - Escuela de Ingeniería Química</p>
+        <p>Laboratorio de Operaciones Unitarias I y II | Simulador Interactivo | © 2025</p>
+        <p style="font-size: 0.7rem;">Sintonía optimizada para rechazo de fugas y cambios de carga</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# =============================================================================
+# --- EJECUCIÓN PRINCIPAL ---
+# =============================================================================
+if __name__ == "__main__":
+    main()
