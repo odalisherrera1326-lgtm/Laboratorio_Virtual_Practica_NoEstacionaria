@@ -64,40 +64,36 @@ def calcular_pid_adaptativo(geom, r_max, h_total, cd=0.61, area_orificio=0.0005)
 def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado, area_ori, op_tipo="Llenado"):
     """
     Sintonización robusta del PID para rechazo de perturbaciones.
-    Basada en métodos Ziegler-Nichols adaptados para tanques.
-    CORREGIDO: Parámetros más agresivos para llegar al setpoint.
+    CORREGIDO: Valores base fijos para todas las geometrías.
     """
-    # Calcular área transversal característica
+    # Calcular área transversal característica (solo para referencia)
     if geom == "Cilíndrico":
         area_t = np.pi * (r**2)
-        tau = area_t / (cd_calculado * area_ori)
     elif geom == "Cónico":
         area_t = np.pi * (r/2)**2
-        tau = area_t / (cd_calculado * area_ori * 0.8)
     else:  # Esférico
         area_t = (2/3) * np.pi * (r**2)
-        tau = area_t / (cd_calculado * area_ori * 0.6)
     
-    # Ganancia crítica (Ziegler-Nichols)
-    Kc = (2 * area_t) / (cd_calculado * area_ori * np.sqrt(2 * 9.81 * h_t/2))
-    Kc = np.clip(Kc, 1.0, 30.0)
+    # Ganancia base proporcional al área del tanque
+    Kc = 10.0 * area_t  # Simplificado: ganancia proporcional al área
+    Kc = np.clip(Kc, 8.0, 25.0)
     
-    # Parámetros PID robustos - VERSIÓN MÁS AGRESIVA
+    # Parámetros PID - Mismos valores para todas las geometrías
     if op_tipo == "Llenado":
-        kp = Kc * 0.9   # Aumentado de 0.6 a 0.9
-        ki = kp / (tau * 0.25)  # Integral mucho más fuerte (antes 0.3)
-        kd = kp * tau * 0.15
+        kp = Kc * 1.2  # Aumentado significativamente
+        ki = kp / 5.0  # Integral fuerte
+        kd = kp * 0.15
     else:
-        kp = Kc * 0.8   # Aumentado de 0.5 a 0.8
-        ki = kp / (tau * 0.3)  # Integral mucho más fuerte (antes 0.4)
-        kd = kp * tau * 0.12
+        kp = Kc * 1.0
+        ki = kp / 6.0
+        kd = kp * 0.12
     
-    # Ajustes adicionales - MÁS AGRESIVOS
-    kp = np.clip(kp, 8.0, 25.0)   # Mínimo aumentado de 5.0 a 8.0
-    ki = np.clip(ki, 1.5, 6.0)    # Mínimo aumentado de 1.0 a 1.5
-    kd = np.clip(kd, 0.2, 2.0)
+    # Forzar valores mínimos altos para todas las geometrías
+    kp = np.clip(kp, 12.0, 30.0)   # Mínimo 12
+    ki = np.clip(ki, 2.5, 8.0)     # Mínimo 2.5
+    kd = np.clip(kd, 0.5, 2.5)
     
-    return round(kp, 2), round(ki, 3), round(kd, 3)
+    return round(kp, 2), round(ki, 3), round(kd, 2)
 
 
 def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
@@ -156,7 +152,7 @@ def resolver_sistema_robusto(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_pre
     
     # Integral (siempre acumula)
     e_sum += err * dt
-    e_sum = np.clip(e_sum, -50.0, 50.0)  # Rango aumentado para mejor acumulación
+    e_sum = np.clip(e_sum, -50.0, 50.0)
     I = ki * e_sum
     
     # Derivativa
@@ -207,7 +203,7 @@ if 'ejecutando' not in st.session_state:
 
 
 # =============================================================================
-# 2. ESTILOS CSS (COMPLETO)
+# 2. ESTILOS CSS (COMPLETO - IGUAL QUE ORIGINAL)
 # =============================================================================
 st.markdown("""
 <style>
@@ -425,7 +421,7 @@ st.markdown(f"""
 
 
 # =============================================================================
-# 4. MARCO TEÓRICO (COMPLETO)
+# 4. MARCO TEÓRICO
 # =============================================================================
 col_teoria1, col_teoria2, col_teoria3 = st.columns(3)
 
@@ -533,10 +529,10 @@ with st.sidebar.expander("Parámetros del Controlador PID Robusto"):
         kd_val = st.number_input("Kd (robusto)", value=kd_sug, format="%.3f", key="kd_asist")
         st.caption("✅ Parámetros optimizados para rechazar perturbaciones")
     else:
-        st.info("✍️ Modo Manual - Valores recomendados: Kp=7.5, Ki=1.2, Kd=0.4")
-        kp_val = st.number_input("Kp", value=7.5, step=0.5, key="kp_man")
-        ki_val = st.number_input("Ki", value=1.2, step=0.1, format="%.3f", key="ki_man")
-        kd_val = st.number_input("Kd", value=0.4, step=0.1, format="%.3f", key="kd_man")
+        st.info("✍️ Modo Manual - Valores recomendados: Kp=15, Ki=3.0, Kd=1.5")
+        kp_val = st.number_input("Kp", value=15.0, step=1.0, key="kp_man")
+        ki_val = st.number_input("Ki", value=3.0, step=0.5, format="%.3f", key="ki_man")
+        kd_val = st.number_input("Kd", value=1.5, step=0.2, format="%.3f", key="kd_man")
     
     tiempo_ensayo = st.slider("Tiempo de simulación [s]", 60, 600, 300)
 
@@ -631,11 +627,11 @@ if iniciar_sim:
                 st.session_state['cd_final'] = cd_calc
                 st.toast(f"🎯 Control Robusto Activado: Cd={cd_calc:.2f} | Kp={kp_a} | Ki={ki_a} | Kd={kd_a}")
             else:
-                st.session_state['kp_ejecucion'] = 15.0
-                st.session_state['ki_ejecucion'] = 3.0
-                st.session_state['kd_ejecucion'] = 1.0
+                st.session_state['kp_ejecucion'] = 18.0
+                st.session_state['ki_ejecucion'] = 3.5
+                st.session_state['kd_ejecucion'] = 1.5
                 st.session_state['cd_final'] = 0.61
-                st.info("💡 Usando configuración robusta por defecto (Kp=15.0, Ki=3.0, Kd=1.0)")
+                st.info("💡 Usando configuración robusta por defecto (Kp=18.0, Ki=3.5, Kd=1.5)")
         else:
             st.session_state['kp_ejecucion'] = kp_val
             st.session_state['ki_ejecucion'] = ki_val
@@ -644,11 +640,11 @@ if iniciar_sim:
             st.info(f"✍️ Modo Manual: Kp={kp_val}, Ki={ki_val}, Kd={kd_val}")
 
     except Exception as e:
-        st.session_state['kp_ejecucion'] = 15.0
-        st.session_state['ki_ejecucion'] = 3.0
-        st.session_state['kd_ejecucion'] = 1.0
+        st.session_state['kp_ejecucion'] = 18.0
+        st.session_state['ki_ejecucion'] = 3.5
+        st.session_state['kd_ejecucion'] = 1.5
         st.session_state['cd_final'] = 0.61
-        st.warning(f"⚠️ Usando configuración robusta de emergencia (Kp=15, Ki=3.0, Kd=1.0)")
+        st.warning(f"⚠️ Usando configuración robusta de emergencia (Kp=18, Ki=3.5, Kd=1.5)")
 
 
 # =============================================================================
@@ -676,12 +672,12 @@ else:
     with col_met:
         st.subheader("Métricas de Control Robusto")
         
-        kp_show = st.session_state.get('kp_ejecucion', 15.0)
-        ki_show = st.session_state.get('ki_ejecucion', 3.0)
+        kp_show = st.session_state.get('kp_ejecucion', 18.0)
+        ki_show = st.session_state.get('ki_ejecucion', 3.5)
         cd_show = st.session_state.get('cd_final', 0.61)
         
         st.write(f"**Parámetros Activos (Robustos):**")
-        st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Kd: {st.session_state.get('kd_ejecucion', 1.0)}")
+        st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Kd: {st.session_state.get('kd_ejecucion', 1.5)}")
         st.caption(f"Cd: {cd_show:.3f} | Modo: {'Auto-Robusto' if modo_auto else 'Manual'}")
         st.markdown("---")
         
@@ -744,9 +740,9 @@ else:
         else:
             q_p_inst = 0.0
         
-        k_p = st.session_state.get('kp_ejecucion', 15.0)
-        k_i = st.session_state.get('ki_ejecucion', 3.0)
-        k_d = st.session_state.get('kd_ejecucion', 1.0)
+        k_p = st.session_state.get('kp_ejecucion', 18.0)
+        k_i = st.session_state.get('ki_ejecucion', 3.5)
+        k_d = st.session_state.get('kd_ejecucion', 1.5)
         
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema_robusto(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst,
@@ -945,9 +941,9 @@ else:
         "Nivel [m]": h_log,
         "Control [m3/s]": u_log,
         "Error [m]": e_log,
-        "Kp_Usado": [st.session_state.get('kp_ejecucion', 15.0)] * len(vector_t),
-        "Ki_Usado": [st.session_state.get('ki_ejecucion', 3.0)] * len(vector_t),
-        "Kd_Usado": [st.session_state.get('kd_ejecucion', 1.0)] * len(vector_t)
+        "Kp_Usado": [st.session_state.get('kp_ejecucion', 18.0)] * len(vector_t),
+        "Ki_Usado": [st.session_state.get('ki_ejecucion', 3.5)] * len(vector_t),
+        "Kd_Usado": [st.session_state.get('kd_ejecucion', 1.5)] * len(vector_t)
     })
     
     st.subheader("📋 Resumen de Datos y Estabilidad del Control Robusto")
