@@ -69,7 +69,7 @@ def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado, area_ori, op_tipo
     # Calcular área transversal característica
     if geom == "Cilíndrico":
         area_t = np.pi * (r**2)
-        tau = area_t / (cd_calculado * area_ori)  # Constante de tiempo
+        tau = area_t / (cd_calculado * area_ori)
     elif geom == "Cónico":
         area_t = np.pi * (r/2)**2
         tau = area_t / (cd_calculado * area_ori * 0.8)
@@ -81,21 +81,18 @@ def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado, area_ori, op_tipo
     Kc = (2 * area_t) / (cd_calculado * area_ori * np.sqrt(2 * 9.81 * h_t/2))
     Kc = np.clip(Kc, 1.0, 30.0)
     
-    # Parámetros PID robustos para rechazo de perturbaciones - CORREGIDOS
+    # Parámetros PID robustos
     if op_tipo == "Llenado":
-        # Para llenado: más agresivo en la integral (elimina offset rápido)
         kp = Kc * 0.6
-        ki = kp / (tau * 0.3)  # Integral más fuerte (antes 0.5)
+        ki = kp / (tau * 0.4)
         kd = kp * tau * 0.125
     else:
-        # Para vaciado: más conservador pero con buena integral
         kp = Kc * 0.5
-        ki = kp / (tau * 0.4)  # Integral más fuerte (antes 0.6)
+        ki = kp / (tau * 0.5)
         kd = kp * tau * 0.1
     
-    # Ajustes adicionales para robustez - CORREGIDOS
-    kp = np.clip(kp, 5.0, 15.0)   # Mínimo aumentado
-    ki = np.clip(ki, 1.0, 4.0)    # Mínimo aumentado de 0.3 a 1.0
+    kp = np.clip(kp, 5.0, 15.0)
+    ki = np.clip(ki, 0.8, 4.0)
     kd = np.clip(kd, 0.1, 1.5)
     
     return round(kp, 2), round(ki, 3), round(kd, 3)
@@ -135,51 +132,63 @@ def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
         return 0.61
 
 
+# =============================================================================
+# FUNCIÓN CORREGIDA - EL PROBLEMA ESTABA AQUÍ
+# =============================================================================
 def resolver_sistema_robusto(dt, h_prev, sp, geom, r, h_t, q_p_val, e_sum, e_prev, modo_op, cd_val, kp, ki, kd, d_pulgadas):
     """
-    Resuelve la dinámica del sistema con Anti-Windup para mejor robustez.
-    CORREGIDO: La integral ahora se acumula siempre.
+    Resuelve la dinámica del sistema con Anti-Windup.
+    CORREGIDO: Lógica de control correcta para llenado y vaciado.
     """
     
-    # Usar la función auxiliar para área transversal
     area_h = get_area_transversal(geom, r, h_prev, h_t)
     area_h = max(area_h, 0.0001)
 
-    # Cálculo del error
+    # Cálculo del error (SP - PV)
     err = sp - h_prev
     
     # Área del orificio
     a_o = np.pi * ((d_pulgadas * 0.0254) / 2)**2
+    q_max = 2.0
     
-    # --- ANTI-WINDUP CORREGIDO: Siempre acumular error ---
-    q_max = 2.0  # Flujo máximo
+    # --- ACCIONES PID ---
+    # Proporcional
+    P = kp * err
     
-    # CORRECCIÓN: Siempre acumular el error integral
+    # Integral (siempre acumula)
     e_sum += err * dt
-    
-    # Limitar el error acumulado (rango ampliado)
     e_sum = np.clip(e_sum, -30.0, 30.0)
+    I = ki * e_sum
     
-    # Derivativo con filtro
-    e_der = (err - e_prev) / dt if dt > 0 else 0
-    e_der = np.clip(e_der, -2.0, 2.0)  # Límite más suave
+    # Derivativa
+    D = kd * (err - e_prev) / dt if dt > 0 else 0
+    D = np.clip(D, -3.0, 3.0)
     
-    # Acción de control final
-    u_control = (kp * err) + (ki * e_sum) + (kd * e_der)
-
-    # Lógica de operación
+    # Control total
+    u_control = P + I + D
+    
+    # --- LÓGICA DE OPERACIÓN CORRECTA ---
     if modo_op == "Llenado":
+        # Llenado: la válvula controla el flujo de ENTRADA
+        # Si err > 0 (nivel bajo) -> abrir válvula (u_control positivo)
+        # Si err < 0 (nivel alto) -> cerrar válvula (u_control negativo)
         q_entrada = np.clip(u_control, 0, q_max)
         q_salida = cd_val * a_o * np.sqrt(2 * 9.81 * max(h_prev, 0.005)) if h_prev > 0.005 else 0
         dh_dt = (q_entrada + q_p_val - q_salida) / area_h
         u_graficar = q_entrada
-    else:
+    else:  # Vaciado
+        # Vaciado: la válvula controla el flujo de SALIDA
+        # Si err < 0 (nivel alto porque sp - h_prev es negativo) -> abrir válvula de salida
+        # Si err > 0 (nivel bajo) -> cerrar válvula de salida
+        # Invertimos la señal: u_control negativo abre la válvula
+        q_salida = np.clip(-u_control, 0, q_max)
         q_entrada = q_p_val
-        q_salida = np.clip(u_control, 0, q_max)
         dh_dt = (q_entrada - q_salida) / area_h
         u_graficar = q_salida
     
+    # Actualizar nivel
     h_next = np.clip(h_prev + dh_dt * dt, 0, h_t)
+    
     return h_next, u_graficar, err, e_sum, err
 
 
@@ -618,7 +627,6 @@ if iniciar_sim:
                 df_calib["Nivel Medido (m)"] = df_calib["Nivel Medido (cm)"] / 100
                 cd_calc = calcular_cd_inteligente(df_calib[["Tiempo (s)", "Nivel Medido (m)"]], 
                                                    r_max, h_total, geom_tanque, area_orificio)
-                # Usar la nueva función de sintonización robusta
                 kp_a, ki_a, kd_a = sintonizar_controlador_robusto(
                     geom_tanque, r_max, h_total, cd_calc, area_orificio, op_tipo
                 )
@@ -629,7 +637,6 @@ if iniciar_sim:
                 st.session_state['cd_final'] = cd_calc
                 st.toast(f"🎯 Control Robusto Activado: Cd={cd_calc:.2f} | Kp={kp_a} | Ki={ki_a} | Kd={kd_a}")
             else:
-                # Valores robustos por defecto (funcionan para cualquier caso)
                 st.session_state['kp_ejecucion'] = 10.0
                 st.session_state['ki_ejecucion'] = 2.0
                 st.session_state['kd_ejecucion'] = 0.8
@@ -643,7 +650,6 @@ if iniciar_sim:
             st.info(f"✍️ Modo Manual: Kp={kp_val}, Ki={ki_val}, Kd={kd_val}")
 
     except Exception as e:
-        # Valores robustos de emergencia
         st.session_state['kp_ejecucion'] = 10.0
         st.session_state['ki_ejecucion'] = 2.0
         st.session_state['kd_ejecucion'] = 0.8
@@ -707,11 +713,9 @@ else:
     vector_t = np.arange(0, tiempo_ensayo, dt)
     h_log, u_log, e_log = [], [], []
 
-    # Condición inicial según operación - CORREGIDO
     if op_tipo == "Llenado":
-        h_corrida = 0.001  # 1 mm - prácticamente vacío pero no cero
+        h_corrida = 0.001
     else:
-        # Para vaciado, empezamos con el tanque casi lleno
         h_corrida = h_total * 0.95
     
     valor_presente = h_corrida
@@ -719,7 +723,6 @@ else:
     err_int, err_pasado = 0.0, 0.0
     iae_acumulado, itae_acumulado = 0.0, 0.0
     
-    # Procesar datos experimentales de forma segura
     if not isinstance(datos_usr, pd.DataFrame):
         datos_usr = pd.DataFrame(datos_usr)
     
@@ -735,11 +738,9 @@ else:
     barra_p = st.progress(0)
     cd_para_simular = st.session_state.get('cd_final', 0.61)
     
-    # Bucle de simulación con control robusto
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 CONTROL ROBUSTO ACTIVADO - PROCESANDO...</div>", unsafe_allow_html=True)
         
-        # Lógica de perturbación (el controlador robusto la rechazará)
         if p_activa and t_act >= p_tiempo:
             if modo_estres:
                 factor = 1.5 if valor_presente < sp_nivel else 0.5
@@ -753,7 +754,6 @@ else:
         k_i = st.session_state.get('ki_ejecucion', 2.0)
         k_d = st.session_state.get('kd_ejecucion', 0.8)
         
-        # Usar la función robusta con Anti-Windup (CORREGIDA)
         h_corrida, u_inst, e_inst, err_int, err_pasado = resolver_sistema_robusto(
             dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst,
             err_int, err_pasado, op_tipo, cd_para_simular,
@@ -769,57 +769,37 @@ else:
         u_log.append(u_inst)
         e_log.append(e_inst)
         
-        # Actualizar métricas
         m_h.metric("Nivel PV [m]", f"{valor_presente:.3f}")
         m_e.metric("Error [m]", f"{error_presente:.4f}")
         placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
         placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
         
         # =========================================================================
-        # VISUALIZACIÓN DEL TANQUE - CORREGIDA PARA QUE EL NIVEL SEA CLARAMENTE VISIBLE
+        # VISUALIZACIÓN DEL TANQUE
         # =========================================================================
         fig_t, ax_t = plt.subplots(figsize=(7, 5))
         ax_t.set_axis_off()
         ax_t.set_xlim(-r_max*3, r_max*3)
         ax_t.set_ylim(-0.8, h_total*1.3)
         
-        # Color del agua: más opaco para mejor visibilidad
-        color_agua = '#3498db'  # Azul más visible
+        color_agua = '#3498db'
         
-        # Fondo del tanque (para que se vea el contraste)
         if geom_tanque == "Cilíndrico":
             c_in_x, c_in_y = -r_max, h_total*0.8
             c_out_x, c_out_y = r_max, 0.1
-            
-            # Paredes del tanque (más gruesas y visibles)
             ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=5, zorder=2)
-            
-            # Agua: rectángulo que sube desde el fondo (y=0) hasta el nivel actual
-            # Añadir borde al agua para que se vea el límite
             ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5))
-            
-            # Línea que marca el nivel actual sobre el agua
             if valor_presente > 0 and valor_presente < h_total:
                 ax_t.axhline(y=valor_presente, color='white', linestyle='-', linewidth=2, alpha=0.8, zorder=3)
             
         elif geom_tanque == "Cónico":
             c_in_x, c_in_y = -(r_max/h_total)*(h_total*0.8), h_total*0.8
             c_out_x, c_out_y = 0, 0
-            
-            # Paredes del tanque cónico
             ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=5, zorder=2)
-            
-            # Agua: polígono que sube desde el fondo
             if valor_presente > 0:
                 radio_superficie = (r_max / h_total) * valor_presente
-                vertices = [
-                    [-radio_superficie, valor_presente],
-                    [radio_superficie, valor_presente],
-                    [0, 0]
-                ]
+                vertices = [[-radio_superficie, valor_presente], [radio_superficie, valor_presente], [0, 0]]
                 ax_t.add_patch(plt.Polygon(vertices, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5))
-                
-                # Línea que marca el nivel actual
                 ax_t.plot([-radio_superficie, radio_superficie], [valor_presente, valor_presente], color='white', linewidth=2, alpha=0.8, zorder=3)
             
         else:  # Esférico
@@ -827,24 +807,15 @@ else:
             c_in_y = h_total * 0.7
             c_in_x = -math.sqrt(abs(r_max**2 - (c_in_y - r_max)**2))
             c_out_x, c_out_y = 0, 0
-            
-            # Agua: círculo recortado por el nivel actual
             agua_esf = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5)
             ax_t.add_patch(agua_esf)
-            
-            # Recortar por nivel
             recorte_nivel = plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, transform=ax_t.transData)
             agua_esf.set_clip_path(recorte_nivel)
-            
-            # Pared de la esfera
             ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=5, zorder=2))
-            
-            # Línea que marca el nivel actual
             if valor_presente > 0 and valor_presente < 2*r_max:
                 radio_nivel = math.sqrt(r_max**2 - (valor_presente - r_max)**2)
                 ax_t.plot([-radio_nivel, radio_nivel], [valor_presente, valor_presente], color='white', linewidth=2, alpha=0.8, zorder=3)
         
-        # VÁLVULAS Y ACCESORIOS (COMPLETOS)
         ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
         ax_t.add_patch(plt.Polygon([[c_in_x-1, c_in_y+0.2], [c_in_x-1, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
         ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
@@ -862,11 +833,8 @@ else:
         offset_t = 0.4 if geom_tanque == "Cilíndrico" else 0
         ax_t.text(vs_x + offset_t, vs_y - 0.5, "V-02 (CV)", ha='center', fontsize=9, fontweight='bold')
         
-        # Setpoint
         ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3, alpha=0.8)
         ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
-        
-        # Nivel actual (con fondo blanco para mejor legibilidad)
         ax_t.text(0, h_total * 1.2, f"PV: {valor_presente:.3f} m", 
                  ha='center', va='center', fontsize=11, fontweight='bold',
                  bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
@@ -874,7 +842,6 @@ else:
         placeholder_tanque.pyplot(fig_t)
         plt.close(fig_t)
         
-        # Gráfico de tendencia
         fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
         ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel (h) - Control Robusto')
         ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
@@ -889,7 +856,6 @@ else:
         placeholder_grafico.pyplot(fig_tr)
         plt.close(fig_tr)
         
-        # Gráfico de acción de control
         fig_u, ax_u = plt.subplots(figsize=(8, 2.5))
         ax_u.step(vector_t[:i+1], u_log, color='#e67e22', where='post', label='Flujo de Control')
         if p_activa and p_tiempo > 0:
@@ -904,7 +870,6 @@ else:
         placeholder_u.pyplot(fig_u)
         plt.close(fig_u)
         
-        # Gráfico de válvula
         fig_v, ax_v = plt.subplots(figsize=(8, 3))
         ax_v.plot(vector_t[:i+1], u_log, color='#2ecc71', lw=2.5)
         ax_v.fill_between(vector_t[:i+1], u_log, color='#2ecc71', alpha=0.15)
@@ -915,7 +880,6 @@ else:
         placeholder_valvula.pyplot(fig_v)
         plt.close(fig_v)
         
-        # Gráfico comparativo
         fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
         ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación Robusta')
         if mostrar_ref and tiene_datos_exp and len(t_exp) > 0:
@@ -933,12 +897,10 @@ else:
         time.sleep(0.01)
         barra_p.progress((i+1)/len(vector_t))
     
-    # Fin de simulación
     status_placeholder.empty()
     st.success(f"✅ Simulación Robusta completada - El controlador mantuvo el nivel ante las perturbaciones")
     st.balloons()
     
-    # Análisis de respuesta
     st.markdown("---")
     st.subheader("📈 Análisis de Respuesta - Control Robusto Anti-Perturbaciones")
     
@@ -972,7 +934,6 @@ else:
         st.metric("IAE Final", f"{iae_acumulado:.2f}")
         st.metric("ITAE Final", f"{itae_acumulado:.2f}")
         
-        # Evaluación del rechazo a perturbaciones
         if p_activa and p_tiempo > 0:
             idx_pert = int(p_tiempo / dt) if p_tiempo < len(h_log) else 0
             if idx_pert < len(h_log) - 10:
@@ -985,7 +946,6 @@ else:
                 else:
                     st.warning("⚠️ El rechazo puede mejorar ajustando Ki")
     
-    # Exportación
     df_final = pd.DataFrame({
         "Tiempo [s]": vector_t,
         "Nivel [m]": h_log,
