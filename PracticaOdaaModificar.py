@@ -14,7 +14,6 @@ modo_auto = False
 p_activa = True
 p_magnitud = 0.045
 p_tiempo = 80
-modo_estres = False
 
 # =============================================================================
 # --- 1. FUNCIONES DE CÁLCULO MEJORADAS ---
@@ -507,12 +506,9 @@ with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)"):
     if p_activa:
         p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.045, format="%.4f")
         p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 80)
-        modo_estres = st.toggle("🔥 Activar Modo Estrés", 
-                               help="La perturbación cambiará según el nivel para desafiar al PID.")
     else:
         p_magnitud = 0.0
         p_tiempo = 0
-        modo_estres = False
 
 with st.sidebar.expander("Parámetros del Controlador PID Robusto"):
     kp_sug, ki_sug, kd_sug = calcular_pid_adaptativo(geom_tanque, r_max, h_total)
@@ -731,12 +727,9 @@ else:
     for i, t_act in enumerate(vector_t):
         status_placeholder.markdown("<div class='flow-indicator'>💧 CONTROL ROBUSTO ACTIVADO - PROCESANDO...</div>", unsafe_allow_html=True)
         
+        # Perturbación en escalón simple (sin modo estrés)
         if p_activa and t_act >= p_tiempo:
-            if modo_estres:
-                factor = 1.5 if valor_presente < sp_nivel else 0.5
-                q_p_inst = p_magnitud * factor
-            else:
-                q_p_inst = p_magnitud
+            q_p_inst = p_magnitud
         else:
             q_p_inst = 0.0
         
@@ -985,7 +978,7 @@ st.markdown("""
 <hr style="margin: 2rem 0 1rem 0; border-color: #1a5276;">
 <div style="text-align: center; color: #5d6d7e; font-size: 0.8rem;">
     <p>Universidad Central de Venezuela - Escuela de Ingeniería Química</p>
-    <p>Simulador de Control PID Robusto para Tanques | Anti-Perturbaciones | © 2025</p>
+    <p>Simulador de Control PID  para Tanques | Practica de Proceso no Estacionario | © 2025</p>
     <p style="font-size: 0.7rem;">Sintonía optimizada para rechazo de fugas y cambios de carga</p>
 </div>
 """, unsafe_allow_html=True)
