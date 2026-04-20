@@ -762,4 +762,3 @@ st.markdown("""
 <p>Control PID de Nivel con Dos Válvulas | Laboratorio Virtual | © 2025</p>
 </div>
 """, unsafe_allow_html=True)
-        
