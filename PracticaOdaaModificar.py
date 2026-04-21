@@ -751,11 +751,12 @@ else:
             q_p_inst = p_magnitud
         else:
             q_p_inst = 0.0
-        
-       h_corrida, q_entrada, q_salida, e_inst, err_int, err_pasado = resolver_sistema_dos_valvulas(
+            
+        h_corrida, q_entrada, q_salida, e_inst, err_int, err_pasado = resolver_sistema_dos_valvulas(
     dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, p_tipo,
     err_int, err_pasado, k_p, k_i, k_d, q_max_bomba, q_max_salida, cd_para_simular, d_pulgadas
 )
+ 
         
         iae_acumulado += abs(e_inst) * dt
         itae_acumulado += (t_act * abs(e_inst)) * dt
