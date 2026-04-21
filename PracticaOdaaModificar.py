@@ -480,19 +480,25 @@ def get_base64(path):
     
     # Si no se encuentra en ninguna ruta, retornar None
     return None
+logo_ucv_64 = get_base64("logo_ucv.png")
+logo_eiq_64 = get_base64("logoquimicaborde.png")
+
+# Si no se encuentran las imágenes, mostrar texto
+logo_ucv_html = f'<img src="data:image/png;base64,{logo_ucv_64}" width="100">' if logo_ucv_64 else '<h3 style="color: white;">UCV</h3>'
+logo_eiq_html = f'<img src="data:image/png;base64,{logo_eiq_64}" width="150">' if logo_eiq_64 else '<h3 style="color: white;">EIQ</h3>'
 
 st.markdown(f"""
 <div class="header-container">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="width: 120px;">
-            {f'<img src="data:image/png;base64,{logo_ucv_64}" width="100">' if logo_ucv_64 else "UCV"}
+        <div style="width: 120px; text-align: center;">
+            {logo_ucv_html}
         </div>
-        <div>
+        <div style="text-align: center;">
             <h1 style="color: white !important; font-size: 2.2rem;">Práctica Virtual: Balance en estado no estacionario</h1>
             <p style="color: #d4e6f1 !important; margin: 0;">Escuela de Ingeniería Química | Facultad de Ingeniería - UCV</p>
         </div>
-        <div style="width: 160px;">
-            {f'<img src="data:image/png;base64,{logo_eiq_64}" width="150">' if logo_eiq_64 else "EIQ"}
+        <div style="width: 160px; text-align: center;">
+            {logo_eiq_html}
         </div>
     </div>
 </div>
