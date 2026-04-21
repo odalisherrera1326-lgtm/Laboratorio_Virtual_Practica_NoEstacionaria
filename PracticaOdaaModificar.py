@@ -577,9 +577,9 @@ with st.sidebar.expander("🔧 Orificio de Salida", expanded=True):
     st.caption(f"Área calculada: {area_orificio:.6f} m²")
 
 # Cálculo automático de Qmax y Cd basado en geometría y diámetro
-cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
+    cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
 
-st.session_state['cd_calculado'] = cd_automatico
+    st.session_state['cd_calculado'] = cd_automatico
 
 with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
     col1, col2 = st.columns(2)
