@@ -576,6 +576,7 @@ with st.sidebar.expander("🔧 Orificio de Salida", expanded=True):
 cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
 q_max_salida = calcular_q_max_salida(d_pulgadas, cd_automatico, h_total)
 st.session_state['cd_calculado'] = cd_automatico
+
 with st.sidebar.expander("📊 Datos Experimentales", expanded=False):
     st.write("Ingresa los datos medidos en laboratorio:")
     st.caption("⚠️ El nivel debe ingresarse en **centímetros (cm)**")
@@ -590,23 +591,30 @@ with st.sidebar.expander("📊 Datos Experimentales", expanded=False):
     
     col_cd1, col_cd2 = st.columns(2)
     with col_cd1:
-        if st.button("🧮 Calcular Cd desde datos", use_container_width=True):
-            if not isinstance(datos_usr, pd.DataFrame):
-                datos_usr = pd.DataFrame(datos_usr)
-            
-            if "Nivel Medido (cm)" in datos_usr.columns and len(datos_usr) >= 2:
-                cd_calculado = calcular_cd_desde_datos(
-                    datos_usr, r_max, h_total, geom_tanque, d_pulgadas
-                )
-                st.session_state['cd_calculado'] = cd_calculado
-                st.success(f"✅ Cd calculado: {cd_calculado:.4f}")
-            else:
-                st.warning("⚠️ Ingresa al menos 2 datos")
+        if tipo_proceso == "Vaciado":
+            if st.button("🧮 Calcular Cd desde datos", use_container_width=True):
+                if not isinstance(datos_usr, pd.DataFrame):
+                    datos_usr = pd.DataFrame(datos_usr)
+                
+                if "Nivel Medido (cm)" in datos_usr.columns and len(datos_usr) >= 2:
+                    cd_calculado = calcular_cd_desde_datos(
+                        datos_usr, r_max, h_total, geom_tanque, d_pulgadas
+                    )
+                    st.session_state['cd_calculado'] = cd_calculado
+                    st.success(f"✅ Cd calculado: {cd_calculado:.4f}")
+                else:
+                    st.warning("⚠️ Ingresa al menos 2 datos")
+        else:
+            # Botón deshabilitado en Llenado
+            st.button("🧮 Calcular Cd desde datos", disabled=True, 
+                     help="El Cd solo se calcula en proceso de Vaciado", 
+                     use_container_width=True)
+            st.caption("ℹ️ Cd solo válido para Vaciado")
+    
     with col_cd2:
         if st.button("🔄 Usar Cd teórico", use_container_width=True):
             st.session_state['cd_calculado'] = cd_automatico
             st.success(f"✅ Cd teórico: {cd_automatico:.4f}")
-
 with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
     col1, col2, col3 = st.columns(3)
     with col1:
