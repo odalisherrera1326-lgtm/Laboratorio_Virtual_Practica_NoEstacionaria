@@ -195,42 +195,7 @@ def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo,
     h_next = np.clip(h_next, 0.0, h_t)
     
     return h_next, q_entrada, q_salida, err, e_sum, err
-      # =========================================================================
-    # ESTRATEGIA CORREGIDA: FLUJO BASE + MODULACIÓN CONTINUA
-    # =========================================================================
-    # Flujo base = 15% del flujo máximo (permite mantener el nivel en equilibrio)
-    flujo_base = q_max * 0.15
-    
-    if err > 0.01:  # Nivel BAJO - Necesito SUBIR
-        # Aumentar entrada, reducir salida
-        q_entrada = flujo_base + np.clip(u_control, 0, q_max_bomba - flujo_base)
-        q_salida = flujo_base * 0.3  # Salida reducida pero NO cero
-    elif err < -0.01:  # Nivel ALTO - Necesito BAJAR
-        # Reducir entrada, aumentar salida
-        q_entrada = flujo_base * 0.3  # Entrada reducida pero NO cero
-        q_salida = flujo_base + np.clip(-u_control, 0, q_max_bomba - flujo_base)
-    else:  # En el setpoint (±0.01) - Mantener equilibrio
-        q_entrada = flujo_base
-        q_salida = flujo_base
-    
-    # Limitar flujos al rango permitido
-    q_entrada = np.clip(q_entrada, 0, q_max_bomba)
-    q_salida = np.clip(q_salida, 0, q_max_bomba)
-    
-    # Agregar perturbación
-    if p_tipo == "Entrada":
-        q_entrada_total = q_entrada + q_p_val
-        q_salida_total = q_salida
-    else:
-        q_entrada_total = q_entrada
-        q_salida_total = q_salida + q_p_val
-    
-    # Balance de masa
-    dh_dt = (q_entrada_total - q_salida_total) / area_h
-    h_next = h_prev + dh_dt * dt
-    h_next = np.clip(h_next, 0.0, h_t)
-    
-    return h_next, q_entrada, q_salida, err, e_sum, err
+ 
 
 
 # =============================================================================
@@ -595,11 +560,11 @@ with st.sidebar.expander("🔧 Orificio de Salida", expanded=True):
     area_orificio = np.pi * (d_metros / 2)**2
     st.caption(f"Área calculada: {area_orificio:.6f} m²")
 
-# Cálculo automático de Qmax y Cd basado en geometría y diámetro
-    q_max_salida = calcular_q_max_salida(d_pulgadas, cd_automatico, h_total)
-    cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
+# Cálculo de Cd y Qmax_salida (FUERA del with, SIN indentación extra)
+cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
+q_max_salida = calcular_q_max_salida(d_pulgadas, cd_automatico, h_total)
+st.session_state['cd_calculado'] = cd_automatico
 
-    st.session_state['cd_calculado'] = cd_automatico
 with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -614,7 +579,9 @@ with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expande
         q_max_bomba = st.number_input("Qmax Bomba Manual [m³/s]", value=q_max_bomba, min_value=0.5, max_value=5.0, step=0.5)
         cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
         st.session_state['cd_calculado'] = cd_manual
+
 with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=True):
+    
     p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
     
     if p_activa:
