@@ -468,7 +468,7 @@ with st.expander("🔧 Diagrama del Proceso", expanded=estado_expander):
         else:
             st.info("📍 Diagrama del sistema de control con dos válvulas")
             st.markdown("""
-            """)
+    """)
 
 
 # =============================================================================
@@ -477,20 +477,20 @@ with st.expander("🔧 Diagrama del Proceso", expanded=estado_expander):
 st.sidebar.header("⚙️ Configuración del Sistema")
 
 with st.sidebar.container(border=True):
-    tipo_proceso = st.sidebar.selectbox("Tipo de Proceso", ["Llenado", "Vaciado"]) 
-    geom_tanque = st.sidebar.selectbox("Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"]) 
+tipo_proceso = st.sidebar.selectbox("Tipo de Proceso", ["Llenado", "Vaciado"])
+geom_tanque = st.sidebar.selectbox("Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
 
 with st.sidebar.expander("📐 Especificaciones del Tanque", expanded=True):
-    r_max = st.number_input("Radio de Diseño (R) [m]", value=1.0, min_value=0.1, step=0.1)
-    h_sug = 3.0 if geom_tanque != "Esférico" else r_max * 2
-    h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
-    sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.5, float(h_total)-0.5, float(h_total/2))
+r_max = st.number_input("Radio de Diseño (R) [m]", value=1.0, min_value=0.1, step=0.1)
+h_sug = 3.0 if geom_tanque != "Esférico" else r_max * 2
+h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
+sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.5, float(h_total)-0.5, float(h_total/2))
 
 with st.sidebar.expander("🚰 Dimensiones de Salida", expanded=True):
-    d_pulgadas = st.number_input("Diámetro del Orificio (pulgadas)", value=1.0, min_value=0.1, step=0.1)
-    d_metros = d_pulgadas * 0.0254
-    area_orificio = np.pi * (d_metros / 2)**2
-    st.caption(f"Área calculada: {area_orificio:.6f} m²")
+d_pulgadas = st.number_input("Diámetro del Orificio (pulgadas)", value=1.0, min_value=0.1, step=0.1)
+d_metros = d_pulgadas * 0.0254
+area_orificio = np.pi * (d_metros / 2)**2
+st.caption(f"Área calculada: {area_orificio:.6f} m²")
 
 # Cálculo automático de Qmax y Cd
 q_max = calcular_q_max_automatico(geom_tanque, r_max, h_total, d_pulgadas)
@@ -498,36 +498,36 @@ cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
 st.session_state['cd_calculado'] = cd_automatico
 
 with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Qmax", f"{q_max:.2f} m³/s")
-    with col2:
-        st.metric("Cd", f"{cd_automatico:.4f}")
-    st.caption("💡 Calculados según geometría y diámetro del orificio")
-    
-    ajuste_manual = st.checkbox("Ajuste manual de parámetros", value=False)  # ← CORREGIDO (4 espacios)
-    if ajuste_manual:  # ← CORREGIDO (4 espacios)
-        q_max = st.number_input("Qmax Manual [m³/s]", value=q_max, min_value=0.5, max_value=5.0, step=0.5)
-        cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
-        st.session_state['cd_calculado'] = cd_manual
+col1, col2 = st.columns(2)
+with col1:
+st.metric("Qmax", f"{q_max:.2f} m³/s")
+with col2:
+st.metric("Cd", f"{cd_automatico:.4f}")
+st.caption("💡 Calculados según geometría y diámetro del orificio")
+
+ajuste_manual = st.checkbox("Ajuste manual de parámetros", value=False)
+if ajuste_manual:
+q_max = st.number_input("Qmax Manual [m³/s]", value=q_max, min_value=0.5, max_value=5.0, step=0.5)
+cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
+st.session_state['cd_calculado'] = cd_manual
 
 with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=True):
-    p_activa = st.toggle("Simular Falla/Fuga Externas", value=False)
+p_activa = st.toggle("Simular Falla/Fuga Externas", value=False)
 
-    if p_activa:
-    p_tipo = st.selectbox("Tipo de Perturbación", ["Entrada", "Salida (Fuga)"])
-    p_tipo = "Entrada" if p_tipo == "Entrada" else "Salida"
-    p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.3, min_value=0.1, max_value=2.0, step=0.1, format="%.2f")
-    p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 100)
-    else:
-    p_magnitud = 0.0
-    p_tiempo = 0
-    p_tipo = "Entrada"
+if p_activa:
+p_tipo = st.selectbox("Tipo de Perturbación", ["Entrada", "Salida (Fuga)"])
+p_tipo = "Entrada" if p_tipo == "Entrada" else "Salida"
+p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.3, min_value=0.1, max_value=2.0, step=0.1, format="%.2f")
+p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 100)
+else:
+p_magnitud = 0.0
+p_tiempo = 0
+p_tipo = "Entrada"
 
 with st.sidebar.expander("🎛️ Parámetros del Controlador PID", expanded=True):
-    cd_actual = st.session_state.get('cd_calculado', 0.61)
-    kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(
-    geom_tanque, r_max, h_total, cd_actual, q_max, tipo_proceso
+cd_actual = st.session_state.get('cd_calculado', 0.61)
+kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(
+geom_tanque, r_max, h_total, cd_actual, q_max, tipo_proceso
 )
 
 modo_auto = st.checkbox("🎯 Modo Robusto (Auto-sintonía)", value=True)
@@ -537,9 +537,9 @@ st.markdown("---")
 if modo_auto:
 st.success(f"💡 PID optimizado para {tipo_proceso}")
 st.caption(f"Kp={kp_sug} | Ki={ki_sug} | Kd={kd_sug}")
-kp_val = st.number_input("Kp", value=kp_sug, key="kp_auto")
-ki_val = st.number_input("Ki", value=ki_sug, format="%.3f", key="ki_auto")
-kd_val = st.number_input("Kd", value=kd_sug, format="%.3f", key="kd_auto")
+kp_val = kp_sug
+ki_val = ki_sug
+kd_val = kd_sug
 else:
 st.info(f"✍️ Modo Manual - {tipo_proceso}")
 if tipo_proceso == "Llenado":
@@ -894,3 +894,4 @@ st.markdown("""
 <p>Simulador de Control PID con Dos Válvulas | © 2025</p>
 </div>
 """, unsafe_allow_html=True)
+
