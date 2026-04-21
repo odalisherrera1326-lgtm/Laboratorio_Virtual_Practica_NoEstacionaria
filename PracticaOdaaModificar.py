@@ -258,71 +258,90 @@ if 'datos_usr' not in st.session_state:
     })
 
 # =============================================================================
-# ESTILOS CSS
+# ESTILOS CSS MEJORADOS
 # =============================================================================
 st.markdown("""
 <style>
+/* Fondo general */
 html, body, [data-testid="stAppViewContainer"] {
     background-color: #f4f7f9 !important;
-    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='1.5'><circle cx='12' cy='12' r='3'/><path d='M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12'/></svg>") 12 12, auto !important;
 }
 
-button, a, [data-testid="stHeaderActionElements"], .stSlider {
-    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='1.5'><circle cx='12' cy='12' r='3'/><path d='M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12'/></svg>") 12 12, pointer !important;
-}
-
+/* =========================================================================
+   BARRA LATERAL - MEJORADA PARA VISIBILIDAD
+   ========================================================================= */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #1a5276 0%, #154360 100%) !important;
     border-right: 4px solid #f1c40f !important;
 }
 
+/* Todos los textos de la barra lateral en BLANCO */
 [data-testid="stSidebar"] .stMarkdown, 
 [data-testid="stSidebar"] label, 
 [data-testid="stSidebar"] p, 
-[data-testid="stSidebar"] span {
-    color: #f0f4f8 !important;
-    font-weight: 400 !important;
-    line-height: 1.4 !important;
-}
-
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div,
 [data-testid="stSidebar"] h1, 
 [data-testid="stSidebar"] h2, 
-[data-testid="stSidebar"] h3 {
-    color: #f1c40f !important;
-    border-bottom: 1px solid #f1c40f80;
-    padding-bottom: 5px;
-    margin-top: 10px;
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] h4,
+[data-testid="stSidebar"] .stCaption,
+[data-testid="stSidebar"] .stNumberInput label,
+[data-testid="stSidebar"] .stSelectbox label,
+[data-testid="stSidebar"] .stSlider label,
+[data-testid="stSidebar"] .stCheckbox label,
+[data-testid="stSidebar"] .stToggle label {
+    color: #ffffff !important;
+    font-weight: 500 !important;
 }
 
-.streamlit-expanderHeader {
-    background-color: #e8f0f7 !important;
-    border-radius: 10px !important;
+/* Texto de ayuda (caption) en gris claro */
+[data-testid="stSidebar"] .stCaption {
+    color: #d4e6f1 !important;
+    font-size: 0.8rem !important;
+}
+
+/* Títulos de los expanders */
+[data-testid="stSidebar"] .streamlit-expanderHeader {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
     font-weight: 600 !important;
-    color: #1a5276 !important;
+    color: #f1c40f !important;
     border-left: 4px solid #f1c40f !important;
-    transition: all 0.2s ease !important;
 }
 
-.streamlit-expanderHeader:hover {
-    background-color: #d4e6f1 !important;
-    transform: translateX(3px);
+[data-testid="stSidebar"] .streamlit-expanderHeader:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
 }
 
-.streamlit-expanderContent {
-    background-color: #ffffff !important;
-    border-radius: 0 0 10px 10px !important;
-    border: 1px solid #e0e8f0 !important;
-    border-top: none !important;
+[data-testid="stSidebar"] .streamlit-expanderHeader svg {
+    fill: #f1c40f !important;
+}
+
+/* Contenido de los expanders - fondo oscuro para contraste */
+[data-testid="stSidebar"] .streamlit-expanderContent {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 0 0 8px 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     padding: 15px !important;
 }
 
+/* Inputs numéricos - texto oscuro para legibilidad */
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] .stNumberInput input {
+    color: #1a1a1a !important;
+    background-color: #ffffff !important;
+}
+
+/* =========================================================================
+   MÉTRICAS Y TARJETAS
+   ========================================================================= */
 div[data-testid="stMetric"] {
     background: linear-gradient(135deg, #ffffff 0%, #f5f9fc 100%) !important;
     border: none !important;
     border-left: 5px solid #1a5276 !important;
     border-radius: 12px !important;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
     padding: 15px !important;
 }
 
@@ -335,16 +354,18 @@ div[data-testid="stMetric"] label {
     color: #1a5276 !important;
     font-size: 0.85rem !important;
     font-weight: 700 !important;
-    letter-spacing: 0.5px;
     text-transform: uppercase !important;
 }
 
 div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
     color: #154360 !important;
-    font-size: 2.2rem !important;
+    font-size: 2rem !important;
     font-weight: 800 !important;
 }
 
+/* =========================================================================
+   BOTONES
+   ========================================================================= */
 .stButton > button[kind="primary"], 
 .stButton > button:first-child:not([kind="secondary"]) {
     background: linear-gradient(90deg, #1a5276, #2471a3) !important;
@@ -357,8 +378,7 @@ div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
     box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
 }
 
-.stButton > button[kind="primary"]:hover,
-.stButton > button:first-child:not([kind="secondary"]):hover {
+.stButton > button[kind="primary"]:hover {
     background: linear-gradient(90deg, #2471a3, #2e86c1) !important;
     transform: scale(1.02);
     box-shadow: 0 4px 12px rgba(26,82,118,0.4) !important;
@@ -369,19 +389,20 @@ div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
     color: white !important;
     border: none !important;
     border-radius: 25px !important;
-    transition: all 0.3s ease !important;
 }
 
 .stButton > button[kind="secondary"]:hover {
     background: linear-gradient(90deg, #943126, #a93226) !important;
     transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(148,49,38,0.4) !important;
 }
 
+/* =========================================================================
+   BARRA DE PROGRESO
+   ========================================================================= */
 .stProgress > div > div > div > div {
     background: linear-gradient(90deg, #1a5276, #3498db, #1a5276) !important;
     background-size: 200% 100% !important;
-    animation: gradientMove 1.5s ease infinite, pulso_azul 2s ease-in-out infinite !important;
+    animation: gradientMove 1.5s ease infinite;
     border-radius: 10px !important;
 }
 
@@ -390,12 +411,9 @@ div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
     100% { background-position: 200% 50%; }
 }
 
-@keyframes pulso_azul {
-    0% { opacity: 0.7; }
-    50% { opacity: 1; }
-    100% { opacity: 0.7; }
-}
-
+/* =========================================================================
+   SLIDERS
+   ========================================================================= */
 div[data-baseweb="slider"] > div > div > div {
     background-color: #f39c12 !important;
 }
@@ -405,6 +423,9 @@ div[role="slider"] {
     border: 2px solid white !important;
 }
 
+/* =========================================================================
+   ENCABEZADO
+   ========================================================================= */
 .header-container {
     background: linear-gradient(135deg, #0d3251 0%, #1a5276 50%, #1f618d 100%);
     background-size: 200% 200%;
@@ -421,15 +442,31 @@ div[role="slider"] {
     100% { background-position: 0% 50%; }
 }
 
-@media (max-width: 768px) {
-    .header-container h1 {
-        font-size: 1.2rem !important;
-    }
-    div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-        font-size: 1.5rem !important;
-    }
+/* =========================================================================
+   EXPANDERS GENERALES
+   ========================================================================= */
+.streamlit-expanderHeader {
+    background-color: #e8f0f7 !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    color: #1a5276 !important;
+    border-left: 4px solid #f1c40f !important;
 }
 
+.streamlit-expanderHeader:hover {
+    background-color: #d4e6f1 !important;
+}
+
+.streamlit-expanderContent {
+    background-color: #ffffff !important;
+    border-radius: 0 0 10px 10px !important;
+    border: 1px solid #e0e8f0 !important;
+    padding: 15px !important;
+}
+
+/* =========================================================================
+   MENSAJES DE ESTADO
+   ========================================================================= */
 div[data-testid="stInfo"] {
     background-color: #e8f4fd !important;
     border-left: 5px solid #1a5276 !important;
@@ -448,6 +485,9 @@ div[data-testid="stWarning"] {
     border-radius: 10px !important;
 }
 
+/* =========================================================================
+   INDICADOR DE FLUJO
+   ========================================================================= */
 .flow-indicator {
     font-size: 1.2rem;
     font-weight: bold;
@@ -459,6 +499,50 @@ div[data-testid="stWarning"] {
     0% { opacity: 0.6; }
     50% { opacity: 1; }
     100% { opacity: 0.6; }
+}
+
+/* =========================================================================
+   RESPONSIVE
+   ========================================================================= */
+@media (max-width: 768px) {
+    .header-container h1 {
+        font-size: 1.2rem !important;
+    }
+    div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* =========================================================================
+   MEJORAS ADICIONALES PARA VISIBILIDAD
+   ========================================================================= */
+/* Hacer que el texto de los selectbox sea más visible */
+[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
+    background-color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] span {
+    color: #1a1a1a !important;
+}
+
+/* Checkbox y toggle más visibles */
+[data-testid="stSidebar"] .stCheckbox label span,
+[data-testid="stSidebar"] .stToggle label span {
+    color: #ffffff !important;
+}
+
+/* Botones dentro de la barra lateral */
+[data-testid="stSidebar"] .stButton > button {
+    color: white !important;
+}
+
+/* Data editor */
+[data-testid="stSidebar"] .stDataEditor {
+    background-color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stDataEditor div {
+    color: #1a1a1a !important;
 }
 </style>
 """, unsafe_allow_html=True)
