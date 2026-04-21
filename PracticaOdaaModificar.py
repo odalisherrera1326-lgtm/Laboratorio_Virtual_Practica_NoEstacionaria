@@ -158,7 +158,7 @@ if 'ejecutando' not in st.session_state:
 
 
 # =============================================================================
-# ESTILOS CSS (ORIGINAL CONSERVADO)
+# ESTILOS CSS
 # =============================================================================
 st.markdown("""
 <style>
@@ -394,56 +394,48 @@ st.markdown(f"""
 col_teoria1, col_teoria2, col_teoria3 = st.columns(3)
 
 with col_teoria1:
-    with st.expander("📚 Fundamento teórico: Ecuaciones de Conservación y Descarga", expanded=False):
+    with st.expander("📚 Fundamento teórico: Ecuaciones de Conservación", expanded=False):
         st.markdown(r"""
-        La dinámica del sistema se describe mediante el **Balance Global de Masa** para un volumen de control con densidad constante ($\rho$):
+        La dinámica del sistema se describe mediante el **Balance Global de Masa**:
         
         $$ \frac{dV}{dt} = Q_{in} - Q_{out} \pm Q_{p} $$
-        
-        Considerando que el volumen es función del nivel ($V = \int A(h)dh$), aplicamos la regla de la cadena para obtener la ecuación general de vaciado/llenado válida para **cualquier área transversal $A(h)$**:
         
         $$ A(h) \frac{dh}{dt} = Q_{in} - Q_{out} \pm Q_{p} $$
         
         Donde:
-        * **$A(h)$**: Área de la sección transversal en función de la altura (m²).
-        * **$Q_{in}$**: Flujo de entrada controlado (m³/s).
-        * **$Q_{out}$**: Flujo de salida controlado (m³/s).
-        * **$Q_{p}$**: Flujo de perturbación o falla (m³/s).
+        * **$A(h)$**: Área transversal (m²)
+        * **$Q_{in}$**: Flujo de entrada (m³/s)
+        * **$Q_{out}$**: Flujo de salida (m³/s)
+        * **$Q_{p}$**: Flujo de perturbación (m³/s)
         """)
 
 with col_teoria2:
-    with st.expander("🎮 Teoría: Estrategia de control PID con Dos Válvulas", expanded=False):
+    with st.expander("🎮 Teoría: Control PID con Dos Válvulas", expanded=False):
         st.markdown(r"""
         El sistema utiliza un controlador **PID** que actúa sobre **DOS VÁLVULAS**:
         
-        $$ u(t) = K_p e(t) + K_i \int_{0}^{t} e(\tau) d\tau + K_d \frac{de(t)}{dt} $$
+        $$ u(t) = K_p e(t) + K_i \int e(t)dt + K_d \frac{de}{dt} $$
         
-        **Estrategia de control bidireccional:**
-        * **V-01 (Entrada):** Controla $Q_{in}$ (0 a $Q_{max}$)
-        * **V-02 (Salida):** Controla $Q_{out}$ (0 a $Q_{max}$)
+        **Estrategia bidireccional:**
+        * **V-01 (Entrada):** $Q_{in}$ (0 a $Q_{max}$)
+        * **V-02 (Salida):** $Q_{out}$ (0 a $Q_{max}$)
         
-        **Lógica de operación:**
-        * Si $h < SP$ ($u > 0$): Abrir V-01, cerrar V-02 → Sube nivel
-        * Si $h > SP$ ($u < 0$): Cerrar V-01, abrir V-02 → Baja nivel
-        
-        **Ventajas:**
-        * Control completo en ambos sentidos
-        * Rechazo activo de perturbaciones
-        * Sin zonas muertas de control
+        **Lógica:**
+        * $h < SP$ → Abrir V-01, cerrar V-02
+        * $h > SP$ → Cerrar V-01, abrir V-02
         """)
 
 with col_teoria3:
     with st.expander("📊 Criterios de Desempeño (IAE/ITAE)", expanded=False):
         st.markdown(r"""
-        Para evaluar la eficiencia del control, se utilizan métricas integrales del error $e(t) = SP - PV$:
+        Métricas integrales del error $e(t) = SP - PV$:
 
         1. **IAE (Integral del Error Absoluto):**
         $$IAE = \int_{0}^{t} |e(t)| dt$$
-        Mide el rendimiento acumulado.
 
-        2. **ITAE (Integral del Tiempo por el Error Absoluto):**
+        2. **ITAE (Integral del Tiempo por Error Absoluto):**
         $$ITAE = \int_{0}^{t} t \cdot |e(t)| dt$$
-        **Penaliza errores que duran mucho tiempo.**
+        Penaliza errores que duran mucho tiempo.
         """)
 
 
@@ -459,8 +451,6 @@ with st.expander("🔧 Diagrama del Proceso", expanded=estado_expander):
             st.image("Captura de pantalla 2026-03-29 163125.png", use_container_width=True)
         else:
             st.info("📍 Diagrama del sistema de control con dos válvulas")
-            st.markdown("""
-""")
 
 
 # =============================================================================
@@ -469,532 +459,449 @@ with st.expander("🔧 Diagrama del Proceso", expanded=estado_expander):
 st.sidebar.header("⚙️ Configuración del Sistema")
 
 with st.sidebar.container(border=True):
-geom_tanque = st.sidebar.selectbox("Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
+    geom_tanque = st.sidebar.selectbox("Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
 
 with st.sidebar.expander("📐 Especificaciones del Tanque", expanded=True):
-r_max = st.number_input("Radio de Diseño (R) [m]", value=1.0, min_value=0.1, step=0.1)
-h_sug = 3.0 if geom_tanque != "Esférico" else r_max * 2
-h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
-sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.2, float(h_total)-0.2, float(h_total/2))
+    r_max = st.number_input("Radio de Diseño (R) [m]", value=1.0, min_value=0.1, step=0.1)
+    h_sug = 3.0 if geom_tanque != "Esférico" else r_max * 2
+    h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
+    sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.2, float(h_total)-0.2, float(h_total/2))
 
 with st.sidebar.expander("🚰 Válvulas de Control", expanded=True):
-q_max = st.number_input("Flujo máximo por válvula [m³/s]", value=2.0, min_value=0.5, max_value=5.0, step=0.5)
+    q_max = st.number_input("Flujo máximo por válvula [m³/s]", value=2.0, min_value=0.5, max_value=5.0, step=0.5)
 
 with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=True):
-p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
-
-if p_activa:
-p_tipo = st.selectbox("Tipo de Perturbación", ["Entrada", "Salida (Fuga)"], 
-                  help="Entrada: flujo adicional que entra. Salida: fuga que sale.")
-p_tipo = "Entrada" if p_tipo == "Entrada" else "Salida"
-p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.5, min_value=0.1, max_value=3.0, step=0.1, format="%.2f")
-p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 100)
-else:
-p_magnitud = 0.0
-p_tiempo = 0
-p_tipo = "Entrada"
+    p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
+    
+    if p_activa:
+        p_tipo = st.selectbox("Tipo de Perturbación", ["Entrada", "Salida (Fuga)"])
+        p_tipo = "Entrada" if p_tipo == "Entrada" else "Salida"
+        p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.5, min_value=0.1, max_value=3.0, step=0.1, format="%.2f")
+        p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 100)
+    else:
+        p_magnitud = 0.0
+        p_tiempo = 0
+        p_tipo = "Entrada"
 
 # =============================================================================
 # DATOS EXPERIMENTALES Y CÁLCULO DE Cd
 # =============================================================================
 with st.sidebar.expander("📊 Cargar Datos Experimentales", expanded=False):
-st.write("Ingresa los datos medidos en el laboratorio:")
-st.caption("⚠️ Nota: El nivel debe ingresarse en **centímetros (cm)**")
-
-df_exp_default = pd.DataFrame({
-"Tiempo (s)": [0, 60, 120, 180, 240, 300],
-"Nivel Medido (cm)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-})
-
-datos_usr = st.data_editor(df_exp_default, num_rows="dynamic", key="datos_exp")
-mostrar_ref = st.checkbox("Mostrar referencia en gráfica", value=True)
-
-if st.button("🧮 Calcular Cd", use_container_width=True):
-if not isinstance(datos_usr, pd.DataFrame):
-datos_usr = pd.DataFrame(datos_usr)
-
-if "Nivel Medido (cm)" in datos_usr.columns and len(datos_usr) >= 2:
-df_calib = datos_usr.copy()
-df_calib["Nivel Medido (m)"] = df_calib["Nivel Medido (cm)"] / 100
-area_ori_temp = np.pi * ((0.0254) / 2)**2
-cd_calculado = calcular_cd_inteligente(
-    df_calib[["Tiempo (s)", "Nivel Medido (m)"]], 
-    r_max, h_total, geom_tanque, area_ori_temp
-)
-st.session_state['cd_calculado'] = cd_calculado
-st.success(f"✅ Cd calculado: {cd_calculado:.4f}")
-else:
-st.warning("⚠️ Ingresa al menos 2 datos para calcular Cd")
-st.session_state['cd_calculado'] = 0.61
+    st.write("Ingresa los datos medidos en el laboratorio:")
+    st.caption("⚠️ El nivel debe ingresarse en **centímetros (cm)**")
+    
+    df_exp_default = pd.DataFrame({
+        "Tiempo (s)": [0, 60, 120, 180, 240, 300],
+        "Nivel Medido (cm)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    })
+    
+    datos_usr = st.data_editor(df_exp_default, num_rows="dynamic", key="datos_exp")
+    mostrar_ref = st.checkbox("Mostrar referencia en gráfica", value=True)
+    
+    if st.button("🧮 Calcular Cd", use_container_width=True):
+        if not isinstance(datos_usr, pd.DataFrame):
+            datos_usr = pd.DataFrame(datos_usr)
+        
+        if "Nivel Medido (cm)" in datos_usr.columns and len(datos_usr) >= 2:
+            df_calib = datos_usr.copy()
+            df_calib["Nivel Medido (m)"] = df_calib["Nivel Medido (cm)"] / 100
+            area_ori_temp = np.pi * ((0.0254) / 2)**2
+            cd_calculado = calcular_cd_inteligente(
+                df_calib[["Tiempo (s)", "Nivel Medido (m)"]], 
+                r_max, h_total, geom_tanque, area_ori_temp
+            )
+            st.session_state['cd_calculado'] = cd_calculado
+            st.success(f"✅ Cd calculado: {cd_calculado:.4f}")
+        else:
+            st.warning("⚠️ Ingresa al menos 2 datos")
+            st.session_state['cd_calculado'] = 0.61
 
 with st.sidebar.expander("🎛️ Parámetros del Controlador PID", expanded=True):
-cd_actual = st.session_state.get('cd_calculado', 0.61)
-kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(geom_tanque, r_max, h_total, cd_actual, q_max)
-
-modo_auto = st.checkbox("🎯 Modo Robusto (Auto-sintonía optimizada)", value=True)
-
-st.markdown("---")
-st.subheader("🎛️ Configuración")
-
-if modo_auto:
-st.success(f"💡 PID optimizado (Cd={cd_actual:.3f})")
-st.caption(f"Kp={kp_sug} | Ki={ki_sug} | Kd={kd_sug}")
-kp_val = st.number_input("Kp (robusto)", value=kp_sug, key="kp_auto")
-ki_val = st.number_input("Ki (robusto)", value=ki_sug, format="%.3f", key="ki_auto")
-kd_val = st.number_input("Kd (robusto)", value=kd_sug, format="%.3f", key="kd_auto")
-st.caption("✅ Parámetros optimizados para rechazar perturbaciones")
-else:
-st.info("✍️ Modo Manual - Valores recomendados: Kp=10, Ki=2.0, Kd=0.5")
-kp_val = st.number_input("Kp", value=10.0, step=1.0, key="kp_man")
-ki_val = st.number_input("Ki", value=2.0, step=0.5, format="%.3f", key="ki_man")
-kd_val = st.number_input("Kd", value=0.5, step=0.1, format="%.3f", key="kd_man")
-
-tiempo_ensayo = st.slider("Tiempo de simulación [s]", 60, 600, 300)
+    cd_actual = st.session_state.get('cd_calculado', 0.61)
+    kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(geom_tanque, r_max, h_total, cd_actual, q_max)
+    
+    modo_auto = st.checkbox("🎯 Modo Robusto (Auto-sintonía)", value=True)
+    
+    st.markdown("---")
+    
+    if modo_auto:
+        st.success(f"💡 PID optimizado (Cd={cd_actual:.3f})")
+        kp_val = st.number_input("Kp", value=kp_sug, key="kp_auto")
+        ki_val = st.number_input("Ki", value=ki_sug, format="%.3f", key="ki_auto")
+        kd_val = st.number_input("Kd", value=kd_sug, format="%.3f", key="kd_auto")
+    else:
+        st.info("✍️ Modo Manual")
+        kp_val = st.number_input("Kp", value=10.0, step=1.0, key="kp_man")
+        ki_val = st.number_input("Ki", value=2.0, step=0.5, format="%.3f", key="ki_man")
+        kd_val = st.number_input("Kd", value=0.5, step=0.1, format="%.3f", key="kd_man")
+    
+    tiempo_ensayo = st.slider("Tiempo de simulación [s]", 60, 600, 300)
 
 
 # =============================================================================
-# BIBLIOTECA Y BOTONES
+# BOTONES
 # =============================================================================
-st.sidebar.markdown("---")
-st.sidebar.subheader("📚 Biblioteca Técnica")
-
-with st.sidebar.container(border=True):
-nombre_pdf = "Guia_Practica_UCV.pdf"
-if os.path.exists(nombre_pdf):
-with open(nombre_pdf, "rb") as f:
-st.sidebar.download_button(
-    label="📥 Descargar Guía (PDF)",
-    data=f,
-    file_name="Guia_Practica_EIQ_UCV.pdf",
-    mime="application/pdf",
-    use_container_width=True
-)
-else:
-st.sidebar.warning("⚠️ Guía no encontrada")
-
 st.sidebar.markdown("---")
 col_btn1, col_btn2 = st.sidebar.columns(2)
 with col_btn1:
-iniciar_sim = st.button("▶️ Iniciar Simulación Robusta", use_container_width=True, type="primary")
+    iniciar_sim = st.button("▶️ Iniciar Simulación", use_container_width=True, type="primary")
 with col_btn2:
-btn_reset = st.button("🔄 Reset", use_container_width=True, type="secondary")
+    btn_reset = st.button("🔄 Reset", use_container_width=True, type="secondary")
 
 if btn_reset:
-st.session_state.ejecutando = False
-st.session_state['cd_calculado'] = 0.61
-st.rerun()
+    st.session_state.ejecutando = False
+    st.session_state['cd_calculado'] = 0.61
+    st.rerun()
 
 
 # =============================================================================
 # INICIALIZACIÓN DE SIMULACIÓN
 # =============================================================================
 if iniciar_sim:
-st.session_state.ejecutando = True
+    st.session_state.ejecutando = True
+    st.session_state['error_acumulado'] = 0.0
+    st.session_state['ultimo_error'] = 0.0
+    
+    try:
+        if not isinstance(datos_usr, pd.DataFrame):
+            datos_usr = pd.DataFrame(datos_usr)
+        
+        cd_para_usar = st.session_state.get('cd_calculado', 0.61)
+        
+        if modo_auto:
+            kp_a, ki_a, kd_a = sintonizar_controlador_robusto(
+                geom_tanque, r_max, h_total, cd_para_usar, q_max
+            )
+            st.session_state['kp_ejecucion'] = kp_a
+            st.session_state['ki_ejecucion'] = ki_a
+            st.session_state['kd_ejecucion'] = kd_a
+            st.session_state['cd_final'] = cd_para_usar
+            st.toast(f"🎯 Control Robusto: Cd={cd_para_usar:.2f} | Kp={kp_a} | Ki={ki_a} | Kd={kd_a}")
+        else:
+            st.session_state['kp_ejecucion'] = kp_val
+            st.session_state['ki_ejecucion'] = ki_val
+            st.session_state['kd_ejecucion'] = kd_val
+            st.session_state['cd_final'] = cd_para_usar
+            st.info(f"✍️ Modo Manual: Kp={kp_val}, Ki={ki_val}, Kd={kd_val}")
 
-st.session_state['error_acumulado'] = 0.0
-st.session_state['ultimo_error'] = 0.0
-
-try:
-if not isinstance(datos_usr, pd.DataFrame):
-datos_usr = pd.DataFrame(datos_usr)
-
-cd_para_usar = st.session_state.get('cd_calculado', 0.61)
-
-if modo_auto:
-kp_a, ki_a, kd_a = sintonizar_controlador_robusto(
-    geom_tanque, r_max, h_total, cd_para_usar, q_max
-)
-st.session_state['kp_ejecucion'] = kp_a
-st.session_state['ki_ejecucion'] = ki_a
-st.session_state['kd_ejecucion'] = kd_a
-st.session_state['cd_final'] = cd_para_usar
-st.toast(f"🎯 Control Robusto Activado: Cd={cd_para_usar:.2f} | Kp={kp_a} | Ki={ki_a} | Kd={kd_a}")
-else:
-st.session_state['kp_ejecucion'] = kp_val
-st.session_state['ki_ejecucion'] = ki_val
-st.session_state['kd_ejecucion'] = kd_val
-st.session_state['cd_final'] = cd_para_usar
-st.info(f"✍️ Modo Manual: Kp={kp_val}, Ki={ki_val}, Kd={kd_val}")
-
-except Exception as e:
-st.session_state['kp_ejecucion'] = 12.0
-st.session_state['ki_ejecucion'] = 2.5
-st.session_state['kd_ejecucion'] = 0.8
-st.session_state['cd_final'] = 0.61
-st.warning(f"⚠️ Usando configuración robusta de emergencia")
+    except Exception as e:
+        st.session_state['kp_ejecucion'] = 12.0
+        st.session_state['ki_ejecucion'] = 2.5
+        st.session_state['kd_ejecucion'] = 0.8
+        st.session_state['cd_final'] = 0.61
 
 
 # =============================================================================
 # SIMULACIÓN PRINCIPAL
 # =============================================================================
 if not st.session_state.ejecutando:
-st.info("💡 Ajuste los parámetros en la barra lateral y presione 'Iniciar Simulación Robusta' para comenzar.")
+    st.info("💡 Configure los parámetros y presione 'Iniciar Simulación'")
 else:
-col_graf, col_met = st.columns([2, 1])
+    col_graf, col_met = st.columns([2, 1])
 
-with col_graf:
-st.subheader("🎮 Monitor del Proceso - Control PID con Dos Válvulas")
-placeholder_tanque = st.empty()
-st.subheader("📈 Tendencia Temporal")
-placeholder_grafico = st.empty()
-st.subheader("🔧 Acción de las Válvulas de Control")
-placeholder_valvulas = st.empty()
-st.markdown("---")
-st.subheader("📊 Comparativa: Modelo Teórico vs Datos Experimentales")
-placeholder_comparativa = st.empty()
+    with col_graf:
+        st.subheader("🎮 Monitor del Proceso - Control PID con Dos Válvulas")
+        placeholder_tanque = st.empty()
+        st.subheader("📈 Tendencia Temporal")
+        placeholder_grafico = st.empty()
+        st.subheader("🔧 Acción de las Válvulas")
+        placeholder_valvulas = st.empty()
+        st.markdown("---")
+        st.subheader("📊 Comparativa: Simulación vs Datos Experimentales")
+        placeholder_comparativa = st.empty()
 
-with col_met:
-st.subheader("📊 Métricas de Control Robusto")
+    with col_met:
+        st.subheader("📊 Métricas de Control")
+        
+        kp_show = st.session_state.get('kp_ejecucion', 12.0)
+        ki_show = st.session_state.get('ki_ejecucion', 2.5)
+        cd_show = st.session_state.get('cd_final', 0.61)
+        
+        st.write(f"**Parámetros Activos:**")
+        st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Kd: {st.session_state.get('kd_ejecucion', 0.8)}")
+        st.caption(f"Cd: {cd_show:.3f} | Qmax: {q_max} m³/s")
+        st.markdown("---")
+        
+        placeholder_iae = st.empty()
+        placeholder_itae = st.empty()
+        placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
+        placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
+        
+        st.markdown("---")
+        m_h = st.empty()
+        m_e = st.empty()
+        m_qin = st.empty()
+        m_qout = st.empty()
+        m_h.metric("Nivel PV [m]", "0.000")
+        m_e.metric("Error [m]", "0.000")
+        m_qin.metric("Flujo Entrada [m³/s]", "0.000")
+        m_qout.metric("Flujo Salida [m³/s]", "0.000")
 
-kp_show = st.session_state.get('kp_ejecucion', 12.0)
-ki_show = st.session_state.get('ki_ejecucion', 2.5)
-cd_show = st.session_state.get('cd_final', 0.61)
+    # Preparación
+    status_placeholder = st.empty()
+    dt = 1.0
+    vector_t = np.arange(0, tiempo_ensayo, dt)
+    h_log, qin_log, qout_log, e_log = [], [], [], []
 
-st.write(f"**Parámetros Activos (Robustos):**")
-st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Kd: {st.session_state.get('kd_ejecucion', 0.8)}")
-st.caption(f"Cd: {cd_show:.3f} | Qmax: {q_max} m³/s | {p_tipo}")
-st.markdown("---")
-
-placeholder_iae = st.empty()
-placeholder_itae = st.empty()
-
-placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
-placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
-
-st.markdown("---")
-
-m_h = st.empty()
-m_e = st.empty()
-m_qin = st.empty()
-m_qout = st.empty()
-m_h.metric("Nivel PV [m]", "0.000")
-m_e.metric("Error [m]", "0.000")
-m_qin.metric("Flujo Entrada [m³/s]", "0.000")
-m_qout.metric("Flujo Salida [m³/s]", "0.000")
-
-st.markdown("---")
-st.caption("💡 El controlador regula el nivel usando ambas válvulas")
-
-# Preparación
-status_placeholder = st.empty()
-dt = 1.0
-vector_t = np.arange(0, tiempo_ensayo, dt)
-h_log, qin_log, qout_log, e_log = [], [], [], []
-
-h_corrida = 0.5  # Nivel inicial
-
-valor_presente = h_corrida
-error_presente = 0.0
-err_int, err_pasado = 0.0, 0.0
-iae_acumulado, itae_acumulado = 0.0, 0.0
-
-if not isinstance(datos_usr, pd.DataFrame):
-datos_usr = pd.DataFrame(datos_usr)
-
-if "Nivel Medido (cm)" in datos_usr.columns and len(datos_usr) > 0:
-t_exp = datos_usr["Tiempo (s)"].values
-h_exp = [val / 100 for val in datos_usr["Nivel Medido (cm)"].values]
-tiene_datos_exp = True
-else:
-t_exp = []
-h_exp = []
-tiene_datos_exp = False
-
-barra_p = st.progress(0)
-cd_para_simular = st.session_state.get('cd_final', 0.61)
-
-k_p = st.session_state.get('kp_ejecucion', 12.0)
-k_i = st.session_state.get('ki_ejecucion', 2.5)
-k_d = st.session_state.get('kd_ejecucion', 0.8)
-
-# Bucle de simulación
-for i, t_act in enumerate(vector_t):
-status_placeholder.markdown("<div class='flow-indicator'>💧 CONTROL PID ACTIVO - PROCESANDO...</div>", unsafe_allow_html=True)
-
-if p_activa and t_act >= p_tiempo:
-q_p_inst = p_magnitud
-else:
-q_p_inst = 0.0
-
-h_corrida, q_entrada, q_salida, e_inst, err_int, err_pasado = resolver_sistema_dos_valvulas(
-dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, p_tipo,
-err_int, err_pasado, k_p, k_i, k_d, q_max
-)
-
-valor_presente = h_corrida
-error_presente = e_inst
-iae_acumulado += abs(e_inst) * dt
-itae_acumulado += (t_act * abs(e_inst)) * dt
-
-h_log.append(h_corrida)
-qin_log.append(q_entrada)
-qout_log.append(q_salida)
-e_log.append(e_inst)
-
-m_h.metric("Nivel PV [m]", f"{valor_presente:.3f}")
-m_e.metric("Error [m]", f"{error_presente:.4f}")
-m_qin.metric("Flujo Entrada [m³/s]", f"{q_entrada:.3f}")
-m_qout.metric("Flujo Salida [m³/s]", f"{q_salida:.3f}")
-placeholder_iae.metric("IAE (Error Acumulado)", f"{iae_acumulado:.2f}")
-placeholder_itae.metric("ITAE (Criterio Tesis)", f"{itae_acumulado:.2f}")
-
-# Visualización del tanque (estética original conservada)
-fig_t, ax_t = plt.subplots(figsize=(7, 5))
-ax_t.set_axis_off()
-ax_t.set_xlim(-r_max*3, r_max*3)
-ax_t.set_ylim(-0.8, h_total*1.3)
-
-if abs(e_inst) < 0.05:
-color_agua = '#27ae60'
-elif abs(e_inst) < 0.15:
-color_agua = '#f39c12'
-else:
-color_agua = '#e74c3c'
-
-if geom_tanque == "Cilíndrico":
-c_in_x, c_in_y = -r_max, h_total*0.8
-c_out_x, c_out_y = r_max, 0.1
-ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=5, zorder=2)
-ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5))
-if valor_presente > 0 and valor_presente < h_total:
-    ax_t.axhline(y=valor_presente, color='white', linestyle='-', linewidth=2, alpha=0.8, zorder=3)
-if q_entrada > 0:
-    ax_t.annotate('', xy=(-r_max-1.5, valor_presente*0.7), xytext=(-r_max-0.3, valor_presente*0.7),
-                arrowprops=dict(arrowstyle='->', lw=3, color='blue'))
-if q_salida > 0:
-    ax_t.annotate('', xy=(r_max+1.5, 0.3), xytext=(r_max+0.3, 0.3),
-                arrowprops=dict(arrowstyle='->', lw=3, color='red'))
-
-elif geom_tanque == "Cónico":
-c_in_x, c_in_y = -(r_max/h_total)*(h_total*0.8), h_total*0.8
-c_out_x, c_out_y = 0, 0
-ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=5, zorder=2)
-if valor_presente > 0:
-    radio_superficie = (r_max / h_total) * valor_presente
-    vertices = [[-radio_superficie, valor_presente], [radio_superficie, valor_presente], [0, 0]]
-    ax_t.add_patch(plt.Polygon(vertices, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5))
-    ax_t.plot([-radio_superficie, radio_superficie], [valor_presente, valor_presente], color='white', linewidth=2, alpha=0.8, zorder=3)
-
-else:  # Esférico
-import math
-c_in_y = h_total * 0.7
-c_in_x = -math.sqrt(abs(r_max**2 - (c_in_y - r_max)**2))
-c_out_x, c_out_y = 0, 0
-agua_esf = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.85, zorder=1, edgecolor='#2980b9', linewidth=1.5)
-ax_t.add_patch(agua_esf)
-recorte_nivel = plt.Rectangle((-r_max, 0), 2*r_max, valor_presente, transform=ax_t.transData)
-agua_esf.set_clip_path(recorte_nivel)
-ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=5, zorder=2))
-if valor_presente > 0 and valor_presente < 2*r_max:
-    radio_nivel = math.sqrt(r_max**2 - (valor_presente - r_max)**2)
-    ax_t.plot([-radio_nivel, radio_nivel], [valor_presente, valor_presente], color='white', linewidth=2, alpha=0.8, zorder=3)
-
-# Tuberías y válvulas (estética original)
-ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
-ax_t.add_patch(plt.Polygon([[c_in_x-1, c_in_y+0.2], [c_in_x-1, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
-ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
-ax_t.text(c_in_x-0.6, c_in_y+0.4, "V-01", ha='center', fontsize=9, fontweight='bold', color='blue')
-
-if geom_tanque == "Cilíndrico":
-ax_t.add_patch(plt.Rectangle((c_out_x, c_out_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
-vs_x, vs_y = c_out_x + 0.8, c_out_y
-else:
-ax_t.add_patch(plt.Rectangle((c_out_x - 0.1, -0.6), 0.2, 0.6, color='silver', zorder=0))
-vs_x, vs_y = c_out_x, -0.4
-
-ax_t.add_patch(plt.Polygon([[vs_x-0.25, vs_y+0.2], [vs_x-0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
-ax_t.add_patch(plt.Polygon([[vs_x+0.25, vs_y+0.2], [vs_x+0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
-offset_t = 0.4 if geom_tanque == "Cilíndrico" else 0
-ax_t.text(vs_x + offset_t, vs_y - 0.5, "V-02", ha='center', fontsize=9, fontweight='bold', color='red')
-
-ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3, alpha=0.8)
-ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SETPOINT: {sp_nivel:.2f}m", color='red', fontweight='bold', fontsize=9)
-ax_t.text(0, h_total * 1.2, f"PV: {valor_presente:.3f} m", 
-     ha='center', va='center', fontsize=11, fontweight='bold',
-     bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round,pad=0.5', lw=2))
-
-if p_activa and t_act >= p_tiempo:
-ax_t.text(0, -0.5, f"⚠️ PERTURBACIÓN ACTIVA ({p_tipo})", ha='center', color='orange', fontweight='bold', fontsize=10,
-         bbox=dict(facecolor='white', alpha=0.8, edgecolor='orange', boxstyle='round'))
-
-placeholder_tanque.pyplot(fig_t)
-plt.close(fig_t)
-
-# Gráfico de tendencia
-fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel (h) - Control PID')
-ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
-if p_activa and p_tiempo > 0 and t_act >= p_tiempo:
-ax_tr.axvspan(p_tiempo, tiempo_ensayo, alpha=0.1, color='orange', label='Zona con Perturbación')
-ax_tr.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
-ax_tr.set_ylabel('Altura [m]', fontsize=10, fontweight='bold')
-ax_tr.legend(loc='upper right', fontsize='x-small')
-ax_tr.set_xlim(0, tiempo_ensayo)
-ax_tr.set_ylim(0, h_total * 1.1)
-ax_tr.grid(True, alpha=0.2)
-placeholder_grafico.pyplot(fig_tr)
-plt.close(fig_tr)
-
-# Gráfico de válvulas
-fig_v, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 3))
-ax1.step(vector_t[:i+1], qin_log, where='post', color='blue', lw=2)
-ax1.set_ylabel('Q entrada [m³/s]', fontsize=9)
-ax1.set_ylim(0, q_max * 1.1)
-ax1.grid(True, alpha=0.2)
-ax1.set_title('Válvula de Entrada (V-01)', fontsize=10, fontweight='bold')
-
-ax2.step(vector_t[:i+1], qout_log, where='post', color='red', lw=2)
-ax2.set_ylabel('Q salida [m³/s]', fontsize=9)
-ax2.set_xlabel('Tiempo [s]', fontsize=10, fontweight='bold')
-ax2.set_ylim(0, q_max * 1.1)
-ax2.grid(True, alpha=0.2)
-ax2.set_title('Válvula de Salida (V-02)', fontsize=10, fontweight='bold')
-
-plt.tight_layout()
-placeholder_valvulas.pyplot(fig_v)
-plt.close(fig_v)
-
-# Gráfico comparativo
-fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
-ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación Robusta')
-if mostrar_ref and tiene_datos_exp and len(t_exp) > 0:
-ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos Experimentales')
-ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
-ax_comp.set_title("Validación de Resultados - Control PID con Dos Válvulas", fontsize=10, fontweight='bold')
-ax_comp.set_xlabel("Tiempo [s]")
-ax_comp.set_ylabel("Nivel [m]")
-ax_comp.set_ylim(0, h_total * 1.1)
-ax_comp.grid(True, alpha=0.3)
-ax_comp.legend(loc='lower right')
-placeholder_comparativa.pyplot(fig_comp)
-plt.close(fig_comp)
-
-time.sleep(0.02)
-barra_p.progress((i+1)/len(vector_t))
-
-status_placeholder.empty()
-st.success(f"✅ Simulación Robusta completada - El controlador mantuvo el nivel ante las perturbaciones")
-st.balloons()
-
-# Análisis final
-st.markdown("---")
-st.subheader("📈 Análisis de Respuesta - Control PID con Dos Válvulas")
-
-col_an1, col_an2 = st.columns([2, 1])
-
-with col_an1:
-fig_amp, ax_amp = plt.subplots(figsize=(10, 5))
-ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta del Sistema (PV)')
-ax_amp.axhline(y=sp_nivel, color='#d62728', linestyle='--', lw=2, label='Referencia (SP)')
-if p_activa and p_tiempo > 0:
-ax_amp.axvline(x=p_tiempo, color='orange', linestyle='--', alpha=0.7, label='Inicio Perturbación')
-ax_amp.axvspan(p_tiempo, tiempo_ensayo, alpha=0.08, color='orange', label='Zona con Perturbación Activa')
-ax_amp.set_title("Respuesta Transitoria del Lazo de Control", fontsize=12)
-ax_amp.set_xlabel("Tiempo (s)")
-ax_amp.set_ylabel("Amplitud (m)")
-ax_amp.grid(True, which='both', linestyle='--', alpha=0.5)
-ax_amp.legend(loc='lower right')
-
-if len(h_log) > 0:
-error_f_val = abs(h_log[-1] - sp_nivel)
-if error_f_val < 0.05:
-    ax_amp.axhspan(sp_nivel-0.05, sp_nivel+0.05, color='green', alpha=0.1, label='Banda de Estabilidad (±5%)')
-
-st.pyplot(fig_amp)
-plt.close(fig_amp)
-
-with col_an2:
-st.info("**Interpretación del Control:**")
-sobrepico = ((max(h_log) - sp_nivel) / sp_nivel) * 100 if max(h_log) > sp_nivel else 0
-st.metric("Sobrepico Máximo", f"{sobrepico:.2f} %")
-st.metric("IAE Final", f"{iae_acumulado:.2f}")
-st.metric("ITAE Final", f"{itae_acumulado:.2f}")
-
-if p_activa and p_tiempo > 0:
-idx_pert = int(p_tiempo / dt) if p_tiempo < len(h_log) else 0
-if idx_pert < len(h_log) - 10:
-    error_post_pert = max([abs(h_log[j] - sp_nivel) for j in range(idx_pert, min(idx_pert+50, len(h_log)))])
-    st.metric("Máximo Error tras Perturbación", f"{error_post_pert:.4f} m")
-    if error_post_pert < 0.05:
-        st.success("✅ Excelente rechazo a perturbaciones")
-    elif error_post_pert < 0.1:
-        st.info("👍 Buen rechazo a perturbaciones")
+    h_corrida = 0.5
+    err_int, err_pasado = 0.0, 0.0
+    iae_acumulado, itae_acumulado = 0.0, 0.0
+    
+    if not isinstance(datos_usr, pd.DataFrame):
+        datos_usr = pd.DataFrame(datos_usr)
+    
+    if "Nivel Medido (cm)" in datos_usr.columns and len(datos_usr) > 0:
+        t_exp = datos_usr["Tiempo (s)"].values
+        h_exp = [val / 100 for val in datos_usr["Nivel Medido (cm)"].values]
+        tiene_datos_exp = True
     else:
-        st.warning("⚠️ El rechazo puede mejorar ajustando Ki")
+        t_exp = []
+        h_exp = []
+        tiene_datos_exp = False
+    
+    barra_p = st.progress(0)
+    cd_para_simular = st.session_state.get('cd_final', 0.61)
+    
+    k_p = st.session_state.get('kp_ejecucion', 12.0)
+    k_i = st.session_state.get('ki_ejecucion', 2.5)
+    k_d = st.session_state.get('kd_ejecucion', 0.8)
+    
+    # Bucle de simulación
+    for i, t_act in enumerate(vector_t):
+        status_placeholder.markdown("<div class='flow-indicator'>💧 CONTROL PID ACTIVO</div>", unsafe_allow_html=True)
+        
+        if p_activa and t_act >= p_tiempo:
+            q_p_inst = p_magnitud
+        else:
+            q_p_inst = 0.0
+        
+        h_corrida, q_entrada, q_salida, e_inst, err_int, err_pasado = resolver_sistema_dos_valvulas(
+            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, p_tipo,
+            err_int, err_pasado, k_p, k_i, k_d, q_max
+        )
+        
+        iae_acumulado += abs(e_inst) * dt
+        itae_acumulado += (t_act * abs(e_inst)) * dt
+        
+        h_log.append(h_corrida)
+        qin_log.append(q_entrada)
+        qout_log.append(q_salida)
+        e_log.append(e_inst)
+        
+        m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
+        m_e.metric("Error [m]", f"{e_inst:.4f}")
+        m_qin.metric("Flujo Entrada [m³/s]", f"{q_entrada:.3f}")
+        m_qout.metric("Flujo Salida [m³/s]", f"{q_salida:.3f}")
+        placeholder_iae.metric("IAE", f"{iae_acumulado:.2f}")
+        placeholder_itae.metric("ITAE", f"{itae_acumulado:.2f}")
+        
+        # Visualización del tanque
+        fig_t, ax_t = plt.subplots(figsize=(7, 5))
+        ax_t.set_axis_off()
+        ax_t.set_xlim(-r_max*3, r_max*3)
+        ax_t.set_ylim(-0.8, h_total*1.3)
+        
+        if abs(e_inst) < 0.05:
+            color_agua = '#27ae60'
+        elif abs(e_inst) < 0.15:
+            color_agua = '#f39c12'
+        else:
+            color_agua = '#e74c3c'
+        
+        if geom_tanque == "Cilíndrico":
+            c_in_x, c_in_y = -r_max, h_total*0.8
+            c_out_x, c_out_y = r_max, 0.1
+            ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=5, zorder=2)
+            ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, color=color_agua, alpha=0.85, zorder=1))
+            if q_entrada > 0:
+                ax_t.annotate('', xy=(-r_max-1.5, h_corrida*0.7), xytext=(-r_max-0.3, h_corrida*0.7),
+                            arrowprops=dict(arrowstyle='->', lw=3, color='blue'))
+            if q_salida > 0:
+                ax_t.annotate('', xy=(r_max+1.5, 0.3), xytext=(r_max+0.3, 0.3),
+                            arrowprops=dict(arrowstyle='->', lw=3, color='red'))
+            
+        elif geom_tanque == "Cónico":
+            c_in_x, c_in_y = -(r_max/h_total)*(h_total*0.8), h_total*0.8
+            c_out_x, c_out_y = 0, 0
+            ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=5, zorder=2)
+            if h_corrida > 0:
+                radio_h = (r_max / h_total) * h_corrida
+                vertices = [[-radio_h, h_corrida], [radio_h, h_corrida], [0, 0]]
+                ax_t.add_patch(plt.Polygon(vertices, color=color_agua, alpha=0.85, zorder=1))
+            
+        else:
+            import math
+            c_in_y = h_total * 0.7
+            c_in_x = -math.sqrt(abs(r_max**2 - (c_in_y - r_max)**2))
+            c_out_x, c_out_y = 0, 0
+            agua = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.85, zorder=1)
+            ax_t.add_patch(agua)
+            recorte = plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, transform=ax_t.transData)
+            agua.set_clip_path(recorte)
+            ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=5, zorder=2))
+        
+        # Tuberías y válvulas
+        ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
+        ax_t.add_patch(plt.Polygon([[c_in_x-1, c_in_y+0.2], [c_in_x-1, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
+        ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
+        ax_t.text(c_in_x-0.6, c_in_y+0.4, "V-01", ha='center', fontsize=9, fontweight='bold', color='blue')
+        
+        if geom_tanque == "Cilíndrico":
+            ax_t.add_patch(plt.Rectangle((c_out_x, c_out_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
+            vs_x, vs_y = c_out_x + 0.8, c_out_y
+        else:
+            ax_t.add_patch(plt.Rectangle((c_out_x - 0.1, -0.6), 0.2, 0.6, color='silver', zorder=0))
+            vs_x, vs_y = c_out_x, -0.4
+        
+        ax_t.add_patch(plt.Polygon([[vs_x-0.25, vs_y+0.2], [vs_x-0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
+        ax_t.add_patch(plt.Polygon([[vs_x+0.25, vs_y+0.2], [vs_x+0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
+        offset_t = 0.4 if geom_tanque == "Cilíndrico" else 0
+        ax_t.text(vs_x + offset_t, vs_y - 0.5, "V-02", ha='center', fontsize=9, fontweight='bold', color='red')
+        
+        ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3, alpha=0.8)
+        ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SP: {sp_nivel:.2f}m", color='red', fontweight='bold')
+        ax_t.text(0, h_total * 1.2, f"PV: {h_corrida:.3f} m", ha='center', fontweight='bold',
+                 bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round'))
+        
+        if p_activa and t_act >= p_tiempo:
+            ax_t.text(0, -0.5, f"⚠️ PERTURBACIÓN ACTIVA", ha='center', color='orange', fontweight='bold')
+        
+        placeholder_tanque.pyplot(fig_t)
+        plt.close(fig_t)
+        
+        # Gráfico de tendencia
+        fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
+        ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel')
+        ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
+        if p_activa and t_act >= p_tiempo:
+            ax_tr.axvspan(p_tiempo, tiempo_ensayo, alpha=0.1, color='orange', label='Perturbación')
+        ax_tr.set_xlabel('Tiempo [s]')
+        ax_tr.set_ylabel('Altura [m]')
+        ax_tr.legend()
+        ax_tr.set_xlim(0, tiempo_ensayo)
+        ax_tr.set_ylim(0, h_total * 1.1)
+        ax_tr.grid(True, alpha=0.2)
+        placeholder_grafico.pyplot(fig_tr)
+        plt.close(fig_tr)
+        
+        # Gráfico de válvulas
+        fig_v, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 3))
+        ax1.step(vector_t[:i+1], qin_log, where='post', color='blue', lw=2)
+        ax1.set_ylabel('Q entrada [m³/s]')
+        ax1.set_ylim(0, q_max * 1.1)
+        ax1.grid(True, alpha=0.2)
+        ax1.set_title('V-01 (Entrada)')
+        
+        ax2.step(vector_t[:i+1], qout_log, where='post', color='red', lw=2)
+        ax2.set_ylabel('Q salida [m³/s]')
+        ax2.set_xlabel('Tiempo [s]')
+        ax2.set_ylim(0, q_max * 1.1)
+        ax2.grid(True, alpha=0.2)
+        ax2.set_title('V-02 (Salida)')
+        
+        plt.tight_layout()
+        placeholder_valvulas.pyplot(fig_v)
+        plt.close(fig_v)
+        
+        # Gráfico comparativo
+        fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
+        ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación')
+        if mostrar_ref and tiene_datos_exp and len(t_exp) > 0:
+            ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Experimental')
+        ax_comp.set_title("Validación de Resultados")
+        ax_comp.set_xlabel("Tiempo [s]")
+        ax_comp.set_ylabel("Nivel [m]")
+        ax_comp.set_ylim(0, h_total * 1.1)
+        ax_comp.grid(True, alpha=0.3)
+        ax_comp.legend()
+        placeholder_comparativa.pyplot(fig_comp)
+        plt.close(fig_comp)
+        
+        time.sleep(0.02)
+        barra_p.progress((i+1)/len(vector_t))
+    
+    status_placeholder.empty()
+    st.success("✅ Simulación completada")
+    st.balloons()
+    
+    # Análisis final
+    st.markdown("---")
+    st.subheader("📈 Análisis de Respuesta")
+    
+    col_an1, col_an2 = st.columns([2, 1])
+    
+    with col_an1:
+        fig_amp, ax_amp = plt.subplots(figsize=(10, 5))
+        ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta')
+        ax_amp.axhline(y=sp_nivel, color='#d62728', linestyle='--', lw=2, label='Setpoint')
+        if p_activa and p_tiempo > 0:
+            ax_amp.axvline(x=p_tiempo, color='orange', linestyle='--', alpha=0.7)
+            ax_amp.axvspan(p_tiempo, tiempo_ensayo, alpha=0.08, color='orange')
+        ax_amp.set_title("Respuesta del Control PID")
+        ax_amp.set_xlabel("Tiempo [s]")
+        ax_amp.set_ylabel("Nivel [m]")
+        ax_amp.grid(True, alpha=0.3)
+        ax_amp.legend()
+        st.pyplot(fig_amp)
+        plt.close(fig_amp)
+    
+    with col_an2:
+        sobrepico = ((max(h_log) - sp_nivel) / sp_nivel) * 100 if max(h_log) > sp_nivel else 0
+        st.metric("Sobrepico Máximo", f"{sobrepico:.2f} %")
+        st.metric("IAE Final", f"{iae_acumulado:.2f}")
+        st.metric("ITAE Final", f"{itae_acumulado:.2f}")
+        
+        err_final = abs(h_log[-1] - sp_nivel) if h_log else 0
+        st.metric("Error Final", f"{err_final:.4f} m")
+        
+        if err_final < 0.02:
+            st.success("✅ Excelente control")
+        elif err_final < 0.05:
+            st.info("👍 Buen control")
+        else:
+            st.warning("⚠️ Ajustar PID")
+    
+    # Tabla de resumen
+    st.markdown("---")
+    st.subheader("📋 Resumen de Datos")
+    
+    col_tab, col_res = st.columns([2, 1])
+    
+    with col_tab:
+        df_resumen = pd.DataFrame({
+            "Tiempo [s]": vector_t[-10:] if len(vector_t) >= 10 else vector_t,
+            "Nivel [m]": h_log[-10:] if len(h_log) >= 10 else h_log,
+            "Q_entrada": qin_log[-10:] if len(qin_log) >= 10 else qin_log,
+            "Q_salida": qout_log[-10:] if len(qout_log) >= 10 else qout_log,
+            "Error [m]": e_log[-10:] if len(e_log) >= 10 else e_log
+        })
+        st.dataframe(df_resumen.style.format("{:.4f}"), use_container_width=True)
+    
+    with col_res:
+        err_f = abs(sp_nivel - h_log[-1]) if len(h_log) > 0 else 0
+        st.metric("Error Residual", f"{err_f:.4f} m")
+    
+    # Exportar
+    df_final = pd.DataFrame({
+        "Tiempo [s]": vector_t,
+        "Nivel [m]": h_log,
+        "Q_entrada [m3/s]": qin_log,
+        "Q_salida [m3/s]": qout_log,
+        "Error [m]": e_log
+    })
+    
+    st.download_button(
+        label="📥 Descargar Datos (CSV)",
+        data=df_final.to_csv(index=False),
+        file_name=f"simulacion_{geom_tanque.lower()}.csv",
+        mime="text/csv"
+    )
 
-# Tabla de resumen
-st.markdown("---")
-st.subheader("📋 Resumen de Datos y Estabilidad del Control")
-
-col_tab, col_res = st.columns([2, 1])
-
-with col_tab:
-df_resumen = pd.DataFrame({
-"Tiempo [s]": vector_t[-10:] if len(vector_t) >= 10 else vector_t,
-"Nivel [m]": h_log[-10:] if len(h_log) >= 10 else h_log,
-"Q_entrada [m³/s]": qin_log[-10:] if len(qin_log) >= 10 else qin_log,
-"Q_salida [m³/s]": qout_log[-10:] if len(qout_log) >= 10 else qout_log,
-"Error [m]": e_log[-10:] if len(e_log) >= 10 else e_log
-})
-
-st.dataframe(df_resumen.style.format({
-"Tiempo [s]": "{:.0f}",
-"Nivel [m]": "{:.4f}",
-"Q_entrada [m³/s]": "{:.4f}",
-"Q_salida [m³/s]": "{:.4f}",
-"Error [m]": "{:.4f}"
-}), use_container_width=True)
-
-st.caption("📊 Últimos 10 datos de la simulación")
-
-with col_res:
-err_f = abs(sp_nivel - h_log[-1]) if len(h_log) > 0 else 0
-st.metric("Error Residual Final (Offset)", f"{err_f:.4f} m")
-
-if err_f < 0.01:
-st.success("✅ Error residual prácticamente nulo - Control excelente")
-elif err_f < 0.05:
-st.info("👍 Error residual aceptable")
-else:
-st.warning("⚠️ Aumentar Ki para eliminar el offset")
-
-# Exportar datos
-df_final = pd.DataFrame({
-"Tiempo [s]": vector_t,
-"Nivel [m]": h_log,
-"Q_entrada [m3/s]": qin_log,
-"Q_salida [m3/s]": qout_log,
-"Error [m]": e_log,
-"Kp_Usado": [k_p] * len(vector_t),
-"Ki_Usado": [k_i] * len(vector_t),
-"Kd_Usado": [k_d] * len(vector_t),
-"Cd_Usado": [cd_para_simular] * len(vector_t)
-})
-
-col_down1, col_down2, col_down3 = st.columns([1, 2, 1])
-with col_down2:
-st.download_button(
-label="📥 Descargar Reporte de Simulación Robusta (CSV)",
-data=df_final.to_csv(index=False),
-file_name=f"resultados_robustos_{geom_tanque}.csv",
-mime="text/csv",
-use_container_width=True
-)
-
-if err_f < 0.05:
-st.success(f"✅ El controlador mantuvo el sistema en {h_log[-1]:.3f} m (error < 5%)")
-else:
-st.warning(f"⚠️ Error residual de {err_f:.3f} m. Aumente Ki para eliminarlo.")
-
-
-# =============================================================================
-# FOOTER INSTITUCIONAL
-# =============================================================================
+# Footer
 st.markdown("""
 <hr style="margin: 2rem 0 1rem 0; border-color: #1a5276;">
 <div style="text-align: center; color: #5d6d7e; font-size: 0.8rem;">
-<p>Universidad Central de Venezuela - Escuela de Ingeniería Química</p>
-<p>Simulador de Control PID con Dos Válvulas | Anti-Perturbaciones | © 2025</p>
-<p style="font-size: 0.7rem;">Sintonía optimizada para rechazo de fugas y cambios de carga</p>
+    <p>Universidad Central de Venezuela - Escuela de Ingeniería Química</p>
+    <p>Simulador de Control PID con Dos Válvulas | © 2025</p>
 </div>
 """, unsafe_allow_html=True)
