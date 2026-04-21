@@ -16,7 +16,7 @@ p_tiempo = 80
 p_tipo = "Entrada"
 
 # =============================================================================
-# --- FUNCIONES DE CÁLCULO (NUEVA LÓGICA CON DOS VÁLVULAS) ---
+# --- FUNCIONES DE CÁLCULO ---
 # =============================================================================
 def get_area_transversal(geom, r, h, h_total):
     """Calcula el área transversal para cualquier geometría en función de la altura actual"""
@@ -35,41 +35,32 @@ def get_area_transversal(geom, r, h, h_total):
             return np.pi * (r ** 2)
 
 
-def calcular_cd_inteligente(df_usr, r, h_t, geom, area_ori):
-    """Calcula el Coeficiente de Descarga (Cd) usando el balance de masa."""
-    df = pd.DataFrame(df_usr) if isinstance(df_usr, list) else df_usr
+def calcular_cd_automatico(geom, r, h_t, q_max=2.0):
+    """
+    Calcula un Cd automático basado en la geometría y parámetros del tanque.
+    NO depende de datos experimentales.
+    """
+    # Valores típicos de Cd según geometría
+    if geom == "Cilíndrico":
+        cd_base = 0.61
+    elif geom == "Cónico":
+        cd_base = 0.58  # Conos tienen más resistencia
+    else:  # Esférico
+        cd_base = 0.55  # Esferas tienen más resistencia aún
     
-    if len(df) < 2:
-        return 0.61
+    # Ajuste por relación área/altura
+    area_t = get_area_transversal(geom, r, h_t/2, h_t)
+    factor_area = np.clip(area_t / (np.pi * r**2), 0.8, 1.2)
     
-    try:
-        t1, t2 = df["Tiempo (s)"].iloc[0], df["Tiempo (s)"].iloc[1]
-        h1, h2 = df["Nivel Medido (m)"].iloc[0], df["Nivel Medido (m)"].iloc[1]
-        dt = abs(t2 - t1)
-        
-        if dt == 0:
-            return 0.61
-
-        if geom == "Cilíndrico":
-            v1, v2 = np.pi*(r**2)*h1, np.pi*(r**2)*h2
-        elif geom == "Cónico":
-            v1 = (1/3)*np.pi*((r/h_t)*h1)**2*h1
-            v2 = (1/3)*np.pi*((r/h_t)*h2)**2*h2
-        else:  # Esférico
-            v1 = (np.pi*(h1**2)/3)*(3*r-h1)
-            v2 = (np.pi*(h2**2)/3)*(3*r-h2)
-
-        q_real = abs(v1 - v2) / dt
-        h_prom = (h1 + h2) / 2
-        q_teorico = area_ori * np.sqrt(2 * 9.81 * max(h_prom, 0.001))
-        
-        cd_result = q_real / q_teorico if q_teorico > 0 else 0.61
-        return float(np.clip(cd_result, 0.4, 1.0))
-    except:
-        return 0.61
+    # Ajuste por q_max (mayor flujo máximo sugiere orificio más grande)
+    factor_q = np.clip(q_max / 2.0, 0.9, 1.1)
+    
+    cd_final = cd_base * factor_area * factor_q
+    
+    return round(float(np.clip(cd_final, 0.45, 0.75)), 4)
 
 
-def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado=0.61, q_max=2.0):
+def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado=0.61, q_max=2.0, tipo_proceso="Llenado"):
     """Sintonización robusta del PID para control de nivel con dos válvulas."""
     if geom == "Cilíndrico":
         area_t = np.pi * (r**2)
@@ -80,17 +71,34 @@ def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado=0.61, q_max=2.0):
     
     tau = area_t * h_t / q_max
     
+    # Sintonización base
     kp = 1.2 * tau / (area_t * 0.1)
     ki = kp / (tau * 0.5)
     kd = kp * tau * 0.1
     
-    factor_cd = np.clip(cd_calculado / 0.61, 0.7, 1.5)
-    kp = kp * factor_cd
-    ki = ki * factor_cd
+    # Ajuste por tipo de proceso
+    if tipo_proceso == "Llenado":
+        # Llenado: respuesta más agresiva
+        factor_proceso = 1.2
+    else:  # Vaciado
+        # Vaciado: más conservador
+        factor_proceso = 0.8
     
-    kp = np.clip(kp, 5.0, 30.0)
-    ki = np.clip(ki, 0.5, 5.0)
-    kd = np.clip(kd, 0.1, 2.0)
+    # Ajuste por Cd
+    factor_cd = np.clip(cd_calculado / 0.61, 0.7, 1.5)
+    
+    kp = kp * factor_cd * factor_proceso
+    ki = ki * factor_cd * factor_proceso
+    
+    # Límites según tipo de proceso
+    if tipo_proceso == "Llenado":
+        kp = np.clip(kp, 8.0, 30.0)
+        ki = np.clip(ki, 1.0, 5.0)
+        kd = np.clip(kd, 0.2, 2.0)
+    else:
+        kp = np.clip(kp, 5.0, 20.0)
+        ki = np.clip(ki, 0.5, 3.0)
+        kd = np.clip(kd, 0.1, 1.5)
     
     return round(kp, 2), round(ki, 3), round(kd, 2)
 
@@ -155,6 +163,10 @@ st.set_page_config(
 
 if 'ejecutando' not in st.session_state:
     st.session_state.ejecutando = False
+
+# Inicializar Cd automático si no existe
+if 'cd_calculado' not in st.session_state:
+    st.session_state['cd_calculado'] = 0.61
 
 
 # =============================================================================
@@ -459,6 +471,7 @@ with st.expander("🔧 Diagrama del Proceso", expanded=estado_expander):
 st.sidebar.header("⚙️ Configuración del Sistema")
 
 with st.sidebar.container(border=True):
+    tipo_proceso = st.sidebar.selectbox("Tipo de Proceso", ["Llenado", "Vaciado"])
     geom_tanque = st.sidebar.selectbox("Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
 
 with st.sidebar.expander("📐 Especificaciones del Tanque", expanded=True):
@@ -484,56 +497,48 @@ with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=
         p_tipo = "Entrada"
 
 # =============================================================================
-# DATOS EXPERIMENTALES Y CÁLCULO DE Cd
+# CÁLCULO AUTOMÁTICO DE Cd
 # =============================================================================
-with st.sidebar.expander("📊 Cargar Datos Experimentales", expanded=False):
-    st.write("Ingresa los datos medidos en el laboratorio:")
-    st.caption("⚠️ El nivel debe ingresarse en **centímetros (cm)**")
+with st.sidebar.expander("📊 Coeficiente de Descarga (Cd)", expanded=False):
+    # Calcular Cd automáticamente basado en geometría y parámetros
+    cd_automatico = calcular_cd_automatico(geom_tanque, r_max, h_total, q_max)
+    st.session_state['cd_calculado'] = cd_automatico
     
-    df_exp_default = pd.DataFrame({
-        "Tiempo (s)": [0, 60, 120, 180, 240, 300],
-        "Nivel Medido (cm)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    })
+    st.metric("Cd Calculado Automáticamente", f"{cd_automatico:.4f}")
+    st.caption("💡 El Cd se calcula automáticamente según la geometría del tanque")
     
-    datos_usr = st.data_editor(df_exp_default, num_rows="dynamic", key="datos_exp")
-    mostrar_ref = st.checkbox("Mostrar referencia en gráfica", value=True)
-    
-    if st.button("🧮 Calcular Cd", use_container_width=True):
-        if not isinstance(datos_usr, pd.DataFrame):
-            datos_usr = pd.DataFrame(datos_usr)
-        
-        if "Nivel Medido (cm)" in datos_usr.columns and len(datos_usr) >= 2:
-            df_calib = datos_usr.copy()
-            df_calib["Nivel Medido (m)"] = df_calib["Nivel Medido (cm)"] / 100
-            area_ori_temp = np.pi * ((0.0254) / 2)**2
-            cd_calculado = calcular_cd_inteligente(
-                df_calib[["Tiempo (s)", "Nivel Medido (m)"]], 
-                r_max, h_total, geom_tanque, area_ori_temp
-            )
-            st.session_state['cd_calculado'] = cd_calculado
-            st.success(f"✅ Cd calculado: {cd_calculado:.4f}")
-        else:
-            st.warning("⚠️ Ingresa al menos 2 datos")
-            st.session_state['cd_calculado'] = 0.61
+    # Opción para ajuste manual si se desea
+    ajuste_manual = st.checkbox("Ajuste manual de Cd", value=False)
+    if ajuste_manual:
+        cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
+        st.session_state['cd_calculado'] = cd_manual
+        st.success(f"✅ Cd manual: {cd_manual:.4f}")
 
 with st.sidebar.expander("🎛️ Parámetros del Controlador PID", expanded=True):
     cd_actual = st.session_state.get('cd_calculado', 0.61)
-    kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(geom_tanque, r_max, h_total, cd_actual, q_max)
+    kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(
+        geom_tanque, r_max, h_total, cd_actual, q_max, tipo_proceso
+    )
     
     modo_auto = st.checkbox("🎯 Modo Robusto (Auto-sintonía)", value=True)
     
     st.markdown("---")
     
     if modo_auto:
-        st.success(f"💡 PID optimizado (Cd={cd_actual:.3f})")
+        st.success(f"💡 PID optimizado para {tipo_proceso} (Cd={cd_actual:.3f})")
+        st.caption(f"Kp={kp_sug} | Ki={ki_sug} | Kd={kd_sug}")
         kp_val = st.number_input("Kp", value=kp_sug, key="kp_auto")
         ki_val = st.number_input("Ki", value=ki_sug, format="%.3f", key="ki_auto")
         kd_val = st.number_input("Kd", value=kd_sug, format="%.3f", key="kd_auto")
     else:
-        st.info("✍️ Modo Manual")
-        kp_val = st.number_input("Kp", value=10.0, step=1.0, key="kp_man")
-        ki_val = st.number_input("Ki", value=2.0, step=0.5, format="%.3f", key="ki_man")
-        kd_val = st.number_input("Kd", value=0.5, step=0.1, format="%.3f", key="kd_man")
+        st.info(f"✍️ Modo Manual - {tipo_proceso}")
+        if tipo_proceso == "Llenado":
+            kp_default, ki_default, kd_default = 12.0, 2.5, 0.8
+        else:
+            kp_default, ki_default, kd_default = 8.0, 1.5, 0.5
+        kp_val = st.number_input("Kp", value=kp_default, step=1.0, key="kp_man")
+        ki_val = st.number_input("Ki", value=ki_default, step=0.5, format="%.3f", key="ki_man")
+        kd_val = st.number_input("Kd", value=kd_default, step=0.1, format="%.3f", key="kd_man")
     
     tiempo_ensayo = st.slider("Tiempo de simulación [s]", 60, 600, 300)
 
@@ -550,7 +555,7 @@ with col_btn2:
 
 if btn_reset:
     st.session_state.ejecutando = False
-    st.session_state['cd_calculado'] = 0.61
+    st.session_state['cd_calculado'] = calcular_cd_automatico(geom_tanque, r_max, h_total, q_max)
     st.rerun()
 
 
@@ -562,33 +567,23 @@ if iniciar_sim:
     st.session_state['error_acumulado'] = 0.0
     st.session_state['ultimo_error'] = 0.0
     
-    try:
-        if not isinstance(datos_usr, pd.DataFrame):
-            datos_usr = pd.DataFrame(datos_usr)
-        
-        cd_para_usar = st.session_state.get('cd_calculado', 0.61)
-        
-        if modo_auto:
-            kp_a, ki_a, kd_a = sintonizar_controlador_robusto(
-                geom_tanque, r_max, h_total, cd_para_usar, q_max
-            )
-            st.session_state['kp_ejecucion'] = kp_a
-            st.session_state['ki_ejecucion'] = ki_a
-            st.session_state['kd_ejecucion'] = kd_a
-            st.session_state['cd_final'] = cd_para_usar
-            st.toast(f"🎯 Control Robusto: Cd={cd_para_usar:.2f} | Kp={kp_a} | Ki={ki_a} | Kd={kd_a}")
-        else:
-            st.session_state['kp_ejecucion'] = kp_val
-            st.session_state['ki_ejecucion'] = ki_val
-            st.session_state['kd_ejecucion'] = kd_val
-            st.session_state['cd_final'] = cd_para_usar
-            st.info(f"✍️ Modo Manual: Kp={kp_val}, Ki={ki_val}, Kd={kd_val}")
-
-    except Exception as e:
-        st.session_state['kp_ejecucion'] = 12.0
-        st.session_state['ki_ejecucion'] = 2.5
-        st.session_state['kd_ejecucion'] = 0.8
-        st.session_state['cd_final'] = 0.61
+    cd_para_usar = st.session_state.get('cd_calculado', 0.61)
+    
+    if modo_auto:
+        kp_a, ki_a, kd_a = sintonizar_controlador_robusto(
+            geom_tanque, r_max, h_total, cd_para_usar, q_max, tipo_proceso
+        )
+        st.session_state['kp_ejecucion'] = kp_a
+        st.session_state['ki_ejecucion'] = ki_a
+        st.session_state['kd_ejecucion'] = kd_a
+        st.session_state['cd_final'] = cd_para_usar
+        st.toast(f"🎯 Control Robusto ({tipo_proceso}): Cd={cd_para_usar:.2f} | Kp={kp_a} | Ki={ki_a}")
+    else:
+        st.session_state['kp_ejecucion'] = kp_val
+        st.session_state['ki_ejecucion'] = ki_val
+        st.session_state['kd_ejecucion'] = kd_val
+        st.session_state['cd_final'] = cd_para_usar
+        st.info(f"✍️ Modo Manual ({tipo_proceso}): Kp={kp_val}, Ki={ki_val}, Kd={kd_val}")
 
 
 # =============================================================================
@@ -600,15 +595,12 @@ else:
     col_graf, col_met = st.columns([2, 1])
 
     with col_graf:
-        st.subheader("🎮 Monitor del Proceso - Control PID con Dos Válvulas")
+        st.subheader(f"🎮 Monitor del Proceso - Control PID ({tipo_proceso})")
         placeholder_tanque = st.empty()
         st.subheader("📈 Tendencia Temporal")
         placeholder_grafico = st.empty()
         st.subheader("🔧 Acción de las Válvulas")
         placeholder_valvulas = st.empty()
-        st.markdown("---")
-        st.subheader("📊 Comparativa: Simulación vs Datos Experimentales")
-        placeholder_comparativa = st.empty()
 
     with col_met:
         st.subheader("📊 Métricas de Control")
@@ -618,8 +610,8 @@ else:
         cd_show = st.session_state.get('cd_final', 0.61)
         
         st.write(f"**Parámetros Activos:**")
+        st.caption(f"Proceso: {tipo_proceso} | Cd: {cd_show:.3f}")
         st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Kd: {st.session_state.get('kd_ejecucion', 0.8)}")
-        st.caption(f"Cd: {cd_show:.3f} | Qmax: {q_max} m³/s")
         st.markdown("---")
         
         placeholder_iae = st.empty()
@@ -643,21 +635,14 @@ else:
     vector_t = np.arange(0, tiempo_ensayo, dt)
     h_log, qin_log, qout_log, e_log = [], [], [], []
 
-    h_corrida = 0.5
+    # Condición inicial según tipo de proceso
+    if tipo_proceso == "Llenado":
+        h_corrida = 0.2  # Empezar bajo para llenado
+    else:
+        h_corrida = h_total * 0.9  # Empezar alto para vaciado
+    
     err_int, err_pasado = 0.0, 0.0
     iae_acumulado, itae_acumulado = 0.0, 0.0
-    
-    if not isinstance(datos_usr, pd.DataFrame):
-        datos_usr = pd.DataFrame(datos_usr)
-    
-    if "Nivel Medido (cm)" in datos_usr.columns and len(datos_usr) > 0:
-        t_exp = datos_usr["Tiempo (s)"].values
-        h_exp = [val / 100 for val in datos_usr["Nivel Medido (cm)"].values]
-        tiene_datos_exp = True
-    else:
-        t_exp = []
-        h_exp = []
-        tiene_datos_exp = False
     
     barra_p = st.progress(0)
     cd_para_simular = st.session_state.get('cd_final', 0.61)
@@ -803,25 +788,11 @@ else:
         placeholder_valvulas.pyplot(fig_v)
         plt.close(fig_v)
         
-        # Gráfico comparativo
-        fig_comp, ax_comp = plt.subplots(figsize=(8, 4))
-        ax_comp.plot(vector_t[:i+1], h_log, color='#1f77b4', lw=2, label='Simulación')
-        if mostrar_ref and tiene_datos_exp and len(t_exp) > 0:
-            ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Experimental')
-        ax_comp.set_title("Validación de Resultados")
-        ax_comp.set_xlabel("Tiempo [s]")
-        ax_comp.set_ylabel("Nivel [m]")
-        ax_comp.set_ylim(0, h_total * 1.1)
-        ax_comp.grid(True, alpha=0.3)
-        ax_comp.legend()
-        placeholder_comparativa.pyplot(fig_comp)
-        plt.close(fig_comp)
-        
         time.sleep(0.02)
         barra_p.progress((i+1)/len(vector_t))
     
     status_placeholder.empty()
-    st.success("✅ Simulación completada")
+    st.success(f"✅ Simulación completada - Proceso: {tipo_proceso}")
     st.balloons()
     
     # Análisis final
@@ -837,7 +808,7 @@ else:
         if p_activa and p_tiempo > 0:
             ax_amp.axvline(x=p_tiempo, color='orange', linestyle='--', alpha=0.7)
             ax_amp.axvspan(p_tiempo, tiempo_ensayo, alpha=0.08, color='orange')
-        ax_amp.set_title("Respuesta del Control PID")
+        ax_amp.set_title(f"Respuesta del Control PID - {tipo_proceso}")
         ax_amp.set_xlabel("Tiempo [s]")
         ax_amp.set_ylabel("Nivel [m]")
         ax_amp.grid(True, alpha=0.3)
@@ -887,13 +858,18 @@ else:
         "Nivel [m]": h_log,
         "Q_entrada [m3/s]": qin_log,
         "Q_salida [m3/s]": qout_log,
-        "Error [m]": e_log
+        "Error [m]": e_log,
+        "Kp_Usado": [k_p] * len(vector_t),
+        "Ki_Usado": [k_i] * len(vector_t),
+        "Kd_Usado": [k_d] * len(vector_t),
+        "Cd_Usado": [cd_para_simular] * len(vector_t),
+        "Tipo_Proceso": [tipo_proceso] * len(vector_t)
     })
     
     st.download_button(
         label="📥 Descargar Datos (CSV)",
         data=df_final.to_csv(index=False),
-        file_name=f"simulacion_{geom_tanque.lower()}.csv",
+        file_name=f"simulacion_{tipo_proceso.lower()}_{geom_tanque.lower()}.csv",
         mime="text/csv"
     )
 
