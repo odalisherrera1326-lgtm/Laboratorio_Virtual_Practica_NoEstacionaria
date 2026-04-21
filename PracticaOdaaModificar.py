@@ -93,7 +93,44 @@ def calcular_cd_automatico(geom, d_orificio_pulg):
     
     return round(float(np.clip(cd_final, 0.45, 0.75)), 4)
 
-
+def calcular_cd_desde_datos(df_usr, r, h_t, geom, d_orificio_pulg):
+    """
+    Calcula el Coeficiente de Descarga (Cd) usando datos experimentales.
+    Usa el balance de masa: Q = A * dh/dt
+    """
+    df = pd.DataFrame(df_usr) if isinstance(df_usr, list) else df_usr
+    
+    if len(df) < 2:
+        return 0.61
+    
+    try:
+        t1, t2 = df["Tiempo (s)"].iloc[0], df["Tiempo (s)"].iloc[1]
+        h1, h2 = df["Nivel Medido (cm)"].iloc[0] / 100, df["Nivel Medido (cm)"].iloc[1] / 100
+        dt = abs(t2 - t1)
+        
+        if dt == 0:
+            return 0.61
+        
+        if geom == "Cilíndrico":
+            v1, v2 = np.pi * (r**2) * h1, np.pi * (r**2) * h2
+        elif geom == "Cónico":
+            v1 = (1/3) * np.pi * ((r/h_t) * h1)**2 * h1
+            v2 = (1/3) * np.pi * ((r/h_t) * h2)**2 * h2
+        else:
+            v1 = (np.pi * (h1**2) / 3) * (3*r - h1)
+            v2 = (np.pi * (h2**2) / 3) * (3*r - h2)
+        
+        q_real = abs(v1 - v2) / dt
+        h_prom = (h1 + h2) / 2
+        
+        d_metros = d_orificio_pulg * 0.0254
+        area_ori = np.pi * (d_metros / 2)**2
+        q_teorico = area_ori * np.sqrt(2 * 9.81 * max(h_prom, 0.001))
+        
+        cd_result = q_real / q_teorico if q_teorico > 0 else 0.61
+        return float(np.clip(cd_result, 0.4, 1.0))
+    except:
+        return 0.61
 def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado=0.61, q_max_bomba=2.0, tipo_proceso="Llenado"):
     """Sintonización robusta del PID CORREGIDA con ganancias más altas"""
     if geom == "Cilíndrico":
@@ -213,6 +250,12 @@ if 'ejecutando' not in st.session_state:
 if 'cd_calculado' not in st.session_state:
     st.session_state['cd_calculado'] = 0.61
 
+# Inicializar datos_usr si no existe
+if 'datos_usr' not in st.session_state:
+    st.session_state['datos_usr'] = pd.DataFrame({
+        "Tiempo (s)": [0, 60, 120, 180, 240, 300],
+        "Nivel Medido (cm)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    })
 
 # =============================================================================
 # ESTILOS CSS
@@ -564,6 +607,36 @@ with st.sidebar.expander("🔧 Orificio de Salida", expanded=True):
 cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
 q_max_salida = calcular_q_max_salida(d_pulgadas, cd_automatico, h_total)
 st.session_state['cd_calculado'] = cd_automatico
+with st.sidebar.expander("📊 Datos Experimentales", expanded=False):
+    st.write("Ingresa los datos medidos en laboratorio:")
+    st.caption("⚠️ El nivel debe ingresarse en **centímetros (cm)**")
+    
+    df_exp_default = pd.DataFrame({
+        "Tiempo (s)": [0, 60, 120, 180, 240, 300],
+        "Nivel Medido (cm)": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    })
+    
+    datos_usr = st.data_editor(df_exp_default, num_rows="dynamic", key="datos_exp")
+    mostrar_ref = st.checkbox("Mostrar referencia experimental en gráfica", value=True)
+    
+    col_cd1, col_cd2 = st.columns(2)
+    with col_cd1:
+        if st.button("🧮 Calcular Cd desde datos", use_container_width=True):
+            if not isinstance(datos_usr, pd.DataFrame):
+                datos_usr = pd.DataFrame(datos_usr)
+            
+            if "Nivel Medido (cm)" in datos_usr.columns and len(datos_usr) >= 2:
+                cd_calculado = calcular_cd_desde_datos(
+                    datos_usr, r_max, h_total, geom_tanque, d_pulgadas
+                )
+                st.session_state['cd_calculado'] = cd_calculado
+                st.success(f"✅ Cd calculado: {cd_calculado:.4f}")
+            else:
+                st.warning("⚠️ Ingresa al menos 2 datos")
+    with col_cd2:
+        if st.button("🔄 Usar Cd teórico", use_container_width=True):
+            st.session_state['cd_calculado'] = cd_automatico
+            st.success(f"✅ Cd teórico: {cd_automatico:.4f}")
 
 with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
     col1, col2, col3 = st.columns(3)
@@ -865,6 +938,29 @@ else:
         
         plt.tight_layout()
         placeholder_valvulas.pyplot(fig_v)
+        # Gráfico comparativo con datos experimentales
+if mostrar_ref:
+    datos_usr_df = st.session_state.get('datos_usr', pd.DataFrame())
+    if not isinstance(datos_usr_df, pd.DataFrame):
+        datos_usr_df = pd.DataFrame(datos_usr_df)
+    
+    if "Nivel Medido (cm)" in datos_usr_df.columns and len(datos_usr_df) > 0:
+        t_exp = datos_usr_df["Tiempo (s)"].values
+        h_exp = [val / 100 for val in datos_usr_df["Nivel Medido (cm)"].values]
+        
+        fig_comp, ax_comp = plt.subplots(figsize=(8, 3.5))
+        ax_comp.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2.5, label='Simulación PID')
+        ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos Experimentales')
+        ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
+        ax_comp.axhline(y=sp_nivel, color='green', ls='--', alpha=0.3, label='Setpoint')
+        ax_comp.set_xlabel("Tiempo [s]")
+        ax_comp.set_ylabel("Nivel [m]")
+        ax_comp.set_xlim(0, tiempo_ensayo)
+        ax_comp.set_ylim(0, h_total * 1.1)
+        ax_comp.grid(True, alpha=0.3)
+        ax_comp.legend(loc='lower right', fontsize='x-small')
+        placeholder_comparativa.pyplot(fig_comp)
+        plt.close(fig_comp)
         plt.close(fig_v)
         
         time.sleep(0.02)
