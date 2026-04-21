@@ -35,27 +35,49 @@ def get_area_transversal(geom, r, h, h_total):
             return np.pi * (r ** 2)
 
 
-def calcular_cd_automatico(geom, r, h_t, q_max=2.0):
+def calcular_q_max_automatico(geom, r, h_t, d_orificio_pulg):
     """
-    Calcula un Cd automático basado en la geometría y parámetros del tanque.
-    NO depende de datos experimentales.
+    Calcula automáticamente el flujo máximo basado en el volumen del tanque 
+    y el diámetro del orificio de salida.
     """
-    # Valores típicos de Cd según geometría
+    if geom == "Cilíndrico":
+        volumen = np.pi * (r**2) * h_t
+    elif geom == "Cónico":
+        volumen = (1/3) * np.pi * (r**2) * h_t
+    else:  # Esférico
+        volumen = (4/3) * np.pi * (r**3)
+    
+    # Área del orificio
+    d_metros = d_orificio_pulg * 0.0254
+    area_orificio = np.pi * (d_metros / 2)**2
+    
+    # Flujo máximo proporcional al volumen y al área del orificio
+    q_max = volumen * area_orificio * 500
+    q_max = np.clip(q_max, 0.5, 5.0)
+    
+    return round(float(q_max), 2)
+
+
+def calcular_cd_automatico(geom, r, h_t, d_orificio_pulg):
+    """
+    Calcula un Cd automático basado en la geometría y el diámetro del orificio.
+    Valores típicos de Cd para orificios:
+    - Orificio pequeño (borde afilado): 0.60 - 0.62
+    - Orificio grande: 0.65 - 0.70
+    - Cono/Esfera: ligeramente menor por resistencia
+    """
+    # Cd base según geometría
     if geom == "Cilíndrico":
         cd_base = 0.61
     elif geom == "Cónico":
-        cd_base = 0.58  # Conos tienen más resistencia
+        cd_base = 0.58
     else:  # Esférico
-        cd_base = 0.55  # Esferas tienen más resistencia aún
+        cd_base = 0.55
     
-    # Ajuste por relación área/altura
-    area_t = get_area_transversal(geom, r, h_t/2, h_t)
-    factor_area = np.clip(area_t / (np.pi * r**2), 0.8, 1.2)
+    # Ajuste por diámetro del orificio (orificio más grande = mayor Cd)
+    factor_diametro = np.clip(d_orificio_pulg / 1.0, 0.9, 1.1)
     
-    # Ajuste por q_max (mayor flujo máximo sugiere orificio más grande)
-    factor_q = np.clip(q_max / 2.0, 0.9, 1.1)
-    
-    cd_final = cd_base * factor_area * factor_q
+    cd_final = cd_base * factor_diametro
     
     return round(float(np.clip(cd_final, 0.45, 0.75)), 4)
 
@@ -71,26 +93,20 @@ def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado=0.61, q_max=2.0, t
     
     tau = area_t * h_t / q_max
     
-    # Sintonización base
     kp = 1.2 * tau / (area_t * 0.1)
     ki = kp / (tau * 0.5)
     kd = kp * tau * 0.1
     
-    # Ajuste por tipo de proceso
     if tipo_proceso == "Llenado":
-        # Llenado: respuesta más agresiva
         factor_proceso = 1.2
-    else:  # Vaciado
-        # Vaciado: más conservador
+    else:
         factor_proceso = 0.8
     
-    # Ajuste por Cd
     factor_cd = np.clip(cd_calculado / 0.61, 0.7, 1.5)
     
     kp = kp * factor_cd * factor_proceso
     ki = ki * factor_cd * factor_proceso
     
-    # Límites según tipo de proceso
     if tipo_proceso == "Llenado":
         kp = np.clip(kp, 8.0, 30.0)
         ki = np.clip(ki, 1.0, 5.0)
@@ -164,7 +180,6 @@ st.set_page_config(
 if 'ejecutando' not in st.session_state:
     st.session_state.ejecutando = False
 
-# Inicializar Cd automático si no existe
 if 'cd_calculado' not in st.session_state:
     st.session_state['cd_calculado'] = 0.61
 
@@ -480,8 +495,30 @@ with st.sidebar.expander("📐 Especificaciones del Tanque", expanded=True):
     h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
     sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.2, float(h_total)-0.2, float(h_total/2))
 
-with st.sidebar.expander("🚰 Válvulas de Control", expanded=True):
-    q_max = st.number_input("Flujo máximo por válvula [m³/s]", value=2.0, min_value=0.5, max_value=5.0, step=0.5)
+with st.sidebar.expander("🚰 Dimensiones de Salida", expanded=True):
+    d_pulgadas = st.number_input("Diámetro del Orificio (pulgadas)", value=1.0, min_value=0.1, step=0.1)
+    d_metros = d_pulgadas * 0.0254
+    area_orificio = np.pi * (d_metros / 2)**2
+    st.caption(f"Área calculada: {area_orificio:.6f} m²")
+
+# Cálculo automático de Qmax y Cd basado en geometría y diámetro
+q_max = calcular_q_max_automatico(geom_tanque, r_max, h_total, d_pulgadas)
+cd_automatico = calcular_cd_automatico(geom_tanque, r_max, h_total, d_pulgadas)
+st.session_state['cd_calculado'] = cd_automatico
+
+with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Qmax", f"{q_max:.2f} m³/s")
+    with col2:
+        st.metric("Cd", f"{cd_automatico:.4f}")
+    st.caption("💡 Calculados según geometría y diámetro del orificio")
+    
+    ajuste_manual = st.checkbox("Ajuste manual de parámetros", value=False)
+    if ajuste_manual:
+        q_max = st.number_input("Qmax Manual [m³/s]", value=q_max, min_value=0.5, max_value=5.0, step=0.5)
+        cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
+        st.session_state['cd_calculado'] = cd_manual
 
 with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=True):
     p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
@@ -496,24 +533,6 @@ with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=
         p_tiempo = 0
         p_tipo = "Entrada"
 
-# =============================================================================
-# CÁLCULO AUTOMÁTICO DE Cd
-# =============================================================================
-with st.sidebar.expander("📊 Coeficiente de Descarga (Cd)", expanded=False):
-    # Calcular Cd automáticamente basado en geometría y parámetros
-    cd_automatico = calcular_cd_automatico(geom_tanque, r_max, h_total, q_max)
-    st.session_state['cd_calculado'] = cd_automatico
-    
-    st.metric("Cd Calculado Automáticamente", f"{cd_automatico:.4f}")
-    st.caption("💡 El Cd se calcula automáticamente según la geometría del tanque")
-    
-    # Opción para ajuste manual si se desea
-    ajuste_manual = st.checkbox("Ajuste manual de Cd", value=False)
-    if ajuste_manual:
-        cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
-        st.session_state['cd_calculado'] = cd_manual
-        st.success(f"✅ Cd manual: {cd_manual:.4f}")
-
 with st.sidebar.expander("🎛️ Parámetros del Controlador PID", expanded=True):
     cd_actual = st.session_state.get('cd_calculado', 0.61)
     kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(
@@ -525,7 +544,7 @@ with st.sidebar.expander("🎛️ Parámetros del Controlador PID", expanded=Tru
     st.markdown("---")
     
     if modo_auto:
-        st.success(f"💡 PID optimizado para {tipo_proceso} (Cd={cd_actual:.3f})")
+        st.success(f"💡 PID optimizado para {tipo_proceso}")
         st.caption(f"Kp={kp_sug} | Ki={ki_sug} | Kd={kd_sug}")
         kp_val = st.number_input("Kp", value=kp_sug, key="kp_auto")
         ki_val = st.number_input("Ki", value=ki_sug, format="%.3f", key="ki_auto")
@@ -555,7 +574,6 @@ with col_btn2:
 
 if btn_reset:
     st.session_state.ejecutando = False
-    st.session_state['cd_calculado'] = calcular_cd_automatico(geom_tanque, r_max, h_total, q_max)
     st.rerun()
 
 
@@ -577,13 +595,13 @@ if iniciar_sim:
         st.session_state['ki_ejecucion'] = ki_a
         st.session_state['kd_ejecucion'] = kd_a
         st.session_state['cd_final'] = cd_para_usar
-        st.toast(f"🎯 Control Robusto ({tipo_proceso}): Cd={cd_para_usar:.2f} | Kp={kp_a} | Ki={ki_a}")
+        st.toast(f"🎯 Control Robusto ({tipo_proceso}) | Qmax={q_max:.2f} | Cd={cd_para_usar:.4f}")
     else:
         st.session_state['kp_ejecucion'] = kp_val
         st.session_state['ki_ejecucion'] = ki_val
         st.session_state['kd_ejecucion'] = kd_val
         st.session_state['cd_final'] = cd_para_usar
-        st.info(f"✍️ Modo Manual ({tipo_proceso}): Kp={kp_val}, Ki={ki_val}, Kd={kd_val}")
+        st.info(f"✍️ Modo Manual ({tipo_proceso}) | Qmax={q_max:.2f} | Cd={cd_para_usar:.4f}")
 
 
 # =============================================================================
@@ -610,7 +628,7 @@ else:
         cd_show = st.session_state.get('cd_final', 0.61)
         
         st.write(f"**Parámetros Activos:**")
-        st.caption(f"Proceso: {tipo_proceso} | Cd: {cd_show:.3f}")
+        st.caption(f"Proceso: {tipo_proceso} | Qmax: {q_max:.2f} m³/s | Cd: {cd_show:.4f}")
         st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Kd: {st.session_state.get('kd_ejecucion', 0.8)}")
         st.markdown("---")
         
@@ -635,11 +653,10 @@ else:
     vector_t = np.arange(0, tiempo_ensayo, dt)
     h_log, qin_log, qout_log, e_log = [], [], [], []
 
-    # Condición inicial según tipo de proceso
     if tipo_proceso == "Llenado":
-        h_corrida = 0.2  # Empezar bajo para llenado
+        h_corrida = 0.2
     else:
-        h_corrida = h_total * 0.9  # Empezar alto para vaciado
+        h_corrida = h_total * 0.9
     
     err_int, err_pasado = 0.0, 0.0
     iae_acumulado, itae_acumulado = 0.0, 0.0
@@ -862,7 +879,9 @@ else:
         "Kp_Usado": [k_p] * len(vector_t),
         "Ki_Usado": [k_i] * len(vector_t),
         "Kd_Usado": [k_d] * len(vector_t),
+        "Qmax_Usado": [q_max] * len(vector_t),
         "Cd_Usado": [cd_para_simular] * len(vector_t),
+        "Diametro_orificio_pulg": [d_pulgadas] * len(vector_t),
         "Tipo_Proceso": [tipo_proceso] * len(vector_t)
     })
     
