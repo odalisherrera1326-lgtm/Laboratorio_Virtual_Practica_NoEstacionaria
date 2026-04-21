@@ -258,83 +258,136 @@ if 'datos_usr' not in st.session_state:
     })
 
 # =============================================================================
-# ESTILOS CSS - SIMPLE Y FUNCIONAL
+# --- ESTILOS CSS MEJORADOS ---
 # =============================================================================
 st.markdown("""
 <style>
-/* Fondo general */
+/* Estilos generales */
 html, body, [data-testid="stAppViewContainer"] {
-    background-color: #f4f7f9 !important;
+    background: linear-gradient(135deg, #f0f4f8 0%, #e8edf2 100%);
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='1.5'><circle cx='12' cy='12' r='3'/><path d='M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12'/></svg>") 12 12, auto !important;
 }
 
-/* =========================================================================
-   BARRA LATERAL - FONDO OSCURO
-   ========================================================================= */
-[data-testid="stSidebar"] {
-    background: #1a5276 !important;
+/* Tabs personalizadas */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 2rem;
+    background: linear-gradient(180deg, #1a5276 0%, #154360 100%);
+    padding: 0.5rem 2rem;
+    border-radius: 15px 15px 0 0;
 }
 
-/* Todo el texto en la sidebar en BLANCO */
-[data-testid="stSidebar"] * {
-    color: #ffffff !important;
+.stTabs [data-baseweb="tab"] {
+    background-color: transparent;
+    border-radius: 10px;
+    padding: 0.5rem 2rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #f0f4f8 !important;
 }
 
-/* Excepciones: inputs con texto oscuro */
-[data-testid="stSidebar"] input,
-[data-testid="stSidebar"] textarea,
-[data-testid="stSidebar"] .stNumberInput input {
-    color: #000000 !important;
-    background-color: #ffffff !important;
+.stTabs [data-baseweb="tab"]:hover {
+    background-color: rgba(241, 196, 15, 0.2);
 }
 
-/* Títulos de expanders en amarillo */
-[data-testid="stSidebar"] .streamlit-expanderHeader {
-    color: #f1c40f !important;
-    font-weight: bold !important;
-}
-
-/* =========================================================================
-   BOTONES
-   ========================================================================= */
-.stButton > button {
-    border: 2px solid #f1c40f !important;
-    border-radius: 25px !important;
-    font-weight: bold !important;
-}
-
-.stButton > button:hover {
-    box-shadow: 0 0 15px #f1c40f !important;
-}
-
-/* =========================================================================
-   ENCABEZADO
-   ========================================================================= */
-.header-container {
-    background: linear-gradient(135deg, #0d3251 0%, #1a5276 50%, #1f618d 100%);
-    border-radius: 20px;
-    padding: 20px 25px;
-    margin-bottom: 20px;
-}
-
-/* =========================================================================
-   MÉTRICAS
-   ========================================================================= */
-div[data-testid="stMetric"] {
-    background: #ffffff !important;
-    border-left: 5px solid #1a5276 !important;
-    border-radius: 12px !important;
-    padding: 15px !important;
-}
-
-div[data-testid="stMetric"] label {
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    background: linear-gradient(90deg, #f1c40f, #e67e22);
     color: #1a5276 !important;
 }
 
-div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
-    color: #154360 !important;
+/* Tarjetas de prácticas */
+.practica-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    border-left: 6px solid #f1c40f;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.practica-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+.practica-card h3 {
+    color: #1a5276;
+    margin-bottom: 0.5rem;
+}
+
+.practica-card p {
+    color: #5d6d7e;
+    font-size: 0.9rem;
+}
+
+.practica-card .badge {
+    display: inline-block;
+    background: linear-gradient(90deg, #1a5276, #2471a3);
+    color: white;
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    margin-top: 0.5rem;
+}
+
+/* Header institucional */
+.header-container {
+    background: linear-gradient(135deg, #0d3251 0%, #1a5276 50%, #1f618d 100%);
+    background-size: 200% 200%;
+    animation: gradientBG 8s ease infinite;
+    border-radius: 20px;
+    padding: 20px 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Botones */
+.stButton > button {
+    background: linear-gradient(90deg, #1a5276, #2471a3) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 25px !important;
+    padding: 0.5rem 1.5rem !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton > button:hover {
+    background: linear-gradient(90deg, #2471a3, #2e86c1) !important;
+    transform: scale(1.02);
+}
+
+/* Sidebar cuando está visible */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #1a5276 0%, #154360 100%) !important;
+    border-right: 4px solid #f1c40f !important;
+}
+
+[data-testid="stSidebar"] .stMarkdown, 
+[data-testid="stSidebar"] label, 
+[data-testid="stSidebar"] p {
+    color: #f0f4f8 !important;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: #5d6d7e;
+    font-size: 0.8rem;
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid #d4e6f1;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL
