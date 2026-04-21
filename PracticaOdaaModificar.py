@@ -64,9 +64,8 @@ def calcular_cd_automatico(geom, d_orificio_pulg):
     cd_final = cd_base * factor_diametro
     
     return round(float(np.clip(cd_final, 0.45, 0.75)), 4)
-
+    
 def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado=0.61, q_max=2.0, tipo_proceso="Llenado"):
-    """Sintonización robusta del PID CORREGIDA"""
     if geom == "Cilíndrico":
         area_t = np.pi * (r**2)
     elif geom == "Cónico":
@@ -74,30 +73,38 @@ def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado=0.61, q_max=2.0, t
     else:
         area_t = (2/3) * np.pi * (r**2)
     
+    # Ganancias base MÁS ALTAS
     if tipo_proceso == "Llenado":
+        kp = 25.0 * (area_t / 3.0)
+        ki = 5.0 * (area_t / 3.0)
+        kd = 2.0 * (area_t / 3.0)
+    else:
         kp = 20.0 * (area_t / 3.0)
         ki = 4.0 * (area_t / 3.0)
         kd = 1.5 * (area_t / 3.0)
-    else:
-        kp = 15.0 * (area_t / 3.0)
-        ki = 3.0 * (area_t / 3.0)
-        kd = 1.0 * (area_t / 3.0)
     
     factor_cd = np.clip(cd_calculado / 0.61, 0.8, 1.3)
     kp = kp * factor_cd
     ki = ki * factor_cd
     
-    kp = np.clip(kp, 10.0, 50.0)
-    ki = np.clip(ki, 2.0, 10.0)
-    kd = np.clip(kd, 0.5, 3.0)
+    kp = np.clip(kp, 15.0, 50.0)
+    ki = np.clip(ki, 3.0, 10.0)
+    kd = np.clip(kd, 1.0, 3.0)
     
     return round(kp, 2), round(ki, 3), round(kd, 2)
 
 def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo, e_sum, e_prev, kp, ki, kd, q_max=2.0):
+    """
+    Sistema CORREGIDO - Control PID con flujo base y modulación continua.
+    Ambas válvulas trabajan en conjunto para mantener el nivel.
+    """
+    
     area_h = get_area_transversal(geom, r, h_prev, h_t)
     area_h = max(area_h, 0.0001)
     
     err = sp - h_prev
+    
+    # Acciones PID (SIN LÍMITE en la integral para eliminar offset)
     P = kp * err
     e_sum += err * dt
     I = ki * e_sum
@@ -108,21 +115,30 @@ def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo,
         D = 0.0
     
     u_control = P + I + D
+    
+    # =========================================================================
+    # ESTRATEGIA CORREGIDA: FLUJO BASE + MODULACIÓN CONTINUA
+    # =========================================================================
+    # Flujo base = 15% del flujo máximo (permite mantener el nivel en equilibrio)
     flujo_base = q_max * 0.15
     
-    if err > 0.01:
+    if err > 0.01:  # Nivel BAJO - Necesito SUBIR
+        # Aumentar entrada, reducir salida
         q_entrada = flujo_base + np.clip(u_control, 0, q_max - flujo_base)
-        q_salida = flujo_base * 0.3
-    elif err < -0.01:
-        q_entrada = flujo_base * 0.3
+        q_salida = flujo_base * 0.3  # Salida reducida pero NO cero
+    elif err < -0.01:  # Nivel ALTO - Necesito BAJAR
+        # Reducir entrada, aumentar salida
+        q_entrada = flujo_base * 0.3  # Entrada reducida pero NO cero
         q_salida = flujo_base + np.clip(-u_control, 0, q_max - flujo_base)
-    else:
+    else:  # En el setpoint (±0.01) - Mantener equilibrio
         q_entrada = flujo_base
         q_salida = flujo_base
     
+    # Limitar flujos al rango permitido
     q_entrada = np.clip(q_entrada, 0, q_max)
     q_salida = np.clip(q_salida, 0, q_max)
     
+    # Agregar perturbación
     if p_tipo == "Entrada":
         q_entrada_total = q_entrada + q_p_val
         q_salida_total = q_salida
@@ -130,17 +146,12 @@ def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo,
         q_entrada_total = q_entrada
         q_salida_total = q_salida + q_p_val
     
+    # Balance de masa
     dh_dt = (q_entrada_total - q_salida_total) / area_h
     h_next = h_prev + dh_dt * dt
     h_next = np.clip(h_next, 0.0, h_t)
     
     return h_next, q_entrada, q_salida, err, e_sum, err
-
-def get_base64(path):
-    if os.path.exists(path):
-        with open(path, "rb") as f:
-            return base64.b64encode(f.read()).decode()
-    return None
 
 # =============================================================================
 # CONFIGURACIÓN DE LA PÁGINA
