@@ -258,19 +258,18 @@ if 'datos_usr' not in st.session_state:
     })
 
 # =============================================================================
-# ESTILOS CSS COMPLETOS
+# ESTILOS CSS - FONDOS OSCUROS FORZADOS PARA EXPANDERS
 # =============================================================================
 st.markdown("""
 <style>
 /* =========================================================================
-   FONDO GENERAL Y CURSORES PERSONALIZADOS
+   FONDO GENERAL Y CURSORES
    ========================================================================= */
 html, body, [data-testid="stAppViewContainer"] {
     background-color: #f4f7f9 !important;
     cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%231a5276' stroke-width='2'><circle cx='12' cy='12' r='4'/><path d='M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12'/></svg>") 12 12, auto !important;
 }
 
-/* Cursor de manito + engranaje para elementos interactivos */
 button, a, [data-testid="stHeaderActionElements"], .stSlider, 
 .stButton, .stCheckbox, .stToggle, .stSelectbox, .stNumberInput,
 [role="button"], [role="slider"], .streamlit-expanderHeader {
@@ -278,48 +277,81 @@ button, a, [data-testid="stHeaderActionElements"], .stSlider,
 }
 
 /* =========================================================================
-   BARRA LATERAL - FONDO OSCURO SIEMPRE
+   BARRA LATERAL - FONDO OSCURO ABSOLUTO
    ========================================================================= */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0d3251 0%, #1a5276 50%, #154360 100%) !important;
+    background: #0d3251 !important;
+    background-image: linear-gradient(180deg, #0d3251 0%, #1a5276 50%, #154360 100%) !important;
     border-right: 4px solid #f1c40f !important;
 }
 
+[data-testid="stSidebar"] > div {
+    background: transparent !important;
+}
+
 /* =========================================================================
-   EXPANDERS EN LA SIDEBAR - NUNCA BLANCOS
+   EXPANDERS - FORZAR FONDO OSCURO (SOLUCIÓN DEFINITIVA)
    ========================================================================= */
-/* Títulos de los expanders - Fondo azul, texto amarillo */
-[data-testid="stSidebar"] .streamlit-expanderHeader {
-    background: linear-gradient(90deg, #1a5276, #2471a3) !important;
+/* Contenedor principal del expander */
+[data-testid="stSidebar"] section[data-testid="stSidebar"] .stExpander,
+[data-testid="stSidebar"] .stExpander {
+    background: #0d3251 !important;
+    border: 1px solid #f1c40f !important;
+    border-radius: 8px !important;
+}
+
+/* Título del expander - SIEMPRE AZUL OSCURO */
+[data-testid="stSidebar"] .streamlit-expanderHeader,
+[data-testid="stSidebar"] [data-testid="stExpander"] details summary,
+[data-testid="stSidebar"] details summary {
+    background: #1a5276 !important;
+    background-image: linear-gradient(90deg, #1a5276, #2471a3) !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
     color: #f1c40f !important;
     border-left: 4px solid #f1c40f !important;
     border-bottom: 1px solid #f1c40f !important;
+    padding: 10px 15px !important;
 }
 
-[data-testid="stSidebar"] .streamlit-expanderHeader:hover {
-    background: linear-gradient(90deg, #2471a3, #2e86c1) !important;
+[data-testid="stSidebar"] .streamlit-expanderHeader:hover,
+[data-testid="stSidebar"] details summary:hover {
+    background: #2471a3 !important;
+    background-image: linear-gradient(90deg, #2471a3, #2e86c1) !important;
     color: #ffffff !important;
 }
 
-[data-testid="stSidebar"] .streamlit-expanderHeader svg {
+[data-testid="stSidebar"] .streamlit-expanderHeader svg,
+[data-testid="stSidebar"] details summary svg {
     fill: #f1c40f !important;
+    color: #f1c40f !important;
 }
 
-/* Contenido de los expanders - Fondo azul oscuro, texto blanco */
-[data-testid="stSidebar"] .streamlit-expanderContent {
-    background: linear-gradient(180deg, #1a5276 0%, #154360 100%) !important;
+/* Contenido del expander - SIEMPRE OSCURO */
+[data-testid="stSidebar"] .streamlit-expanderContent,
+[data-testid="stSidebar"] [data-testid="stExpander"] details div,
+[data-testid="stSidebar"] details > div {
+    background: #0d3251 !important;
+    background-image: linear-gradient(180deg, #0d3251 0%, #154360 100%) !important;
     border-radius: 0 0 8px 8px !important;
     border: 1px solid #f1c40f !important;
     border-top: none !important;
     padding: 15px !important;
 }
 
+/* =========================================================================
+   TEXTO DENTRO DE EXPANDERS - SIEMPRE BLANCO
+   ========================================================================= */
+[data-testid="stSidebar"] .streamlit-expanderContent *,
+[data-testid="stSidebar"] details > div *,
 [data-testid="stSidebar"] .streamlit-expanderContent p,
 [data-testid="stSidebar"] .streamlit-expanderContent span,
 [data-testid="stSidebar"] .streamlit-expanderContent div,
-[data-testid="stSidebar"] .streamlit-expanderContent label {
+[data-testid="stSidebar"] .streamlit-expanderContent label,
+[data-testid="stSidebar"] .streamlit-expanderContent h1,
+[data-testid="stSidebar"] .streamlit-expanderContent h2,
+[data-testid="stSidebar"] .streamlit-expanderContent h3,
+[data-testid="stSidebar"] .streamlit-expanderContent h4 {
     color: #ffffff !important;
 }
 
@@ -329,7 +361,53 @@ button, a, [data-testid="stHeaderActionElements"], .stSlider,
 }
 
 /* =========================================================================
-   TEXTOS EN LA SIDEBAR - SIEMPRE VISIBLES
+   SELECTBOX - VISIBILIDAD DE OPCIONES
+   ========================================================================= */
+/* El selectbox en sí */
+[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
+    background-color: #1a5276 !important;
+    border: 1px solid #f1c40f !important;
+    border-radius: 5px !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] span {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+}
+
+/* El dropdown desplegable */
+[data-testid="stSidebar"] div[role="listbox"] {
+    background-color: #0d3251 !important;
+    border: 2px solid #f1c40f !important;
+    border-radius: 5px !important;
+}
+
+[data-testid="stSidebar"] div[role="listbox"] ul {
+    background-color: #0d3251 !important;
+}
+
+[data-testid="stSidebar"] div[role="listbox"] li,
+[data-testid="stSidebar"] div[role="option"] {
+    background-color: #0d3251 !important;
+    color: #ffffff !important;
+    padding: 8px 12px !important;
+}
+
+[data-testid="stSidebar"] div[role="listbox"] li:hover,
+[data-testid="stSidebar"] div[role="option"]:hover {
+    background-color: #1a5276 !important;
+    color: #f1c40f !important;
+}
+
+[data-testid="stSidebar"] div[role="listbox"] li[aria-selected="true"],
+[data-testid="stSidebar"] div[role="option"][aria-selected="true"] {
+    background-color: #2471a3 !important;
+    color: #f1c40f !important;
+    font-weight: bold !important;
+}
+
+/* =========================================================================
+   TEXTOS GENERALES EN SIDEBAR
    ========================================================================= */
 [data-testid="stSidebar"] .stMarkdown, 
 [data-testid="stSidebar"] label, 
@@ -350,7 +428,6 @@ button, a, [data-testid="stHeaderActionElements"], .stSlider,
     font-weight: 500 !important;
 }
 
-/* Caption en amarillo */
 [data-testid="stSidebar"] .stCaption,
 [data-testid="stSidebar"] [data-testid="stCaption"] {
     color: #f1c40f !important;
@@ -358,7 +435,6 @@ button, a, [data-testid="stHeaderActionElements"], .stSlider,
     font-size: 0.85rem !important;
 }
 
-/* Títulos en sidebar */
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3,
@@ -367,22 +443,26 @@ button, a, [data-testid="stHeaderActionElements"], .stSlider,
 }
 
 /* =========================================================================
+   CHECKBOX Y TOGGLE - TEXTO BLANCO
+   ========================================================================= */
+[data-testid="stSidebar"] .stCheckbox label span,
+[data-testid="stSidebar"] .stToggle label span,
+[data-testid="stSidebar"] [data-testid="stCheckbox"] label span,
+[data-testid="stSidebar"] [data-testid="stToggle"] label span {
+    color: #ffffff !important;
+}
+
+/* =========================================================================
    INPUTS - TEXTO OSCURO SOBRE FONDO BLANCO
    ========================================================================= */
 [data-testid="stSidebar"] input,
 [data-testid="stSidebar"] .stNumberInput input,
 [data-testid="stSidebar"] .streamlit-expanderContent input,
-[data-testid="stSidebar"] .streamlit-expanderContent textarea {
+[data-testid="stSidebar"] .streamlit-expanderContent textarea,
+[data-testid="stSidebar"] textarea {
     color: #1a1a1a !important;
     background-color: #ffffff !important;
-}
-
-[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
-    background-color: #ffffff !important;
-}
-
-[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] span {
-    color: #1a1a1a !important;
+    border: 1px solid #f1c40f !important;
 }
 
 /* =========================================================================
@@ -390,11 +470,13 @@ button, a, [data-testid="stHeaderActionElements"], .stSlider,
    ========================================================================= */
 [data-testid="stSidebar"] .stDataFrame,
 [data-testid="stSidebar"] .stDataEditor,
-[data-testid="stSidebar"] [data-testid="stDataEditor"] {
+[data-testid="stSidebar"] [data-testid="stDataEditor"],
+[data-testid="stSidebar"] .stDataEditor > div {
     background-color: #0d3251 !important;
     color: #ffffff !important;
 }
 
+[data-testid="stSidebar"] .stDataEditor table,
 [data-testid="stSidebar"] .stDataEditor th,
 [data-testid="stSidebar"] .stDataEditor td {
     color: #ffffff !important;
@@ -450,11 +532,13 @@ button, a, [data-testid="stHeaderActionElements"], .stSlider,
     color: #ffffff !important;
     border: 2px solid #f1c40f !important;
     box-shadow: 0 0 10px rgba(241, 196, 15, 0.3) !important;
+    background: #1a5276 !important;
 }
 
 [data-testid="stSidebar"] .stButton > button:hover {
     box-shadow: 0 0 20px #f1c40f !important;
     border-color: #f39c12 !important;
+    background: #2471a3 !important;
 }
 
 /* =========================================================================
@@ -607,6 +691,27 @@ div[data-testid="stWarning"] {
     div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
         font-size: 1.5rem !important;
     }
+}
+
+/* =========================================================================
+   FORZAR FONDO OSCURO EN TODOS LOS ELEMENTOS DE SIDEBAR
+   ========================================================================= */
+[data-testid="stSidebar"] section,
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+    background: transparent !important;
+}
+
+[data-testid="stSidebar"] .stMarkdown {
+    background: transparent !important;
+}
+
+/* Asegurar que el texto del selectbox seleccionado sea visible */
+[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] div {
+    color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] svg {
+    fill: #f1c40f !important;
 }
 </style>
 """, unsafe_allow_html=True)
