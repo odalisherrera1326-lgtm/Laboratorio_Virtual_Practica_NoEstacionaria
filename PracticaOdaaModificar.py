@@ -265,7 +265,16 @@ st.markdown("""
 /* Estilos generales */
 html, body, [data-testid="stAppViewContainer"] {
     background: linear-gradient(135deg, #f0f4f8 0%, #e8edf2 100%);
-    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='1.5'><circle cx='12' cy='12' r='3'/><path d='M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12'/></svg>") 12 12, auto !important;
+    /* Cursor de engranaje normal */
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%231a5276' stroke-width='2'><circle cx='12' cy='12' r='3'/><path d='M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12'/></svg>") 14 14, auto !important;
+}
+
+/* Cursor de engranaje + manito para elementos interactivos */
+button, a, [data-testid="stHeaderActionElements"], .stSlider,
+.stButton, .stCheckbox, .stToggle, .stSelectbox, .stNumberInput,
+[role="button"], [role="slider"], .streamlit-expanderHeader,
+.stTabs [data-baseweb="tab"], .practica-card {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='%23f1c40f' stroke-width='2'><circle cx='12' cy='12' r='3'/><path d='M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12'/></svg>") 16 16, pointer !important;
 }
 
 /* Tabs personalizadas */
@@ -348,20 +357,55 @@ html, body, [data-testid="stAppViewContainer"] {
     100% { background-position: 0% 50%; }
 }
 
-/* Botones */
+/* =========================================================================
+   BOTONES MEJORADOS
+   ========================================================================= */
+/* Botón normal (azul) */
 .stButton > button {
     background: linear-gradient(90deg, #1a5276, #2471a3) !important;
     color: white !important;
-    border: none !important;
+    border: 2px solid #f1c40f !important;
     border-radius: 25px !important;
     padding: 0.5rem 1.5rem !important;
     font-weight: bold !important;
     transition: all 0.3s ease !important;
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.2) !important;
 }
 
 .stButton > button:hover {
     background: linear-gradient(90deg, #2471a3, #2e86c1) !important;
     transform: scale(1.02);
+    box-shadow: 0 0 20px #f1c40f !important;
+    border-color: #f39c12 !important;
+}
+
+/* Botón PRIMARIO - NARANJA (Iniciar Simulación) */
+.stButton > button[kind="primary"] {
+    background: linear-gradient(90deg, #e67e22, #f39c12) !important;
+    color: #1a1a1a !important;
+    font-weight: bold !important;
+    border: 2px solid #f1c40f !important;
+    box-shadow: 0 0 15px rgba(230, 126, 34, 0.4) !important;
+}
+
+.stButton > button[kind="primary"]:hover {
+    background: linear-gradient(90deg, #f39c12, #f1c40f) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 0 30px #f39c12, 0 0 15px #f1c40f !important;
+    border-color: #ffffff !important;
+}
+
+/* Botón secundario (Reset) */
+.stButton > button[kind="secondary"] {
+    background: linear-gradient(90deg, #7b241c, #943126) !important;
+    color: white !important;
+    border: 2px solid #f1c40f !important;
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.2) !important;
+}
+
+.stButton > button[kind="secondary"]:hover {
+    background: linear-gradient(90deg, #943126, #a93226) !important;
+    box-shadow: 0 0 20px #f1c40f !important;
 }
 
 /* Sidebar cuando está visible */
