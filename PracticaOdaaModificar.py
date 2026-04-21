@@ -258,17 +258,27 @@ if 'datos_usr' not in st.session_state:
     })
 
 # =============================================================================
-# ESTILOS CSS MEJORADOS
+# ESTILOS CSS COMPLETOS CON BORDES ILUMINADOS Y CURSORES PERSONALIZADOS
 # =============================================================================
 st.markdown("""
 <style>
-/* Fondo general */
+/* =========================================================================
+   FONDO GENERAL Y CURSORES PERSONALIZADOS
+   ========================================================================= */
 html, body, [data-testid="stAppViewContainer"] {
     background-color: #f4f7f9 !important;
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%231a5276' stroke-width='2'><circle cx='12' cy='12' r='4'/><path d='M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12'/></svg>") 12 12, auto !important;
+}
+
+/* Cursor de manito + engranaje para elementos interactivos */
+button, a, [data-testid="stHeaderActionElements"], .stSlider, 
+.stButton, .stCheckbox, .stToggle, .stSelectbox, .stNumberInput,
+[role="button"], [role="slider"], .streamlit-expanderHeader {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='%23f1c40f' stroke-width='2'><circle cx='12' cy='12' r='4'/><path d='M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12'/></svg>") 14 14, pointer !important;
 }
 
 /* =========================================================================
-   BARRA LATERAL - MEJORADA PARA VISIBILIDAD
+   BARRA LATERAL - COMPLETAMENTE VISIBLE
    ========================================================================= */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #1a5276 0%, #154360 100%) !important;
@@ -295,10 +305,12 @@ html, body, [data-testid="stAppViewContainer"] {
     font-weight: 500 !important;
 }
 
-/* Texto de ayuda (caption) en gris claro */
-[data-testid="stSidebar"] .stCaption {
-    color: #d4e6f1 !important;
-    font-size: 0.8rem !important;
+/* Texto de ayuda (caption) en amarillo para destacar */
+[data-testid="stSidebar"] .stCaption,
+[data-testid="stSidebar"] [data-testid="stCaption"] {
+    color: #f1c40f !important;
+    font-weight: 500 !important;
+    font-size: 0.85rem !important;
 }
 
 /* Títulos de los expanders */
@@ -320,21 +332,105 @@ html, body, [data-testid="stAppViewContainer"] {
 
 /* Contenido de los expanders - fondo oscuro para contraste */
 [data-testid="stSidebar"] .streamlit-expanderContent {
-    background-color: rgba(0, 0, 0, 0.2) !important;
+    background-color: rgba(0, 0, 0, 0.3) !important;
     border-radius: 0 0 8px 8px !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     padding: 15px !important;
 }
 
-/* Inputs numéricos - texto oscuro para legibilidad */
+[data-testid="stSidebar"] .streamlit-expanderContent p,
+[data-testid="stSidebar"] .streamlit-expanderContent span,
+[data-testid="stSidebar"] .streamlit-expanderContent div {
+    color: #ffffff !important;
+}
+
+/* =========================================================================
+   INPUTS Y FORMULARIOS EN LA SIDEBAR
+   ========================================================================= */
 [data-testid="stSidebar"] input,
-[data-testid="stSidebar"] .stNumberInput input {
+[data-testid="stSidebar"] .stNumberInput input,
+[data-testid="stSidebar"] .streamlit-expanderContent input,
+[data-testid="stSidebar"] .streamlit-expanderContent textarea {
+    color: #1a1a1a !important;
+    background-color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
+    background-color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] span {
+    color: #1a1a1a !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox div[role="listbox"] {
+    background-color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox div[role="option"] {
+    color: #1a1a1a !important;
+}
+
+[data-testid="stSidebar"] .stNumberInput div[role="spinbutton"] {
+    color: #1a1a1a !important;
+    background-color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stSlider div[data-testid="stThumbValue"] {
+    color: #1a1a1a !important;
+    background-color: #f1c40f !important;
+}
+
+[data-testid="stSidebar"] .stCheckbox label,
+[data-testid="stSidebar"] .stToggle label,
+[data-testid="stSidebar"] [data-testid="stCheckbox"] label,
+[data-testid="stSidebar"] [data-testid="stToggle"] label,
+[data-testid="stSidebar"] .stCheckbox p,
+[data-testid="stSidebar"] .stToggle p {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+}
+
+/* =========================================================================
+   DATA EDITOR EN LA SIDEBAR
+   ========================================================================= */
+[data-testid="stSidebar"] .stDataFrame,
+[data-testid="stSidebar"] .stDataEditor,
+[data-testid="stSidebar"] [data-testid="stDataEditor"] {
+    background-color: #2c3e50 !important;
+    color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stDataEditor th,
+[data-testid="stSidebar"] .stDataEditor td {
+    color: #ffffff !important;
+    background-color: #2c3e50 !important;
+    border-color: #4a6a8a !important;
+}
+
+[data-testid="stSidebar"] .stDataEditor input {
     color: #1a1a1a !important;
     background-color: #ffffff !important;
 }
 
 /* =========================================================================
-   MÉTRICAS Y TARJETAS
+   MÉTRICAS DENTRO DE LA SIDEBAR
+   ========================================================================= */
+[data-testid="stSidebar"] [data-testid="stMetric"] {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-left: 4px solid #f1c40f !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stMetric"] label {
+    color: #d4e6f1 !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stMetric"] div[data-testid="stMetricValue"] {
+    color: #ffffff !important;
+}
+
+/* =========================================================================
+   MÉTRICAS Y TARJETAS (ÁREA PRINCIPAL)
    ========================================================================= */
 div[data-testid="stMetric"] {
     background: linear-gradient(135deg, #ffffff 0%, #f5f9fc 100%) !important;
@@ -364,36 +460,59 @@ div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
 }
 
 /* =========================================================================
-   BOTONES
+   BOTONES PRINCIPALES CON BORDE ILUMINADO
    ========================================================================= */
 .stButton > button[kind="primary"], 
 .stButton > button:first-child:not([kind="secondary"]) {
     background: linear-gradient(90deg, #1a5276, #2471a3) !important;
     color: white !important;
-    border: none !important;
+    border: 2px solid #f1c40f !important;
     border-radius: 25px !important;
     padding: 0.5rem 1.5rem !important;
     font-weight: bold !important;
     transition: all 0.3s ease !important;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.3), 0 2px 5px rgba(0,0,0,0.2) !important;
 }
 
-.stButton > button[kind="primary"]:hover {
+.stButton > button[kind="primary"]:hover,
+.stButton > button:first-child:not([kind="secondary"]):hover {
     background: linear-gradient(90deg, #2471a3, #2e86c1) !important;
     transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(26,82,118,0.4) !important;
+    box-shadow: 0 0 20px #f1c40f, 0 4px 12px rgba(26,82,118,0.4) !important;
+    border-color: #f39c12 !important;
 }
 
 .stButton > button[kind="secondary"] {
     background: linear-gradient(90deg, #7b241c, #943126) !important;
     color: white !important;
-    border: none !important;
+    border: 2px solid #f1c40f !important;
     border-radius: 25px !important;
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.2) !important;
+    transition: all 0.3s ease !important;
 }
 
 .stButton > button[kind="secondary"]:hover {
     background: linear-gradient(90deg, #943126, #a93226) !important;
     transform: scale(1.02);
+    box-shadow: 0 0 20px #f1c40f, 0 4px 12px rgba(148,49,38,0.4) !important;
+    border-color: #f39c12 !important;
+}
+
+/* Botones en la sidebar */
+[data-testid="stSidebar"] .stButton > button {
+    color: #ffffff !important;
+    border: 2px solid #f1c40f !important;
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.3) !important;
+}
+
+[data-testid="stSidebar"] .stButton > button:hover {
+    box-shadow: 0 0 20px #f1c40f !important;
+    border-color: #f39c12 !important;
+}
+
+[data-testid="stSidebar"] .streamlit-expanderContent .stButton > button {
+    background: linear-gradient(90deg, #1a5276, #2471a3) !important;
+    border: 2px solid #f1c40f !important;
 }
 
 /* =========================================================================
@@ -412,7 +531,7 @@ div[data-testid="stMetric"] div[data-testid="stMetricValue"] {
 }
 
 /* =========================================================================
-   SLIDERS
+   SLIDERS GENERALES
    ========================================================================= */
 div[data-baseweb="slider"] > div > div > div {
     background-color: #f39c12 !important;
@@ -443,7 +562,7 @@ div[role="slider"] {
 }
 
 /* =========================================================================
-   EXPANDERS GENERALES
+   EXPANDERS GENERALES (ÁREA PRINCIPAL)
    ========================================================================= */
 .streamlit-expanderHeader {
     background-color: #e8f0f7 !important;
@@ -514,39 +633,29 @@ div[data-testid="stWarning"] {
 }
 
 /* =========================================================================
-   MEJORAS ADICIONALES PARA VISIBILIDAD
+   FORZAR VISIBILIDAD EN SIDEBAR
    ========================================================================= */
-/* Hacer que el texto de los selectbox sea más visible */
-[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] {
-    background-color: #ffffff !important;
+[data-testid="stSidebar"] * {
+    --text-color: #ffffff !important;
 }
 
-[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] span {
-    color: #1a1a1a !important;
-}
-
-/* Checkbox y toggle más visibles */
-[data-testid="stSidebar"] .stCheckbox label span,
-[data-testid="stSidebar"] .stToggle label span {
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] .stMarkdown,
+[data-testid="stSidebar"] p {
     color: #ffffff !important;
 }
 
-/* Botones dentro de la barra lateral */
-[data-testid="stSidebar"] .stButton > button {
-    color: white !important;
-}
-
-/* Data editor */
-[data-testid="stSidebar"] .stDataEditor {
-    background-color: #ffffff !important;
-}
-
-[data-testid="stSidebar"] .stDataEditor div {
-    color: #1a1a1a !important;
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] h4,
+[data-testid="stSidebar"] .stMarkdown h1,
+[data-testid="stSidebar"] .stMarkdown h2,
+[data-testid="stSidebar"] .stMarkdown h3 {
+    color: #f1c40f !important;
 }
 </style>
 """, unsafe_allow_html=True)
-
 
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL
