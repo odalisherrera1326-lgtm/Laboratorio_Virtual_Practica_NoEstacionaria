@@ -578,7 +578,7 @@ with st.sidebar.expander("🔧 Orificio de Salida", expanded=True):
 
 # Cálculo automático de Qmax y Cd basado en geometría y diámetro
 cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
-q_max_salida = calcular_q_max_salida(d_pulgadas, cd_automatico, h_total)
+
 st.session_state['cd_calculado'] = cd_automatico
 
 with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
