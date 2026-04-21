@@ -70,7 +70,7 @@ def calcular_q_max_salida(d_orificio_pulg, cd=0.61, h_max=10.0):
     
     return round(float(q_max_salida), 4)
 
-def calcular_cd_automatico(geom, r, h_t, d_orificio_pulg):
+def calcular_cd_automatico(geom, d_orificio_pulg):
     """
     Calcula un Cd automático basado en la geometría y el diámetro del orificio.
     Valores típicos de Cd para orificios:
