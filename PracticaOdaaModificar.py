@@ -195,7 +195,7 @@ def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo,
     h_next = np.clip(h_next, 0.0, h_t)
     
     return h_next, q_entrada, q_salida, err, e_sum, err
-    # =========================================================================
+      # =========================================================================
     # ESTRATEGIA CORREGIDA: FLUJO BASE + MODULACIÓN CONTINUA
     # =========================================================================
     # Flujo base = 15% del flujo máximo (permite mantener el nivel en equilibrio)
@@ -231,12 +231,6 @@ def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo,
     h_next = np.clip(h_next, 0.0, h_t)
     
     return h_next, q_entrada, q_salida, err, e_sum, err
-    
-def get_base64(path):
-    if os.path.exists(path):
-        with open(path, "rb") as f:
-            return base64.b64encode(f.read()).decode()
-    return None
 
 
 # =============================================================================
@@ -577,24 +571,24 @@ with st.sidebar.expander("🔧 Orificio de Salida", expanded=True):
     st.caption(f"Área calculada: {area_orificio:.6f} m²")
 
 # Cálculo automático de Qmax y Cd basado en geometría y diámetro
+    q_max_salida = calcular_q_max_salida(d_pulgadas, cd_automatico, h_total)
     cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
 
     st.session_state['cd_calculado'] = cd_automatico
-
 with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Qmax", f"{q_max:.2f} m³/s")
+        st.metric("Qmax Bomba", f"{q_max_bomba:.2f}")
     with col2:
+        st.metric("Qmax Salida", f"{q_max_salida:.4f}")
+    with col3:
         st.metric("Cd", f"{cd_automatico:.4f}")
-    st.caption("💡 Calculados según geometría y diámetro del orificio")
     
     ajuste_manual = st.checkbox("Ajuste manual de parámetros", value=False)
     if ajuste_manual:
-        q_max = st.number_input("Qmax Manual [m³/s]", value=q_max_bomba, min_value=0.5, max_value=5.0, step=0.5)
+        q_max_bomba = st.number_input("Qmax Bomba Manual [m³/s]", value=q_max_bomba, min_value=0.5, max_value=5.0, step=0.5)
         cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
         st.session_state['cd_calculado'] = cd_manual
-
 with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=True):
     p_activa = st.toggle("Simular Falla/Fuga Externas", value=True)
     
