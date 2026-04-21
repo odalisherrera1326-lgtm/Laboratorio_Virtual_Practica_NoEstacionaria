@@ -512,22 +512,22 @@ with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expande
         st.session_state['cd_calculado'] = cd_manual
 
 with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=True):
-p_activa = st.toggle("Simular Falla/Fuga Externas", value=False)
+    p_activa = st.toggle("Simular Falla/Fuga Externas", value=False)
 
-if p_activa:
-p_tipo = st.selectbox("Tipo de Perturbación", ["Entrada", "Salida (Fuga)"])
-p_tipo = "Entrada" if p_tipo == "Entrada" else "Salida"
-p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.3, min_value=0.1, max_value=2.0, step=0.1, format="%.2f")
-p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 100)
-else:
-p_magnitud = 0.0
-p_tiempo = 0
-p_tipo = "Entrada"
+    if p_activa:
+    p_tipo = st.selectbox("Tipo de Perturbación", ["Entrada", "Salida (Fuga)"])
+    p_tipo = "Entrada" if p_tipo == "Entrada" else "Salida"
+    p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.3, min_value=0.1, max_value=2.0, step=0.1, format="%.2f")
+    p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 100)
+    else:
+    p_magnitud = 0.0
+    p_tiempo = 0
+    p_tipo = "Entrada"
 
 with st.sidebar.expander("🎛️ Parámetros del Controlador PID", expanded=True):
-cd_actual = st.session_state.get('cd_calculado', 0.61)
-kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(
-geom_tanque, r_max, h_total, cd_actual, q_max, tipo_proceso
+    cd_actual = st.session_state.get('cd_calculado', 0.61)
+    kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(
+    geom_tanque, r_max, h_total, cd_actual, q_max, tipo_proceso
 )
 
 modo_auto = st.checkbox("🎯 Modo Robusto (Auto-sintonía)", value=True)
