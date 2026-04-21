@@ -477,8 +477,8 @@ with st.expander("🔧 Diagrama del Proceso", expanded=estado_expander):
 st.sidebar.header("⚙️ Configuración del Sistema")
 
 with st.sidebar.container(border=True):
-tipo_proceso = st.sidebar.selectbox("Tipo de Proceso", ["Llenado", "Vaciado"])
-geom_tanque = st.sidebar.selectbox("Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
+    tipo_proceso = st.sidebar.selectbox("Tipo de Proceso", ["Llenado", "Vaciado"]) 
+    geom_tanque = st.sidebar.selectbox("Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"]) 
 
 with st.sidebar.expander("📐 Especificaciones del Tanque", expanded=True):
 r_max = st.number_input("Radio de Diseño (R) [m]", value=1.0, min_value=0.1, step=0.1)
@@ -498,18 +498,18 @@ cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
 st.session_state['cd_calculado'] = cd_automatico
 
 with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
-col1, col2 = st.columns(2)
-with col1:
-st.metric("Qmax", f"{q_max:.2f} m³/s")
-with col2:
-st.metric("Cd", f"{cd_automatico:.4f}")
-st.caption("💡 Calculados según geometría y diámetro del orificio")
-
-ajuste_manual = st.checkbox("Ajuste manual de parámetros", value=False)
-if ajuste_manual:
-q_max = st.number_input("Qmax Manual [m³/s]", value=q_max, min_value=0.5, max_value=5.0, step=0.5)
-cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
-st.session_state['cd_calculado'] = cd_manual
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Qmax", f"{q_max:.2f} m³/s")
+    with col2:
+        st.metric("Cd", f"{cd_automatico:.4f}")
+    st.caption("💡 Calculados según geometría y diámetro del orificio")
+    
+    ajuste_manual = st.checkbox("Ajuste manual de parámetros", value=False)  # ← CORREGIDO (4 espacios)
+    if ajuste_manual:  # ← CORREGIDO (4 espacios)
+        q_max = st.number_input("Qmax Manual [m³/s]", value=q_max, min_value=0.5, max_value=5.0, step=0.5)
+        cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
+        st.session_state['cd_calculado'] = cd_manual
 
 with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=True):
 p_activa = st.toggle("Simular Falla/Fuga Externas", value=False)
