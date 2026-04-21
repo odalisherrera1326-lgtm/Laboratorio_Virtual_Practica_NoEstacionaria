@@ -459,8 +459,27 @@ div[data-testid="stWarning"] {
 # =============================================================================
 # ENCABEZADO INSTITUCIONAL
 # =============================================================================
-logo_ucv_64 = get_base64("logo_ucv.png")
-logo_eiq_64 = get_base64("logoquimicaborde.png")
+def get_base64(path):
+    # Intentar primero con la ruta directa
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    
+    # Si no existe, intentar con rutas alternativas (para Streamlit Cloud)
+    posibles_rutas = [
+        path,
+        os.path.join(os.path.dirname(__file__), path),
+        os.path.join("/mount/src/laboratorio_virtual_practica_noestacionaria", path),
+        os.path.join(os.getcwd(), path)
+    ]
+    
+    for ruta in posibles_rutas:
+        if os.path.exists(ruta):
+            with open(ruta, "rb") as f:
+                return base64.b64encode(f.read()).decode()
+    
+    # Si no se encuentra en ninguna ruta, retornar None
+    return None
 
 st.markdown(f"""
 <div class="header-container">
