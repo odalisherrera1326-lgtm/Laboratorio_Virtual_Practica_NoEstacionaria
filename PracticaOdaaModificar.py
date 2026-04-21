@@ -753,6 +753,9 @@ else:
         placeholder_grafico = st.empty()
         st.subheader("🔧 Acción de las Válvulas")
         placeholder_valvulas = st.empty()
+        st.markdown("---")
+        st.subheader("📊 Comparativa: Simulación vs Datos Experimentales")
+        placeholder_comparativa = st.empty()
 
     with col_met:
         st.subheader("📊 Métricas de Control")
@@ -935,34 +938,37 @@ else:
         ax2.set_ylim(0, q_max_bomba * 1.1)
         ax2.grid(True, alpha=0.2)
         ax2.set_title('V-02 (Salida)')
-        
         plt.tight_layout()
         placeholder_valvulas.pyplot(fig_v)
-        # Gráfico comparativo con datos experimentales
-if mostrar_ref:
-    datos_usr_df = st.session_state.get('datos_usr', pd.DataFrame())
-    if not isinstance(datos_usr_df, pd.DataFrame):
-        datos_usr_df = pd.DataFrame(datos_usr_df)
-    
-    if "Nivel Medido (cm)" in datos_usr_df.columns and len(datos_usr_df) > 0:
-        t_exp = datos_usr_df["Tiempo (s)"].values
-        h_exp = [val / 100 for val in datos_usr_df["Nivel Medido (cm)"].values]
-        
-        fig_comp, ax_comp = plt.subplots(figsize=(8, 3.5))
-        ax_comp.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2.5, label='Simulación PID')
-        ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos Experimentales')
-        ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
-        ax_comp.axhline(y=sp_nivel, color='green', ls='--', alpha=0.3, label='Setpoint')
-        ax_comp.set_xlabel("Tiempo [s]")
-        ax_comp.set_ylabel("Nivel [m]")
-        ax_comp.set_xlim(0, tiempo_ensayo)
-        ax_comp.set_ylim(0, h_total * 1.1)
-        ax_comp.grid(True, alpha=0.3)
-        ax_comp.legend(loc='lower right', fontsize='x-small')
-        placeholder_comparativa.pyplot(fig_comp)
-        plt.close(fig_comp)
         plt.close(fig_v)
         
+        
+        # Gráfico comparativo con datos experimentales (DENTRO DEL BUCLE)
+        if mostrar_ref:
+            datos_usr_df = st.session_state.get('datos_usr', pd.DataFrame())
+            if not isinstance(datos_usr_df, pd.DataFrame):
+                datos_usr_df = pd.DataFrame(datos_usr_df)
+            
+            if "Nivel Medido (cm)" in datos_usr_df.columns and len(datos_usr_df) > 0:
+                t_exp = datos_usr_df["Tiempo (s)"].values
+                h_exp = [val / 100 for val in datos_usr_df["Nivel Medido (cm)"].values]
+                
+                fig_comp, ax_comp = plt.subplots(figsize=(8, 3.5))
+                ax_comp.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2.5, label='Simulación PID')
+                ax_comp.scatter(t_exp, h_exp, color='red', marker='x', s=100, label='Datos Experimentales')
+                ax_comp.plot(t_exp, h_exp, color='red', linestyle='--', alpha=0.3)
+                ax_comp.axhline(y=sp_nivel, color='green', ls='--', alpha=0.3, label='Setpoint')
+                ax_comp.set_xlabel("Tiempo [s]")
+                ax_comp.set_ylabel("Nivel [m]")
+                ax_comp.set_xlim(0, tiempo_ensayo)
+                ax_comp.set_ylim(0, h_total * 1.1)
+                ax_comp.grid(True, alpha=0.3)
+                ax_comp.legend(loc='lower right', fontsize='x-small')
+                placeholder_comparativa.pyplot(fig_comp)
+                plt.close(fig_comp)
+        
+        
+       
         time.sleep(0.02)
         barra_p.progress((i+1)/len(vector_t))
     
