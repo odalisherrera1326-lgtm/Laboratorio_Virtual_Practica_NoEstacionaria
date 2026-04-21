@@ -56,7 +56,19 @@ def calcular_q_max_automatico(geom, r, h_t, d_orificio_pulg):
     q_max = np.clip(q_max, 0.5, 5.0)
     
     return round(float(q_max), 2)
-
+def calcular_q_max_salida(d_orificio_pulg, cd=0.61, h_max=10.0):
+    """
+    Calcula el caudal máximo de salida basado en el orificio.
+    Usa la Ley de Torricelli: Q = Cd * A * sqrt(2 * g * h)
+    """
+    g = 9.81  # m/s²
+    d_metros = d_orificio_pulg * 0.0254
+    area_orificio = np.pi * (d_metros / 2)**2
+    
+    # Caudal máximo teórico (con altura máxima)
+    q_max_salida = cd * area_orificio * np.sqrt(2 * g * h_max)
+    
+    return round(float(q_max_salida), 4)
 
 def calcular_cd_automatico(geom, r, h_t, d_orificio_pulg):
     """
@@ -82,7 +94,7 @@ def calcular_cd_automatico(geom, r, h_t, d_orificio_pulg):
     return round(float(np.clip(cd_final, 0.45, 0.75)), 4)
 
 
-def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado=0.61, q_max=2.0, tipo_proceso="Llenado"):
+def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado=0.61, q_max_bomba=2.0, tipo_proceso="Llenado"):
     """Sintonización robusta del PID CORREGIDA con ganancias más altas"""
     if geom == "Cilíndrico":
         area_t = np.pi * (r**2)
@@ -111,10 +123,11 @@ def sintonizar_controlador_robusto(geom, r, h_t, cd_calculado=0.61, q_max=2.0, t
     
     return round(kp, 2), round(ki, 3), round(kd, 2)
 
-def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo, e_sum, e_prev, kp, ki, kd, q_max=2.0):
+def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo, e_sum, e_prev, kp, ki, kd, q_max_bomba, q_max_salida, cd_val, d_orificio_pulg):
     """
-    Sistema CORREGIDO - Control PID con flujo base y modulación continua.
-    Ambas válvulas trabajan en conjunto para mantener el nivel.
+    Sistema CORREGIDO - Físicamente correcto:
+    - V-01 (Entrada): Controla flujo de bomba (0 a Qmax_bomba)
+    - V-02 (Salida): Controla flujo por orificio (Ley de Torricelli)
     """
     
     area_h = get_area_transversal(geom, r, h_prev, h_t)
@@ -122,7 +135,7 @@ def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo,
     
     err = sp - h_prev
     
-    # Acciones PID (SIN LÍMITE en la integral para eliminar offset)
+    # Acciones PID
     P = kp * err
     e_sum += err * dt
     I = ki * e_sum
@@ -135,6 +148,54 @@ def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo,
     u_control = P + I + D
     
     # =========================================================================
+    # CONTROL DE VÁLVULA DE ENTRADA (BOMBA)
+    # =========================================================================
+    flujo_base_bomba = q_max_bomba * 0.15
+    
+    if err > 0.01:  # Nivel BAJO - Necesito SUBIR
+        q_entrada = flujo_base_bomba + np.clip(u_control, 0, q_max_bomba - flujo_base_bomba)
+        apertura_salida = 0.3  # Válvula de salida casi cerrada (30% abierta)
+    elif err < -0.01:  # Nivel ALTO - Necesito BAJAR
+        q_entrada = flujo_base_bomba * 0.3  # Bomba al 30%
+        apertura_salida = 1.0 + np.clip(-u_control / q_max_bomba, 0, 1.0)
+        apertura_salida = np.clip(apertura_salida, 0.3, 1.0)
+    else:  # En el setpoint - Equilibrio
+        q_entrada = flujo_base_bomba
+        apertura_salida = 0.5  # Válvula al 50%
+    
+    q_entrada = np.clip(q_entrada, 0, q_max_bomba)
+    
+    # =========================================================================
+    # CONTROL DE VÁLVULA DE SALIDA (ORIFICIO - LEY DE TORRICELLI)
+    # =========================================================================
+    g = 9.81
+    d_metros = d_orificio_pulg * 0.0254
+    area_orificio = np.pi * (d_metros / 2)**2
+    
+    if h_prev > 0.001:
+        q_salida_teorico = cd_val * area_orificio * np.sqrt(2 * g * h_prev)
+    else:
+        q_salida_teorico = 0.0
+    
+    q_salida = apertura_salida * q_salida_teorico
+    
+    # =========================================================================
+    # AGREGAR PERTURBACIÓN
+    # =========================================================================
+    if p_tipo == "Entrada":
+        q_entrada_total = q_entrada + q_p_val
+        q_salida_total = q_salida
+    else:
+        q_entrada_total = q_entrada
+        q_salida_total = q_salida + q_p_val
+    
+    # Balance de masa
+    dh_dt = (q_entrada_total - q_salida_total) / area_h
+    h_next = h_prev + dh_dt * dt
+    h_next = np.clip(h_next, 0.0, h_t)
+    
+    return h_next, q_entrada, q_salida, err, e_sum, err
+    # =========================================================================
     # ESTRATEGIA CORREGIDA: FLUJO BASE + MODULACIÓN CONTINUA
     # =========================================================================
     # Flujo base = 15% del flujo máximo (permite mantener el nivel en equilibrio)
@@ -142,19 +203,19 @@ def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo,
     
     if err > 0.01:  # Nivel BAJO - Necesito SUBIR
         # Aumentar entrada, reducir salida
-        q_entrada = flujo_base + np.clip(u_control, 0, q_max - flujo_base)
+        q_entrada = flujo_base + np.clip(u_control, 0, q_max_bomba - flujo_base)
         q_salida = flujo_base * 0.3  # Salida reducida pero NO cero
     elif err < -0.01:  # Nivel ALTO - Necesito BAJAR
         # Reducir entrada, aumentar salida
         q_entrada = flujo_base * 0.3  # Entrada reducida pero NO cero
-        q_salida = flujo_base + np.clip(-u_control, 0, q_max - flujo_base)
+        q_salida = flujo_base + np.clip(-u_control, 0, q_max_bomba - flujo_base)
     else:  # En el setpoint (±0.01) - Mantener equilibrio
         q_entrada = flujo_base
         q_salida = flujo_base
     
     # Limitar flujos al rango permitido
-    q_entrada = np.clip(q_entrada, 0, q_max)
-    q_salida = np.clip(q_salida, 0, q_max)
+    q_entrada = np.clip(q_entrada, 0, q_max_bomba)
+    q_salida = np.clip(q_salida, 0, q_max_bomba)
     
     # Agregar perturbación
     if p_tipo == "Entrada":
@@ -505,15 +566,19 @@ with st.sidebar.expander("📐 Especificaciones del Tanque", expanded=True):
     h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
     sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.2, float(h_total)-0.2, float(h_total/2))
 
-with st.sidebar.expander("🚰 Dimensiones de Salida", expanded=True):
+with st.sidebar.expander("🚰 Bomba de Alimentación", expanded=True):
+    q_max_bomba = st.number_input("Caudal máximo de bomba [m³/s]", value=2.0, min_value=0.5, max_value=5.0, step=0.5)
+    st.caption("💡 Capacidad máxima de la bomba de entrada")
+
+with st.sidebar.expander("🔧 Orificio de Salida", expanded=True):
     d_pulgadas = st.number_input("Diámetro del Orificio (pulgadas)", value=1.0, min_value=0.1, step=0.1)
     d_metros = d_pulgadas * 0.0254
     area_orificio = np.pi * (d_metros / 2)**2
     st.caption(f"Área calculada: {area_orificio:.6f} m²")
 
 # Cálculo automático de Qmax y Cd basado en geometría y diámetro
-q_max = calcular_q_max_automatico(geom_tanque, r_max, h_total, d_pulgadas)
-cd_automatico = calcular_cd_automatico(geom_tanque, r_max, h_total, d_pulgadas)
+cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
+q_max_salida = calcular_q_max_salida(d_pulgadas, cd_automatico, h_total)
 st.session_state['cd_calculado'] = cd_automatico
 
 with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
@@ -526,7 +591,7 @@ with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expande
     
     ajuste_manual = st.checkbox("Ajuste manual de parámetros", value=False)
     if ajuste_manual:
-        q_max = st.number_input("Qmax Manual [m³/s]", value=q_max, min_value=0.5, max_value=5.0, step=0.5)
+        q_max = st.number_input("Qmax Manual [m³/s]", value=q_max_bomba, min_value=0.5, max_value=5.0, step=0.5)
         cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
         st.session_state['cd_calculado'] = cd_manual
 
@@ -546,7 +611,7 @@ with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=
 with st.sidebar.expander("🎛️ Parámetros del Controlador PID", expanded=True):
     cd_actual = st.session_state.get('cd_calculado', 0.61)
     kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(
-        geom_tanque, r_max, h_total, cd_actual, q_max, tipo_proceso
+        geom_tanque, r_max, h_total, cd_actual, q_max_bomba, tipo_proceso
     )
     
     modo_auto = st.checkbox("🎯 Modo Robusto (Auto-sintonía)", value=True)
@@ -599,19 +664,19 @@ if iniciar_sim:
     
     if modo_auto:
         kp_a, ki_a, kd_a = sintonizar_controlador_robusto(
-            geom_tanque, r_max, h_total, cd_para_usar, q_max, tipo_proceso
+            geom_tanque, r_max, h_total, cd_para_usar, q_max_bomba, tipo_proceso
         )
         st.session_state['kp_ejecucion'] = kp_a
         st.session_state['ki_ejecucion'] = ki_a
         st.session_state['kd_ejecucion'] = kd_a
         st.session_state['cd_final'] = cd_para_usar
-        st.toast(f"🎯 Control Robusto ({tipo_proceso}) | Qmax={q_max:.2f} | Cd={cd_para_usar:.4f}")
+        st.toast(f"🎯 Control Robusto ({tipo_proceso}) | Qmax={q_max_bomba:.2f} | Cd={cd_para_usar:.4f}")
     else:
         st.session_state['kp_ejecucion'] = kp_val
         st.session_state['ki_ejecucion'] = ki_val
         st.session_state['kd_ejecucion'] = kd_val
         st.session_state['cd_final'] = cd_para_usar
-        st.info(f"✍️ Modo Manual ({tipo_proceso}) | Qmax={q_max:.2f} | Cd={cd_para_usar:.4f}")
+        st.info(f"✍️ Modo Manual ({tipo_proceso}) | Qmax={q_max_bomba:.2f} | Cd={cd_para_usar:.4f}")
 
 
 # =============================================================================
@@ -638,7 +703,7 @@ else:
         cd_show = st.session_state.get('cd_final', 0.61)
         
         st.write(f"**Parámetros Activos:**")
-        st.caption(f"Proceso: {tipo_proceso} | Qmax: {q_max:.2f} m³/s | Cd: {cd_show:.4f}")
+        st.caption(f"Proceso: {tipo_proceso} | Qmax: {q_max_bomba:.2f} m³/s | Cd: {cd_show:.4f}")
         st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Kd: {st.session_state.get('kd_ejecucion', 0.8)}")
         st.markdown("---")
         
@@ -687,10 +752,10 @@ else:
         else:
             q_p_inst = 0.0
         
-        h_corrida, q_entrada, q_salida, e_inst, err_int, err_pasado = resolver_sistema_dos_valvulas(
-            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, p_tipo,
-            err_int, err_pasado, k_p, k_i, k_d, q_max
-        )
+       h_corrida, q_entrada, q_salida, e_inst, err_int, err_pasado = resolver_sistema_dos_valvulas(
+    dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, p_tipo,
+    err_int, err_pasado, k_p, k_i, k_d, q_max_bomba, q_max_salida, cd_para_simular, d_pulgadas
+)
         
         iae_acumulado += abs(e_inst) * dt
         itae_acumulado += (t_act * abs(e_inst)) * dt
@@ -800,14 +865,14 @@ else:
         fig_v, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 3))
         ax1.step(vector_t[:i+1], qin_log, where='post', color='blue', lw=2)
         ax1.set_ylabel('Q entrada [m³/s]')
-        ax1.set_ylim(0, q_max * 1.1)
+        ax1.set_ylim(0, q_max_bomba * 1.1)
         ax1.grid(True, alpha=0.2)
         ax1.set_title('V-01 (Entrada)')
         
         ax2.step(vector_t[:i+1], qout_log, where='post', color='red', lw=2)
         ax2.set_ylabel('Q salida [m³/s]')
         ax2.set_xlabel('Tiempo [s]')
-        ax2.set_ylim(0, q_max * 1.1)
+        ax2.set_ylim(0, q_max_bomba * 1.1)
         ax2.grid(True, alpha=0.2)
         ax2.set_title('V-02 (Salida)')
         
@@ -889,7 +954,7 @@ else:
         "Kp_Usado": [k_p] * len(vector_t),
         "Ki_Usado": [k_i] * len(vector_t),
         "Kd_Usado": [k_d] * len(vector_t),
-        "Qmax_Usado": [q_max] * len(vector_t),
+        "Qmax_Usado": [q_max_bomba] * len(vector_t),
         "Cd_Usado": [cd_para_simular] * len(vector_t),
         "Diametro_orificio_pulg": [d_pulgadas] * len(vector_t),
         "Tipo_Proceso": [tipo_proceso] * len(vector_t)
