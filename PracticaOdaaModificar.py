@@ -477,80 +477,80 @@ with st.expander("🔧 Diagrama del Proceso", expanded=estado_expander):
 st.sidebar.header("⚙️ Configuración del Sistema")
 
 with st.sidebar.container(border=True):
-    tipo_proceso = st.sidebar.selectbox("Tipo de Proceso", ["Llenado", "Vaciado"])
-    geom_tanque = st.sidebar.selectbox("Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
+tipo_proceso = st.sidebar.selectbox("Tipo de Proceso", ["Llenado", "Vaciado"])
+geom_tanque = st.sidebar.selectbox("Geometría del Equipo", ["Cilíndrico", "Cónico", "Esférico"])
 
 with st.sidebar.expander("📐 Especificaciones del Tanque", expanded=True):
-    r_max = st.number_input("Radio de Diseño (R) [m]", value=1.0, min_value=0.1, step=0.1)
-    h_sug = 3.0 if geom_tanque != "Esférico" else r_max * 2
-    h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
-    sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.5, float(h_total)-0.5, float(h_total/2))
+r_max = st.number_input("Radio de Diseño (R) [m]", value=1.0, min_value=0.1, step=0.1)
+h_sug = 3.0 if geom_tanque != "Esférico" else r_max * 2
+h_total = st.number_input("Altura de Diseño (H) [m]", value=float(h_sug), min_value=0.1, step=0.5)
+sp_nivel = st.slider("Consigna de Nivel (Setpoint) [m]", 0.5, float(h_total)-0.5, float(h_total/2))
 
 with st.sidebar.expander("🚰 Dimensiones de Salida", expanded=True):
-    d_pulgadas = st.number_input("Diámetro del Orificio (pulgadas)", value=1.0, min_value=0.1, step=0.1)
-    d_metros = d_pulgadas * 0.0254
-    area_orificio = np.pi * (d_metros / 2)**2
-    st.caption(f"Área calculada: {area_orificio:.6f} m²")
+d_pulgadas = st.number_input("Diámetro del Orificio (pulgadas)", value=1.0, min_value=0.1, step=0.1)
+d_metros = d_pulgadas * 0.0254
+area_orificio = np.pi * (d_metros / 2)**2
+st.caption(f"Área calculada: {area_orificio:.6f} m²")
 
-    # Cálculo automático de Qmax y Cd
-    q_max = calcular_q_max_automatico(geom_tanque, r_max, h_total, d_pulgadas)
-    cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
-    st.session_state['cd_calculado'] = cd_automatico
+# Cálculo automático de Qmax y Cd
+q_max = calcular_q_max_automatico(geom_tanque, r_max, h_total, d_pulgadas)
+cd_automatico = calcular_cd_automatico(geom_tanque, d_pulgadas)
+st.session_state['cd_calculado'] = cd_automatico
 
 with st.sidebar.expander("📊 Parámetros Calculados Automáticamente", expanded=False):
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Qmax", f"{q_max:.2f} m³/s")
-    with col2:
-        st.metric("Cd", f"{cd_automatico:.4f}")
-    st.caption("💡 Calculados según geometría y diámetro del orificio")
+col1, col2 = st.columns(2)
+with col1:
+st.metric("Qmax", f"{q_max:.2f} m³/s")
+with col2:
+st.metric("Cd", f"{cd_automatico:.4f}")
+st.caption("💡 Calculados según geometría y diámetro del orificio")
 
 ajuste_manual = st.checkbox("Ajuste manual de parámetros", value=False)
 if ajuste_manual:
-    q_max = st.number_input("Qmax Manual [m³/s]", value=q_max, min_value=0.5, max_value=5.0, step=0.5)
-    cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
-    st.session_state['cd_calculado'] = cd_manual
+q_max = st.number_input("Qmax Manual [m³/s]", value=q_max, min_value=0.5, max_value=5.0, step=0.5)
+cd_manual = st.number_input("Cd Manual", value=cd_automatico, min_value=0.30, max_value=0.90, step=0.01, format="%.4f")
+st.session_state['cd_calculado'] = cd_manual
 
 with st.sidebar.expander("🛡️ Escenario de Perturbación ($Q_p$)", expanded=True):
-    p_activa = st.toggle("Simular Falla/Fuga Externas", value=False)
+p_activa = st.toggle("Simular Falla/Fuga Externas", value=False)
 
-    if p_activa:
-        p_tipo = st.selectbox("Tipo de Perturbación", ["Entrada", "Salida (Fuga)"])
-        p_tipo = "Entrada" if p_tipo == "Entrada" else "Salida"
-        p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.3, min_value=0.1, max_value=2.0, step=0.1, format="%.2f")
-        p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 100)
-    else:
-        p_magnitud = 0.0
-        p_tiempo = 0
-        p_tipo = "Entrada"
+if p_activa:
+p_tipo = st.selectbox("Tipo de Perturbación", ["Entrada", "Salida (Fuga)"])
+p_tipo = "Entrada" if p_tipo == "Entrada" else "Salida"
+p_magnitud = st.number_input("Magnitud Qp [m³/s]", value=0.3, min_value=0.1, max_value=2.0, step=0.1, format="%.2f")
+p_tiempo = st.slider("Inicio de perturbación [s]", 0, 500, 100)
+else:
+p_magnitud = 0.0
+p_tiempo = 0
+p_tipo = "Entrada"
 
 with st.sidebar.expander("🎛️ Parámetros del Controlador PID", expanded=True):
-    cd_actual = st.session_state.get('cd_calculado', 0.61)
-    kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(
-        geom_tanque, r_max, h_total, cd_actual, q_max, tipo_proceso
-    )
+cd_actual = st.session_state.get('cd_calculado', 0.61)
+kp_sug, ki_sug, kd_sug = sintonizar_controlador_robusto(
+geom_tanque, r_max, h_total, cd_actual, q_max, tipo_proceso
+)
 
-    modo_auto = st.checkbox("🎯 Modo Robusto (Auto-sintonía)", value=True)
+modo_auto = st.checkbox("🎯 Modo Robusto (Auto-sintonía)", value=True)
 
-    st.markdown("---")
+st.markdown("---")
 
-    if modo_auto:
-        st.success(f"💡 PID optimizado para {tipo_proceso}")
-        st.caption(f"Kp={kp_sug} | Ki={ki_sug} | Kd={kd_sug}")
-        kp_val = st.number_input("Kp", value=kp_sug, key="kp_auto")
-        ki_val = st.number_input("Ki", value=ki_sug, format="%.3f", key="ki_auto")
-        kd_val = st.number_input("Kd", value=kd_sug, format="%.3f", key="kd_auto")
-    else:
-        st.info(f"✍️ Modo Manual - {tipo_proceso}")
-        if tipo_proceso == "Llenado":
-            kp_default, ki_default, kd_default = 20.0, 4.0, 1.5
-        else:
-            kp_default, ki_default, kd_default = 15.0, 3.0, 1.0
-        kp_val = st.number_input("Kp", value=kp_default, step=1.0, key="kp_man")
-        ki_val = st.number_input("Ki", value=ki_default, step=0.5, format="%.3f", key="ki_man")
-        kd_val = st.number_input("Kd", value=kd_default, step=0.1, format="%.3f", key="kd_man")
+if modo_auto:
+st.success(f"💡 PID optimizado para {tipo_proceso}")
+st.caption(f"Kp={kp_sug} | Ki={ki_sug} | Kd={kd_sug}")
+kp_val = st.number_input("Kp", value=kp_sug, key="kp_auto")
+ki_val = st.number_input("Ki", value=ki_sug, format="%.3f", key="ki_auto")
+kd_val = st.number_input("Kd", value=kd_sug, format="%.3f", key="kd_auto")
+else:
+st.info(f"✍️ Modo Manual - {tipo_proceso}")
+if tipo_proceso == "Llenado":
+kp_default, ki_default, kd_default = 20.0, 4.0, 1.5
+else:
+kp_default, ki_default, kd_default = 15.0, 3.0, 1.0
+kp_val = st.number_input("Kp", value=kp_default, step=1.0, key="kp_man")
+ki_val = st.number_input("Ki", value=ki_default, step=0.5, format="%.3f", key="ki_man")
+kd_val = st.number_input("Kd", value=kd_default, step=0.1, format="%.3f", key="kd_man")
 
-tiempo_ensayo = st.sidebar.slider("Tiempo de simulación [s]", 60, 600, 300)
+tiempo_ensayo = st.slider("Tiempo de simulación [s]", 60, 600, 300)
 
 
 # =============================================================================
@@ -559,338 +559,338 @@ tiempo_ensayo = st.sidebar.slider("Tiempo de simulación [s]", 60, 600, 300)
 st.sidebar.markdown("---")
 col_btn1, col_btn2 = st.sidebar.columns(2)
 with col_btn1:
-    iniciar_sim = st.button("▶️ Iniciar Simulación", use_container_width=True, type="primary")
+iniciar_sim = st.button("▶️ Iniciar Simulación", use_container_width=True, type="primary")
 with col_btn2:
-    btn_reset = st.button("🔄 Reset", use_container_width=True, type="secondary")
+btn_reset = st.button("🔄 Reset", use_container_width=True, type="secondary")
 
 if btn_reset:
-    st.session_state.ejecutando = False
-    st.rerun()
+st.session_state.ejecutando = False
+st.rerun()
 
 
 # =============================================================================
 # INICIALIZACIÓN DE SIMULACIÓN
 # =============================================================================
 if iniciar_sim:
-    st.session_state.ejecutando = True
-    st.session_state['error_acumulado'] = 0.0
-    st.session_state['ultimo_error'] = 0.0
+st.session_state.ejecutando = True
+st.session_state['error_acumulado'] = 0.0
+st.session_state['ultimo_error'] = 0.0
 
-    cd_para_usar = st.session_state.get('cd_calculado', 0.61)
+cd_para_usar = st.session_state.get('cd_calculado', 0.61)
 
-    if modo_auto:
-        kp_a, ki_a, kd_a = sintonizar_controlador_robusto(
-            geom_tanque, r_max, h_total, cd_para_usar, q_max, tipo_proceso
-        )
-        st.session_state['kp_ejecucion'] = kp_a
-        st.session_state['ki_ejecucion'] = ki_a
-        st.session_state['kd_ejecucion'] = kd_a
-        st.session_state['cd_final'] = cd_para_usar
-        st.toast(f"🎯 Control Robusto ({tipo_proceso}) | Qmax={q_max:.2f} | Cd={cd_para_usar:.4f}")
-    else:
-        st.session_state['kp_ejecucion'] = kp_val
-        st.session_state['ki_ejecucion'] = ki_val
-        st.session_state['kd_ejecucion'] = kd_val
-        st.session_state['cd_final'] = cd_para_usar
-        st.info(f"✍️ Modo Manual ({tipo_proceso}) | Qmax={q_max:.2f} | Cd={cd_para_usar:.4f}")
+if modo_auto:
+kp_a, ki_a, kd_a = sintonizar_controlador_robusto(
+geom_tanque, r_max, h_total, cd_para_usar, q_max, tipo_proceso
+)
+st.session_state['kp_ejecucion'] = kp_a
+st.session_state['ki_ejecucion'] = ki_a
+st.session_state['kd_ejecucion'] = kd_a
+st.session_state['cd_final'] = cd_para_usar
+st.toast(f"🎯 Control Robusto ({tipo_proceso}) | Qmax={q_max:.2f} | Cd={cd_para_usar:.4f}")
+else:
+st.session_state['kp_ejecucion'] = kp_val
+st.session_state['ki_ejecucion'] = ki_val
+st.session_state['kd_ejecucion'] = kd_val
+st.session_state['cd_final'] = cd_para_usar
+st.info(f"✍️ Modo Manual ({tipo_proceso}) | Qmax={q_max:.2f} | Cd={cd_para_usar:.4f}")
 
 
 # =============================================================================
 # SIMULACIÓN PRINCIPAL
 # =============================================================================
 if not st.session_state.ejecutando:
-    st.info("💡 Configure los parámetros y presione 'Iniciar Simulación'")
+st.info("💡 Configure los parámetros y presione 'Iniciar Simulación'")
 else:
-    col_graf, col_met = st.columns([2, 1])
+col_graf, col_met = st.columns([2, 1])
 
-    with col_graf:
-        st.subheader(f"🎮 Monitor del Proceso - Control PID ({tipo_proceso})")
-        placeholder_tanque = st.empty()
-        st.subheader("📈 Tendencia Temporal")
-        placeholder_grafico = st.empty()
-        st.subheader("🔧 Acción de las Válvulas")
-        placeholder_valvulas = st.empty()
+with col_graf:
+st.subheader(f"🎮 Monitor del Proceso - Control PID ({tipo_proceso})")
+placeholder_tanque = st.empty()
+st.subheader("📈 Tendencia Temporal")
+placeholder_grafico = st.empty()
+st.subheader("🔧 Acción de las Válvulas")
+placeholder_valvulas = st.empty()
 
-    with col_met:
-        st.subheader("📊 Métricas de Control")
+with col_met:
+st.subheader("📊 Métricas de Control")
 
-        kp_show = st.session_state.get('kp_ejecucion', 20.0)
-        ki_show = st.session_state.get('ki_ejecucion', 4.0)
-        cd_show = st.session_state.get('cd_final', 0.61)
+kp_show = st.session_state.get('kp_ejecucion', 20.0)
+ki_show = st.session_state.get('ki_ejecucion', 4.0)
+cd_show = st.session_state.get('cd_final', 0.61)
 
-        st.write(f"**Parámetros Activos:**")
-        st.caption(f"Proceso: {tipo_proceso} | Qmax: {q_max:.2f} m³/s | Cd: {cd_show:.4f}")
-        st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Kd: {st.session_state.get('kd_ejecucion', 1.5)}")
-        st.markdown("---")
+st.write(f"**Parámetros Activos:**")
+st.caption(f"Proceso: {tipo_proceso} | Qmax: {q_max:.2f} m³/s | Cd: {cd_show:.4f}")
+st.caption(f"Kp: {kp_show} | Ki: {ki_show} | Kd: {st.session_state.get('kd_ejecucion', 1.5)}")
+st.markdown("---")
 
-        placeholder_iae = st.empty()
-        placeholder_itae = st.empty()
-        placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
-        placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
+placeholder_iae = st.empty()
+placeholder_itae = st.empty()
+placeholder_iae.metric("IAE (Error Acumulado)", "0.00")
+placeholder_itae.metric("ITAE (Criterio Tesis)", "0.00")
 
-        st.markdown("---")
-        m_h = st.empty()
-        m_e = st.empty()
-        m_qin = st.empty()
-        m_qout = st.empty()
-        m_h.metric("Nivel PV [m]", "0.000")
-        m_e.metric("Error [m]", "0.000")
-        m_qin.metric("Flujo Entrada [m³/s]", "0.000")
-        m_qout.metric("Flujo Salida [m³/s]", "0.000")
+st.markdown("---")
+m_h = st.empty()
+m_e = st.empty()
+m_qin = st.empty()
+m_qout = st.empty()
+m_h.metric("Nivel PV [m]", "0.000")
+m_e.metric("Error [m]", "0.000")
+m_qin.metric("Flujo Entrada [m³/s]", "0.000")
+m_qout.metric("Flujo Salida [m³/s]", "0.000")
 
-    # Preparación
-    status_placeholder = st.empty()
-    dt = 1.0
-    vector_t = np.arange(0, tiempo_ensayo, dt)
-    h_log, qin_log, qout_log, e_log = [], [], [], []
+# Preparación
+status_placeholder = st.empty()
+dt = 1.0
+vector_t = np.arange(0, tiempo_ensayo, dt)
+h_log, qin_log, qout_log, e_log = [], [], [], []
 
-    if tipo_proceso == "Llenado":
-        h_corrida = 0.3
-    else:
-        h_corrida = h_total * 0.8
+if tipo_proceso == "Llenado":
+h_corrida = 0.3
+else:
+h_corrida = h_total * 0.8
 
-    err_int, err_pasado = 0.0, 0.0
-    iae_acumulado, itae_acumulado = 0.0, 0.0
+err_int, err_pasado = 0.0, 0.0
+iae_acumulado, itae_acumulado = 0.0, 0.0
 
-    barra_p = st.progress(0)
-    cd_para_simular = st.session_state.get('cd_final', 0.61)
+barra_p = st.progress(0)
+cd_para_simular = st.session_state.get('cd_final', 0.61)
 
-    k_p = st.session_state.get('kp_ejecucion', 20.0)
-    k_i = st.session_state.get('ki_ejecucion', 4.0)
-    k_d = st.session_state.get('kd_ejecucion', 1.5)
+k_p = st.session_state.get('kp_ejecucion', 20.0)
+k_i = st.session_state.get('ki_ejecucion', 4.0)
+k_d = st.session_state.get('kd_ejecucion', 1.5)
 
-    # Bucle de simulación
-    for i, t_act in enumerate(vector_t):
-        status_placeholder.markdown("<div class='flow-indicator'>💧 CONTROL PID ACTIVO</div>", unsafe_allow_html=True)
+# Bucle de simulación
+for i, t_act in enumerate(vector_t):
+status_placeholder.markdown("<div class='flow-indicator'>💧 CONTROL PID ACTIVO</div>", unsafe_allow_html=True)
 
-        if p_activa and t_act >= p_tiempo:
-            q_p_inst = p_magnitud
-        else:
-            q_p_inst = 0.0
+if p_activa and t_act >= p_tiempo:
+q_p_inst = p_magnitud
+else:
+q_p_inst = 0.0
 
-        h_corrida, q_entrada, q_salida, e_inst, err_int, err_pasado = resolver_sistema_dos_valvulas(
-            dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, p_tipo,
-            err_int, err_pasado, k_p, k_i, k_d, q_max
-        )
+h_corrida, q_entrada, q_salida, e_inst, err_int, err_pasado = resolver_sistema_dos_valvulas(
+dt, h_corrida, sp_nivel, geom_tanque, r_max, h_total, q_p_inst, p_tipo,
+err_int, err_pasado, k_p, k_i, k_d, q_max
+)
 
-        iae_acumulado += abs(e_inst) * dt
-        itae_acumulado += (t_act * abs(e_inst)) * dt
+iae_acumulado += abs(e_inst) * dt
+itae_acumulado += (t_act * abs(e_inst)) * dt
 
-        h_log.append(h_corrida)
-        qin_log.append(q_entrada)
-        qout_log.append(q_salida)
-        e_log.append(e_inst)
+h_log.append(h_corrida)
+qin_log.append(q_entrada)
+qout_log.append(q_salida)
+e_log.append(e_inst)
 
-        m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
-        m_e.metric("Error [m]", f"{e_inst:.4f}")
-        m_qin.metric("Flujo Entrada [m³/s]", f"{q_entrada:.3f}")
-        m_qout.metric("Flujo Salida [m³/s]", f"{q_salida:.3f}")
-        placeholder_iae.metric("IAE", f"{iae_acumulado:.2f}")
-        placeholder_itae.metric("ITAE", f"{itae_acumulado:.2f}")
+m_h.metric("Nivel PV [m]", f"{h_corrida:.3f}")
+m_e.metric("Error [m]", f"{e_inst:.4f}")
+m_qin.metric("Flujo Entrada [m³/s]", f"{q_entrada:.3f}")
+m_qout.metric("Flujo Salida [m³/s]", f"{q_salida:.3f}")
+placeholder_iae.metric("IAE", f"{iae_acumulado:.2f}")
+placeholder_itae.metric("ITAE", f"{itae_acumulado:.2f}")
 
-        # Visualización del tanque
-        fig_t, ax_t = plt.subplots(figsize=(7, 5))
-        ax_t.set_axis_off()
-        ax_t.set_xlim(-r_max*3, r_max*3)
-        ax_t.set_ylim(-0.8, h_total*1.3)
+# Visualización del tanque
+fig_t, ax_t = plt.subplots(figsize=(7, 5))
+ax_t.set_axis_off()
+ax_t.set_xlim(-r_max*3, r_max*3)
+ax_t.set_ylim(-0.8, h_total*1.3)
 
-        if abs(e_inst) < 0.05:
-            color_agua = '#27ae60'
-        elif abs(e_inst) < 0.15:
-            color_agua = '#f39c12'
-        else:
-            color_agua = '#e74c3c'
+if abs(e_inst) < 0.05:
+color_agua = '#27ae60'
+elif abs(e_inst) < 0.15:
+color_agua = '#f39c12'
+else:
+color_agua = '#e74c3c'
 
-        if geom_tanque == "Cilíndrico":
-            c_in_x, c_in_y = -r_max, h_total*0.8
-            c_out_x, c_out_y = r_max, 0.1
-            ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=5, zorder=2)
-            ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, color=color_agua, alpha=0.85, zorder=1))
-            if q_entrada > 0:
-                ax_t.annotate('', xy=(-r_max-1.5, h_corrida*0.7), xytext=(-r_max-0.3, h_corrida*0.7),
-                            arrowprops=dict(arrowstyle='->', lw=3, color='blue'))
-            if q_salida > 0:
-                ax_t.annotate('', xy=(r_max+1.5, 0.3), xytext=(r_max+0.3, 0.3),
-                            arrowprops=dict(arrowstyle='->', lw=3, color='red'))
+if geom_tanque == "Cilíndrico":
+c_in_x, c_in_y = -r_max, h_total*0.8
+c_out_x, c_out_y = r_max, 0.1
+ax_t.plot([-r_max, -r_max, r_max, r_max], [h_total, 0, 0, h_total], color='#2c3e50', lw=5, zorder=2)
+ax_t.add_patch(plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, color=color_agua, alpha=0.85, zorder=1))
+if q_entrada > 0:
+    ax_t.annotate('', xy=(-r_max-1.5, h_corrida*0.7), xytext=(-r_max-0.3, h_corrida*0.7),
+                arrowprops=dict(arrowstyle='->', lw=3, color='blue'))
+if q_salida > 0:
+    ax_t.annotate('', xy=(r_max+1.5, 0.3), xytext=(r_max+0.3, 0.3),
+                arrowprops=dict(arrowstyle='->', lw=3, color='red'))
 
-        elif geom_tanque == "Cónico":
-            c_in_x, c_in_y = -(r_max/h_total)*(h_total*0.8), h_total*0.8
-            c_out_x, c_out_y = 0, 0
-            ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=5, zorder=2)
-            if h_corrida > 0:
-                radio_h = (r_max / h_total) * h_corrida
-                vertices = [[-radio_h, h_corrida], [radio_h, h_corrida], [0, 0]]
-                ax_t.add_patch(plt.Polygon(vertices, color=color_agua, alpha=0.85, zorder=1))
+elif geom_tanque == "Cónico":
+c_in_x, c_in_y = -(r_max/h_total)*(h_total*0.8), h_total*0.8
+c_out_x, c_out_y = 0, 0
+ax_t.plot([-r_max, 0, r_max], [h_total, 0, h_total], color='#2c3e50', lw=5, zorder=2)
+if h_corrida > 0:
+    radio_h = (r_max / h_total) * h_corrida
+    vertices = [[-radio_h, h_corrida], [radio_h, h_corrida], [0, 0]]
+    ax_t.add_patch(plt.Polygon(vertices, color=color_agua, alpha=0.85, zorder=1))
 
-        else:
-            import math
-            c_in_y = h_total * 0.7
-            c_in_x = -math.sqrt(abs(r_max**2 - (c_in_y - r_max)**2))
-            c_out_x, c_out_y = 0, 0
-            agua = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.85, zorder=1)
-            ax_t.add_patch(agua)
-            recorte = plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, transform=ax_t.transData)
-            agua.set_clip_path(recorte)
-            ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=5, zorder=2))
+else:
+import math
+c_in_y = h_total * 0.7
+c_in_x = -math.sqrt(abs(r_max**2 - (c_in_y - r_max)**2))
+c_out_x, c_out_y = 0, 0
+agua = plt.Circle((0, r_max), r_max, color=color_agua, alpha=0.85, zorder=1)
+ax_t.add_patch(agua)
+recorte = plt.Rectangle((-r_max, 0), 2*r_max, h_corrida, transform=ax_t.transData)
+agua.set_clip_path(recorte)
+ax_t.add_patch(plt.Circle((0, r_max), r_max, color='#2c3e50', fill=False, lw=5, zorder=2))
 
-        # Tuberías y válvulas
-        ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
-        ax_t.add_patch(plt.Polygon([[c_in_x-1, c_in_y+0.2], [c_in_x-1, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
-        ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
-        ax_t.text(c_in_x-0.6, c_in_y+0.4, "V-01", ha='center', fontsize=9, fontweight='bold', color='blue')
+# Tuberías y válvulas
+ax_t.add_patch(plt.Rectangle((c_in_x - 1.5, c_in_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
+ax_t.add_patch(plt.Polygon([[c_in_x-1, c_in_y+0.2], [c_in_x-1, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
+ax_t.add_patch(plt.Polygon([[c_in_x-0.2, c_in_y+0.2], [c_in_x-0.2, c_in_y-0.2], [c_in_x-0.6, c_in_y]], color='#2c3e50', zorder=2))
+ax_t.text(c_in_x-0.6, c_in_y+0.4, "V-01", ha='center', fontsize=9, fontweight='bold', color='blue')
 
-        if geom_tanque == "Cilíndrico":
-            ax_t.add_patch(plt.Rectangle((c_out_x, c_out_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
-            vs_x, vs_y = c_out_x + 0.8, c_out_y
-        else:
-            ax_t.add_patch(plt.Rectangle((c_out_x - 0.1, -0.6), 0.2, 0.6, color='silver', zorder=0))
-            vs_x, vs_y = c_out_x, -0.4
+if geom_tanque == "Cilíndrico":
+ax_t.add_patch(plt.Rectangle((c_out_x, c_out_y - 0.1), 1.5, 0.2, color='silver', zorder=0))
+vs_x, vs_y = c_out_x + 0.8, c_out_y
+else:
+ax_t.add_patch(plt.Rectangle((c_out_x - 0.1, -0.6), 0.2, 0.6, color='silver', zorder=0))
+vs_x, vs_y = c_out_x, -0.4
 
-        ax_t.add_patch(plt.Polygon([[vs_x-0.25, vs_y+0.2], [vs_x-0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
-        ax_t.add_patch(plt.Polygon([[vs_x+0.25, vs_y+0.2], [vs_x+0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
-        offset_t = 0.4 if geom_tanque == "Cilíndrico" else 0
-        ax_t.text(vs_x + offset_t, vs_y - 0.5, "V-02", ha='center', fontsize=9, fontweight='bold', color='red')
+ax_t.add_patch(plt.Polygon([[vs_x-0.25, vs_y+0.2], [vs_x-0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
+ax_t.add_patch(plt.Polygon([[vs_x+0.25, vs_y+0.2], [vs_x+0.25, vs_y-0.2], [vs_x, vs_y]], color='#2c3e50', zorder=2))
+offset_t = 0.4 if geom_tanque == "Cilíndrico" else 0
+ax_t.text(vs_x + offset_t, vs_y - 0.5, "V-02", ha='center', fontsize=9, fontweight='bold', color='red')
 
-        ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3, alpha=0.8)
-        ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SP: {sp_nivel:.2f}m", color='red', fontweight='bold')
-        ax_t.text(0, h_total * 1.2, f"PV: {h_corrida:.3f} m", ha='center', fontweight='bold',
-             bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round'))
+ax_t.axhline(y=sp_nivel, color='red', ls='--', lw=2, zorder=3, alpha=0.8)
+ax_t.text(-r_max*2.8, sp_nivel + 0.05, f"SP: {sp_nivel:.2f}m", color='red', fontweight='bold')
+ax_t.text(0, h_total * 1.2, f"PV: {h_corrida:.3f} m", ha='center', fontweight='bold',
+     bbox=dict(facecolor='white', alpha=0.9, edgecolor='#1a5276', boxstyle='round'))
 
-        if p_activa and t_act >= p_tiempo:
-            ax_t.text(0, -0.5, f"⚠️ PERTURBACIÓN ACTIVA", ha='center', color='orange', fontweight='bold')
+if p_activa and t_act >= p_tiempo:
+ax_t.text(0, -0.5, f"⚠️ PERTURBACIÓN ACTIVA", ha='center', color='orange', fontweight='bold')
 
-        placeholder_tanque.pyplot(fig_t)
-        plt.close(fig_t)
+placeholder_tanque.pyplot(fig_t)
+plt.close(fig_t)
 
-        # Gráfico de tendencia
-        fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
-        ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel')
-        ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
-        if p_activa and t_act >= p_tiempo:
-            ax_tr.axvspan(p_tiempo, tiempo_ensayo, alpha=0.1, color='orange', label='Perturbación')
-        ax_tr.set_xlabel('Tiempo [s]')
-        ax_tr.set_ylabel('Altura [m]')
-        ax_tr.legend()
-        ax_tr.set_xlim(0, tiempo_ensayo)
-        ax_tr.set_ylim(0, h_total * 1.1)
-        ax_tr.grid(True, alpha=0.2)
-        placeholder_grafico.pyplot(fig_tr)
-        plt.close(fig_tr)
+# Gráfico de tendencia
+fig_tr, ax_tr = plt.subplots(figsize=(8, 3.5))
+ax_tr.plot(vector_t[:i+1], h_log, color='#2980b9', lw=2, label='Nivel')
+ax_tr.axhline(y=sp_nivel, color='red', ls='--', alpha=0.5, label='Setpoint')
+if p_activa and t_act >= p_tiempo:
+ax_tr.axvspan(p_tiempo, tiempo_ensayo, alpha=0.1, color='orange', label='Perturbación')
+ax_tr.set_xlabel('Tiempo [s]')
+ax_tr.set_ylabel('Altura [m]')
+ax_tr.legend()
+ax_tr.set_xlim(0, tiempo_ensayo)
+ax_tr.set_ylim(0, h_total * 1.1)
+ax_tr.grid(True, alpha=0.2)
+placeholder_grafico.pyplot(fig_tr)
+plt.close(fig_tr)
 
-        # Gráfico de válvulas
-        fig_v, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 3))
-        ax1.step(vector_t[:i+1], qin_log, where='post', color='blue', lw=2)
-        ax1.set_ylabel('Q entrada [m³/s]')
-        ax1.set_ylim(0, q_max * 1.1)
-        ax1.grid(True, alpha=0.2)
-        ax1.set_title('V-01 (Entrada)')
+# Gráfico de válvulas
+fig_v, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 3))
+ax1.step(vector_t[:i+1], qin_log, where='post', color='blue', lw=2)
+ax1.set_ylabel('Q entrada [m³/s]')
+ax1.set_ylim(0, q_max * 1.1)
+ax1.grid(True, alpha=0.2)
+ax1.set_title('V-01 (Entrada)')
 
-        ax2.step(vector_t[:i+1], qout_log, where='post', color='red', lw=2)
-        ax2.set_ylabel('Q salida [m³/s]')
-        ax2.set_xlabel('Tiempo [s]')
-        ax2.set_ylim(0, q_max * 1.1)
-        ax2.grid(True, alpha=0.2)
-        ax2.set_title('V-02 (Salida)')
+ax2.step(vector_t[:i+1], qout_log, where='post', color='red', lw=2)
+ax2.set_ylabel('Q salida [m³/s]')
+ax2.set_xlabel('Tiempo [s]')
+ax2.set_ylim(0, q_max * 1.1)
+ax2.grid(True, alpha=0.2)
+ax2.set_title('V-02 (Salida)')
 
-        plt.tight_layout()
-        placeholder_valvulas.pyplot(fig_v)
-        plt.close(fig_v)
+plt.tight_layout()
+placeholder_valvulas.pyplot(fig_v)
+plt.close(fig_v)
 
-        time.sleep(0.02)
-        barra_p.progress((i+1)/len(vector_t))
+time.sleep(0.02)
+barra_p.progress((i+1)/len(vector_t))
 
-    status_placeholder.empty()
+status_placeholder.empty()
 
-    err_final = abs(h_log[-1] - sp_nivel)
-    if err_final < 0.05:
-        st.success(f"✅ ¡Simulación completada! El sistema LLEGÓ al setpoint. Error final: {err_final:.4f} m")
-    else:
-        st.warning(f"⚠️ Simulación completada. Error final: {err_final:.4f} m - Ajusta Ki")
-    st.balloons()
+err_final = abs(h_log[-1] - sp_nivel)
+if err_final < 0.05:
+st.success(f"✅ ¡Simulación completada! El sistema LLEGÓ al setpoint. Error final: {err_final:.4f} m")
+else:
+st.warning(f"⚠️ Simulación completada. Error final: {err_final:.4f} m - Ajusta Ki")
+st.balloons()
 
-    # Análisis final
-    st.markdown("---")
-    st.subheader("📈 Análisis de Respuesta")
+# Análisis final
+st.markdown("---")
+st.subheader("📈 Análisis de Respuesta")
 
-    col_an1, col_an2 = st.columns([2, 1])
+col_an1, col_an2 = st.columns([2, 1])
 
-    with col_an1:
-        fig_amp, ax_amp = plt.subplots(figsize=(10, 5))
-        ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta')
-        ax_amp.axhline(y=sp_nivel, color='#d62728', linestyle='--', lw=2, label='Setpoint')
-        if p_activa and p_tiempo > 0:
-            ax_amp.axvline(x=p_tiempo, color='orange', linestyle='--', alpha=0.7)
-            ax_amp.axvspan(p_tiempo, tiempo_ensayo, alpha=0.08, color='orange')
-        ax_amp.set_title(f"Respuesta del Control PID - {tipo_proceso}")
-        ax_amp.set_xlabel("Tiempo [s]")
-        ax_amp.set_ylabel("Nivel [m]")
-        ax_amp.grid(True, alpha=0.3)
-        ax_amp.legend()
-        st.pyplot(fig_amp)
-        plt.close(fig_amp)
+with col_an1:
+fig_amp, ax_amp = plt.subplots(figsize=(10, 5))
+ax_amp.plot(vector_t, h_log, color='#1f77b4', lw=2.5, label='Respuesta')
+ax_amp.axhline(y=sp_nivel, color='#d62728', linestyle='--', lw=2, label='Setpoint')
+if p_activa and p_tiempo > 0:
+ax_amp.axvline(x=p_tiempo, color='orange', linestyle='--', alpha=0.7)
+ax_amp.axvspan(p_tiempo, tiempo_ensayo, alpha=0.08, color='orange')
+ax_amp.set_title(f"Respuesta del Control PID - {tipo_proceso}")
+ax_amp.set_xlabel("Tiempo [s]")
+ax_amp.set_ylabel("Nivel [m]")
+ax_amp.grid(True, alpha=0.3)
+ax_amp.legend()
+st.pyplot(fig_amp)
+plt.close(fig_amp)
 
-    with col_an2:
-        sobrepico = ((max(h_log) - sp_nivel) / sp_nivel) * 100 if max(h_log) > sp_nivel else 0
-        st.metric("Sobrepico Máximo", f"{sobrepico:.2f} %")
-        st.metric("IAE Final", f"{iae_acumulado:.2f}")
-        st.metric("ITAE Final", f"{itae_acumulado:.2f}")
-        st.metric("Error Final", f"{err_final:.4f} m")
+with col_an2:
+sobrepico = ((max(h_log) - sp_nivel) / sp_nivel) * 100 if max(h_log) > sp_nivel else 0
+st.metric("Sobrepico Máximo", f"{sobrepico:.2f} %")
+st.metric("IAE Final", f"{iae_acumulado:.2f}")
+st.metric("ITAE Final", f"{itae_acumulado:.2f}")
+st.metric("Error Final", f"{err_final:.4f} m")
 
-        if err_final < 0.02:
-            st.success("✅ Excelente control")
-        elif err_final < 0.05:
-            st.info("👍 Buen control")
-        else:
-            st.warning("⚠️ Ajustar PID")
+if err_final < 0.02:
+st.success("✅ Excelente control")
+elif err_final < 0.05:
+st.info("👍 Buen control")
+else:
+st.warning("⚠️ Ajustar PID")
 
-    # Tabla de resumen
-    st.markdown("---")
-    st.subheader("📋 Resumen de Datos")
+# Tabla de resumen
+st.markdown("---")
+st.subheader("📋 Resumen de Datos")
 
-    col_tab, col_res = st.columns([2, 1])
+col_tab, col_res = st.columns([2, 1])
 
-    with col_tab:
-        df_resumen = pd.DataFrame({
-            "Tiempo [s]": vector_t[-10:] if len(vector_t) >= 10 else vector_t,
-            "Nivel [m]": h_log[-10:] if len(h_log) >= 10 else h_log,
-            "Q_entrada": qin_log[-10:] if len(qin_log) >= 10 else qin_log,
-            "Q_salida": qout_log[-10:] if len(qout_log) >= 10 else qout_log,
-            "Error [m]": e_log[-10:] if len(e_log) >= 10 else e_log
-        })
-        st.dataframe(df_resumen.style.format("{:.4f}"), use_container_width=True)
+with col_tab:
+df_resumen = pd.DataFrame({
+"Tiempo [s]": vector_t[-10:] if len(vector_t) >= 10 else vector_t,
+"Nivel [m]": h_log[-10:] if len(h_log) >= 10 else h_log,
+"Q_entrada": qin_log[-10:] if len(qin_log) >= 10 else qin_log,
+"Q_salida": qout_log[-10:] if len(qout_log) >= 10 else qout_log,
+"Error [m]": e_log[-10:] if len(e_log) >= 10 else e_log
+})
+st.dataframe(df_resumen.style.format("{:.4f}"), use_container_width=True)
 
-    with col_res:
-        err_f = abs(sp_nivel - h_log[-1]) if len(h_log) > 0 else 0
-        st.metric("Error Residual", f"{err_f:.4f} m")
+with col_res:
+err_f = abs(sp_nivel - h_log[-1]) if len(h_log) > 0 else 0
+st.metric("Error Residual", f"{err_f:.4f} m")
 
-    # Exportar
-    df_final = pd.DataFrame({
-        "Tiempo [s]": vector_t,
-        "Nivel [m]": h_log,
-        "Q_entrada [m3/s]": qin_log,
-        "Q_salida [m3/s]": qout_log,
-        "Error [m]": e_log,
-        "Kp_Usado": [k_p] * len(vector_t),
-        "Ki_Usado": [k_i] * len(vector_t),
-        "Kd_Usado": [k_d] * len(vector_t),
-        "Qmax_Usado": [q_max] * len(vector_t),
-        "Cd_Usado": [cd_para_simular] * len(vector_t),
-        "Diametro_orificio_pulg": [d_pulgadas] * len(vector_t),
-        "Tipo_Proceso": [tipo_proceso] * len(vector_t)
-    })
+# Exportar
+df_final = pd.DataFrame({
+"Tiempo [s]": vector_t,
+"Nivel [m]": h_log,
+"Q_entrada [m3/s]": qin_log,
+"Q_salida [m3/s]": qout_log,
+"Error [m]": e_log,
+"Kp_Usado": [k_p] * len(vector_t),
+"Ki_Usado": [k_i] * len(vector_t),
+"Kd_Usado": [k_d] * len(vector_t),
+"Qmax_Usado": [q_max] * len(vector_t),
+"Cd_Usado": [cd_para_simular] * len(vector_t),
+"Diametro_orificio_pulg": [d_pulgadas] * len(vector_t),
+"Tipo_Proceso": [tipo_proceso] * len(vector_t)
+})
 
-    st.download_button(
-        label="📥 Descargar Datos (CSV)",
-        data=df_final.to_csv(index=False),
-        file_name=f"simulacion_{tipo_proceso.lower()}_{geom_tanque.lower()}.csv",
-        mime="text/csv"
-    )
+st.download_button(
+label="📥 Descargar Datos (CSV)",
+data=df_final.to_csv(index=False),
+file_name=f"simulacion_{tipo_proceso.lower()}_{geom_tanque.lower()}.csv",
+mime="text/csv"
+)
 
-    # Footer
-    st.markdown("""
-    <hr style="margin: 2rem 0 1rem 0; border-color: #1a5276;">
-    <div style="text-align: center; color: #5d6d7e; font-size: 0.8rem;">
-    <p>Universidad Central de Venezuela - Escuela de Ingeniería Química</p>
-    <p>Simulador de Control PID con Dos Válvulas | © 2025</p>
-    </div>
-    """, unsafe_allow_html=True)
+# Footer
+st.markdown("""
+<hr style="margin: 2rem 0 1rem 0; border-color: #1a5276;">
+<div style="text-align: center; color: #5d6d7e; font-size: 0.8rem;">
+<p>Universidad Central de Venezuela - Escuela de Ingeniería Química</p>
+<p>Simulador de Control PID con Dos Válvulas | © 2025</p>
+</div>
+""", unsafe_allow_html=True)
