@@ -170,6 +170,12 @@ def resolver_sistema_dos_valvulas(dt, h_prev, sp, geom, r, h_t, q_p_val, p_tipo,
     h_next = np.clip(h_next, 0.0, h_t)
     
     return h_next, q_entrada, q_salida, err, e_sum, err
+    
+def get_base64(path):
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return None
 
 
 # =============================================================================
